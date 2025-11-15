@@ -4,7 +4,7 @@
     "slug": "MR_BunkManager",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/logo.png",
     "scheme": "mrbunkmanager",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
