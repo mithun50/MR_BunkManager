@@ -1,98 +1,323 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { View, StyleSheet, ScrollView, Platform, StatusBar } from 'react-native';
+import { Text, Surface, Card, useTheme, ProgressBar, Appbar, ActivityIndicator } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuthStore } from '@/src/store/authStore';
+import firestoreService from '@/src/services/firestoreService';
+import { useState, useEffect, useCallback } from 'react';
+import { Subject, UserProfile } from '@/src/types/user';
+import { useFocusEffect } from '@react-navigation/native';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+export default function DashboardScreen() {
+  const theme = useTheme();
+  const { user } = useAuthStore();
+  const insets = useSafeAreaInsets();
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export default function HomeScreen() {
+  const loadData = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      const [subjectsList, userProfile] = await Promise.all([
+        firestoreService.getSubjects(user.uid),
+        firestoreService.getUserProfile(user.uid),
+      ]);
+      setSubjects(subjectsList);
+      setProfile(userProfile);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  // Reload data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
+
+  // Calculate overall statistics
+  const totalClasses = subjects.reduce((sum, s) => sum + (s.totalClasses || 0), 0);
+  const attendedClasses = subjects.reduce((sum, s) => sum + (s.attendedClasses || 0), 0);
+  const overallPercentage = totalClasses > 0 ? (attendedClasses / totalClasses) * 100 : 0;
+
+  // Calculate how many classes can be bunked
+  const minimumAttendance = profile?.minimumAttendance || 75;
+  const canBunk = totalClasses > 0
+    ? Math.floor((attendedClasses - (minimumAttendance / 100) * totalClasses) / (minimumAttendance / 100))
+    : 0;
+
+  const getAttendanceColor = (percentage: number) => {
+    if (percentage >= 85) return theme.colors.tertiary;
+    if (percentage >= 75) return theme.colors.secondary;
+    return theme.colors.error;
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <Appbar.Header elevated style={{ backgroundColor: theme.colors.surface }}>
+          <Appbar.Content title="Dashboard" />
+        </Appbar.Header>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
+      </View>
+    );
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {/* App Bar */}
+      <Appbar.Header
+        elevated
+        style={{ backgroundColor: theme.colors.surface }}
+      >
+        <Appbar.Content title="Dashboard" />
+      </Appbar.Header>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      <ScrollView
+        style={styles.scrollContainer}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 16 }]}
+        showsVerticalScrollIndicator={false}
+      >
+      {/* Header */}
+      <View style={styles.header}>
+        <Text variant="headlineMedium" style={styles.greeting}>
+          Welcome back, {user?.displayName?.split(' ')[0] || 'Student'}!
+        </Text>
+        <Text variant="bodyMedium" style={styles.subtitle}>
+          Here's your attendance overview
+        </Text>
+      </View>
+
+      {/* Overall Attendance Card */}
+      {subjects.length > 0 ? (
+        <Card style={styles.card}>
+          <Card.Content>
+            <View style={styles.cardHeader}>
+              <MaterialCommunityIcons
+                name="chart-donut"
+                size={32}
+                color={theme.colors.primary}
+              />
+              <Text variant="titleLarge" style={styles.cardTitle}>
+                Overall Attendance
+              </Text>
+            </View>
+            <View style={styles.percentageContainer}>
+              <Text variant="displayMedium" style={{ color: getAttendanceColor(overallPercentage) }}>
+                {overallPercentage.toFixed(1)}%
+              </Text>
+            </View>
+            <ProgressBar
+              progress={overallPercentage / 100}
+              color={getAttendanceColor(overallPercentage)}
+              style={styles.progressBar}
+            />
+            <Text variant="bodySmall" style={styles.attendanceText}>
+              {attendedClasses} classes attended out of {totalClasses}
+            </Text>
+          </Card.Content>
+        </Card>
+      ) : (
+        <Card style={styles.card}>
+          <Card.Content>
+            <View style={styles.emptyState}>
+              <MaterialCommunityIcons name="book-off-outline" size={64} color={theme.colors.outline} />
+              <Text variant="titleMedium" style={styles.emptyTitle}>
+                No Subjects Added
+              </Text>
+              <Text variant="bodyMedium" style={styles.emptyText}>
+                Add subjects in the Attendance tab to start tracking
+              </Text>
+            </View>
+          </Card.Content>
+        </Card>
+      )}
+
+      {/* Quick Stats */}
+      {subjects.length > 0 && (
+        <View style={styles.statsContainer}>
+          <Surface style={[styles.statCard, { backgroundColor: theme.colors.secondaryContainer }]}>
+            <MaterialCommunityIcons
+              name={canBunk >= 0 ? "check-circle" : "alert-circle"}
+              size={32}
+              color={canBunk >= 0 ? theme.colors.secondary : theme.colors.error}
+            />
+            <Text variant="headlineSmall" style={styles.statNumber}>
+              {canBunk >= 0 ? canBunk : 0}
+            </Text>
+            <Text variant="bodySmall" style={styles.statLabel}>
+              {canBunk >= 0 ? 'Can Bunk' : 'Must Attend'}
+            </Text>
+          </Surface>
+
+          <Surface style={[styles.statCard, { backgroundColor: theme.colors.tertiaryContainer }]}>
+            <MaterialCommunityIcons name="book-multiple" size={32} color={theme.colors.tertiary} />
+            <Text variant="headlineSmall" style={styles.statNumber}>
+              {subjects.length}
+            </Text>
+            <Text variant="bodySmall" style={styles.statLabel}>
+              Total Subjects
+            </Text>
+          </Surface>
+        </View>
+      )}
+
+      {/* Subject List */}
+      {subjects.length > 0 && (
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text variant="titleMedium" style={styles.sectionTitle}>
+              Subject Attendance
+            </Text>
+            {subjects.slice(0, 5).map((subject) => (
+              <View key={subject.id} style={styles.subjectItem}>
+                <View style={styles.subjectInfo}>
+                  <Text variant="titleSmall">{subject.name}</Text>
+                  <Text variant="bodySmall" style={styles.subjectStats}>
+                    {subject.attendedClasses}/{subject.totalClasses} classes
+                  </Text>
+                </View>
+                <Text
+                  variant="titleMedium"
+                  style={{ color: getAttendanceColor(subject.attendancePercentage) }}
+                >
+                  {subject.attendancePercentage.toFixed(1)}%
+                </Text>
+              </View>
+            ))}
+          </Card.Content>
+        </Card>
+      )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  content: {
+    padding: 16,
+  },
+  header: {
+    marginBottom: 24,
+  },
+  greeting: {
+    fontWeight: 'bold',
+  },
+  subtitle: {
+    marginTop: 4,
+    opacity: 0.7,
+  },
+  card: {
+    marginBottom: 16,
+    elevation: 2,
+  },
+  cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    marginBottom: 16,
   },
-  stepContainer: {
-    gap: 8,
+  cardTitle: {
+    marginLeft: 12,
+    fontWeight: 'bold',
+  },
+  percentageContainer: {
+    alignItems: 'center',
+    marginVertical: 16,
+  },
+  progressBar: {
+    height: 8,
+    borderRadius: 4,
+    marginVertical: 12,
+  },
+  attendanceText: {
+    textAlign: 'center',
+    opacity: 0.7,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  statCard: {
+    flex: 1,
+    padding: 16,
+    marginHorizontal: 4,
+    borderRadius: 12,
+    alignItems: 'center',
+    elevation: 2,
+  },
+  statNumber: {
+    fontWeight: 'bold',
+    marginTop: 8,
+  },
+  statLabel: {
+    opacity: 0.7,
+    marginTop: 4,
+  },
+  sectionTitle: {
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  classItem: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  classTime: {
+    width: 80,
+    paddingTop: 2,
+  },
+  classDetails: {
+    flex: 1,
+  },
+  classInfo: {
+    marginTop: 4,
+    opacity: 0.7,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 100,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyTitle: {
+    marginTop: 16,
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  emptyText: {
+    opacity: 0.7,
+    textAlign: 'center',
+  },
+  subjectItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  subjectInfo: {
+    flex: 1,
+  },
+  subjectStats: {
+    marginTop: 4,
+    opacity: 0.7,
   },
 });
