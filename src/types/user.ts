@@ -4,6 +4,7 @@ export interface UserProfile {
   displayName: string;
   photoURL?: string;
   college: string;
+  course: string;
   department: string;
   semester: string;
   rollNumber: string;
@@ -21,7 +22,7 @@ export interface TimetableEntry {
   endTime: string; // "10:00 AM"
   subject: string;
   subjectCode?: string;
-  type: 'lecture' | 'lab' | 'tutorial';
+  type: 'lecture' | 'lab' | 'tutorial' | 'practical' | 'seminar';
   room?: string;
   faculty?: string;
 }
@@ -30,11 +31,13 @@ export interface Subject {
   id: string;
   name: string;
   code: string;
-  type: 'lecture' | 'lab' | 'tutorial';
+  type: 'lecture' | 'lab' | 'tutorial' | 'practical' | 'seminar';
   totalClasses: number;
   attendedClasses: number;
   attendancePercentage: number;
   faculty?: string;
+  room?: string;
+  lastUpdated?: Date;
 }
 
 export interface AttendanceRecord {
@@ -43,7 +46,7 @@ export interface AttendanceRecord {
   subjectName: string;
   date: Date;
   status: 'present' | 'absent';
-  type: 'lecture' | 'lab' | 'tutorial';
+  type: 'lecture' | 'lab' | 'tutorial' | 'practical' | 'seminar';
   remarks?: string;
 }
 

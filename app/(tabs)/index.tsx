@@ -7,6 +7,7 @@ import firestoreService from '@/src/services/firestoreService';
 import { useState, useEffect, useCallback } from 'react';
 import { Subject, UserProfile } from '@/src/types/user';
 import { useFocusEffect } from '@react-navigation/native';
+import { ThemeSwitcher } from '@/src/components/ThemeSwitcher';
 
 export default function DashboardScreen() {
   const theme = useTheme();
@@ -25,7 +26,33 @@ export default function DashboardScreen() {
         firestoreService.getSubjects(user.uid),
         firestoreService.getUserProfile(user.uid),
       ]);
-      setSubjects(subjectsList);
+
+      // Filter out invalid/blank subjects
+      const validSubjects = subjectsList.filter(subject => {
+        const name = subject.name?.toLowerCase()?.trim() || '';
+
+        // Exclude empty names
+        if (!name || name.length < 2) {
+          console.log('Filtering out subject with invalid name:', subject);
+          return false;
+        }
+
+        // Exclude breaks, lunch, etc.
+        const invalidKeywords = [
+          'break', 'lunch', 'recess', 'free', 'vacant', 'empty',
+          'no class', 'holiday', 'off', '-', 'nil', 'na', 'n/a'
+        ];
+
+        if (invalidKeywords.some(keyword => name.includes(keyword))) {
+          console.log('Filtering out invalid subject:', name);
+          return false;
+        }
+
+        return true;
+      });
+
+      console.log(`Loaded ${subjectsList.length} subjects, filtered to ${validSubjects.length} valid subjects`);
+      setSubjects(validSubjects);
       setProfile(userProfile);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -62,7 +89,11 @@ export default function DashboardScreen() {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <Appbar.Header elevated style={{ backgroundColor: theme.colors.surface }}>
-          <Appbar.Content title="Dashboard" />
+          <MaterialCommunityIcons name="view-dashboard" size={24} color={theme.colors.primary} style={{ marginLeft: 16 }} />
+          <Appbar.Content title="Bunk Manager" titleStyle={{ fontWeight: 'bold' }} />
+          <View style={{ marginRight: 16 }}>
+            <ThemeSwitcher />
+          </View>
         </Appbar.Header>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -78,7 +109,11 @@ export default function DashboardScreen() {
         elevated
         style={{ backgroundColor: theme.colors.surface }}
       >
-        <Appbar.Content title="Dashboard" />
+        <MaterialCommunityIcons name="view-dashboard" size={24} color={theme.colors.primary} style={{ marginLeft: 16 }} />
+        <Appbar.Content title="Bunk Manager" titleStyle={{ fontWeight: 'bold' }} />
+        <View style={{ marginRight: 16 }}>
+          <ThemeSwitcher />
+        </View>
       </Appbar.Header>
 
       <ScrollView

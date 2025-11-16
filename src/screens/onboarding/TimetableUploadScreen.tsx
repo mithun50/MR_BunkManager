@@ -3,7 +3,6 @@ import { View, StyleSheet, ScrollView, Image, Alert } from 'react-native';
 import { Text, Button, useTheme, ActivityIndicator, Card, IconButton } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
-import * as DocumentPicker from 'expo-document-picker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import geminiService from '../../services/geminiService';
 import { TimetableEntry } from '../../types/user';
@@ -17,7 +16,6 @@ export default function TimetableUploadScreen({ onNext, onSkip }: TimetableUploa
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
-  const [fileType, setFileType] = useState<'image' | 'pdf' | null>(null);
   const [extracting, setExtracting] = useState(false);
   const [extracted, setExtracted] = useState(false);
 
@@ -38,7 +36,6 @@ export default function TimetableUploadScreen({ onNext, onSkip }: TimetableUploa
 
       if (!result.canceled && result.assets[0]) {
         setSelectedFile(result.assets[0].uri);
-        setFileType('image');
         setExtracted(false);
       }
     } catch (error) {
@@ -62,7 +59,6 @@ export default function TimetableUploadScreen({ onNext, onSkip }: TimetableUploa
 
       if (!result.canceled && result.assets[0]) {
         setSelectedFile(result.assets[0].uri);
-        setFileType('image');
         setExtracted(false);
       }
     } catch (error) {
@@ -70,35 +66,13 @@ export default function TimetableUploadScreen({ onNext, onSkip }: TimetableUploa
     }
   };
 
-  const pickPDF = async () => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: 'application/pdf',
-        copyToCacheDirectory: true,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        setSelectedFile(result.assets[0].uri);
-        setFileType('pdf');
-        setExtracted(false);
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to pick PDF');
-    }
-  };
 
   const extractTimetable = async () => {
-    if (!selectedFile || !fileType) return;
+    if (!selectedFile) return;
 
     setExtracting(true);
     try {
-      let timetableData: TimetableEntry[];
-
-      if (fileType === 'image') {
-        timetableData = await geminiService.extractTimetableFromImage(selectedFile);
-      } else {
-        timetableData = await geminiService.extractTimetableFromPDF(selectedFile);
-      }
+      const timetableData = await geminiService.extractTimetableFromImage(selectedFile);
 
       if (timetableData.length === 0) {
         Alert.alert('No Data Found', 'Could not extract timetable data. Please try another image or add manually.');
@@ -125,7 +99,6 @@ export default function TimetableUploadScreen({ onNext, onSkip }: TimetableUploa
 
   const removeFile = () => {
     setSelectedFile(null);
-    setFileType(null);
     setExtracted(false);
   };
 
@@ -172,18 +145,6 @@ export default function TimetableUploadScreen({ onNext, onSkip }: TimetableUploa
               </Text>
             </Card.Content>
           </Card>
-
-          <Card style={styles.optionCard} onPress={pickPDF}>
-            <Card.Content style={styles.optionContent}>
-              <MaterialCommunityIcons name="file-pdf-box" size={48} color={theme.colors.tertiary} />
-              <Text variant="titleMedium" style={styles.optionTitle}>
-                Upload PDF
-              </Text>
-              <Text variant="bodySmall" style={styles.optionDescription}>
-                PDF timetable document
-              </Text>
-            </Card.Content>
-          </Card>
         </View>
       )}
 
@@ -193,20 +154,11 @@ export default function TimetableUploadScreen({ onNext, onSkip }: TimetableUploa
           <Card style={styles.previewCard}>
             <Card.Content>
               <View style={styles.previewHeader}>
-                <Text variant="titleMedium">Selected {fileType === 'image' ? 'Image' : 'PDF'}</Text>
+                <Text variant="titleMedium">Selected Image</Text>
                 <IconButton icon="close" size={20} onPress={removeFile} />
               </View>
 
-              {fileType === 'image' && (
-                <Image source={{ uri: selectedFile }} style={styles.previewImage} resizeMode="contain" />
-              )}
-
-              {fileType === 'pdf' && (
-                <View style={styles.pdfPreview}>
-                  <MaterialCommunityIcons name="file-pdf-box" size={80} color={theme.colors.tertiary} />
-                  <Text variant="bodyMedium">PDF Document Ready</Text>
-                </View>
-              )}
+              <Image source={{ uri: selectedFile }} style={styles.previewImage} resizeMode="contain" />
             </Card.Content>
           </Card>
 
@@ -303,10 +255,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 300,
     borderRadius: 8,
-  },
-  pdfPreview: {
-    alignItems: 'center',
-    paddingVertical: 40,
   },
   extractingContainer: {
     alignItems: 'center',

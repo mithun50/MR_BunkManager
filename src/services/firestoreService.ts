@@ -8,6 +8,7 @@ import {
   query,
   where,
   getDocs,
+  deleteDoc,
   serverTimestamp,
   Timestamp
 } from 'firebase/firestore';
@@ -61,16 +62,19 @@ class FirestoreService {
   async saveTimetable(uid: string, timetable: TimetableEntry[]): Promise<void> {
     const timetableRef = collection(db, 'users', uid, 'timetable');
 
-    // Delete existing timetable
+    // Delete existing timetable documents first
     const existingQuery = query(timetableRef);
     const existingDocs = await getDocs(existingQuery);
 
+    const deletePromises = existingDocs.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
+
     // Add new timetable entries
-    const promises = timetable.map(entry =>
+    const addPromises = timetable.map(entry =>
       addDoc(timetableRef, entry)
     );
 
-    await Promise.all(promises);
+    await Promise.all(addPromises);
   }
 
   async getTimetable(uid: string): Promise<TimetableEntry[]> {
@@ -81,6 +85,33 @@ class FirestoreService {
       id: doc.id,
       ...doc.data(),
     })) as TimetableEntry[];
+  }
+
+  async deleteTimetable(uid: string): Promise<void> {
+    try {
+      console.log('deleteTimetable called for uid:', uid);
+      const timetableRef = collection(db, 'users', uid, 'timetable');
+      const querySnapshot = await getDocs(timetableRef);
+
+      console.log('Found timetable documents:', querySnapshot.docs.length);
+
+      if (querySnapshot.docs.length === 0) {
+        console.log('No timetable documents to delete');
+        return;
+      }
+
+      // Delete all timetable documents
+      const deletePromises = querySnapshot.docs.map(doc => {
+        console.log('Deleting document:', doc.id);
+        return deleteDoc(doc.ref);
+      });
+
+      await Promise.all(deletePromises);
+      console.log('All timetable documents deleted successfully');
+    } catch (error) {
+      console.error('Error in deleteTimetable:', error);
+      throw error;
+    }
   }
 
   // Subject Operations

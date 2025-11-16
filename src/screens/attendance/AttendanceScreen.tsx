@@ -21,6 +21,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import firestoreService from '../../services/firestoreService';
 import { Subject, AttendanceRecord } from '../../types/user';
+import { ThemeSwitcher } from '../../components/ThemeSwitcher';
 
 export default function AttendanceScreen() {
   const theme = useTheme();
@@ -31,6 +32,7 @@ export default function AttendanceScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showMarkModal, setShowMarkModal] = useState(false);
   const [markedDates, setMarkedDates] = useState<any>({});
+  const [todayClasses, setTodayClasses] = useState<any[]>([]);
 
   // Mark attendance form
   const [attendanceStatus, setAttendanceStatus] = useState<'present' | 'absent' | 'leave'>('present');
@@ -42,14 +44,93 @@ export default function AttendanceScreen() {
 
     try {
       setLoading(true);
-      const subjectsList = await firestoreService.getSubjects(user.uid);
-      setSubjects(subjectsList);
+      const [subjectsList, timetableData] = await Promise.all([
+        firestoreService.getSubjects(user.uid),
+        firestoreService.getTimetable(user.uid),
+      ]);
+
+      // Get today's day name
+      const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+
+      // Filter and validate today's classes
+      const todaySchedule = timetableData
+        .filter(entry => {
+          const subject = entry.subject?.toLowerCase()?.trim() || '';
+
+          // Must match today
+          if (entry.day !== today) return false;
+
+          // Must have valid subject name
+          if (!subject || subject.length < 2) return false;
+
+          // Exclude breaks, lunch, etc.
+          const invalidKeywords = [
+            'break', 'lunch', 'recess', 'free', 'vacant', 'empty',
+            'no class', 'holiday', 'off', '-', 'nil', 'na', 'n/a'
+          ];
+
+          return !invalidKeywords.some(keyword => subject.includes(keyword));
+        })
+        .sort((a, b) => {
+          const timeA = convertTo24Hour(a.startTime);
+          const timeB = convertTo24Hour(b.startTime);
+          return timeA.localeCompare(timeB);
+        });
+
+      setTodayClasses(todaySchedule);
+      console.log(`Today (${today}): ${todaySchedule.length} valid classes`);
+
+      // Filter subjects to show ONLY subjects that have classes today
+      const todaySubjectNames = new Set(
+        todaySchedule.map(entry => entry.subject.toLowerCase().trim())
+      );
+
+      console.log('Today\'s subject names:', Array.from(todaySubjectNames));
+
+      // Filter subjects: must be valid AND have a class today
+      const validTodaySubjects = subjectsList.filter(subject => {
+        const name = subject.name?.toLowerCase()?.trim() || '';
+
+        // Exclude empty names
+        if (!name || name.length < 2) return false;
+
+        // Exclude breaks, lunch, etc.
+        const invalidKeywords = [
+          'break', 'lunch', 'recess', 'free', 'vacant', 'empty',
+          'no class', 'holiday', 'off', '-', 'nil', 'na', 'n/a'
+        ];
+
+        if (invalidKeywords.some(keyword => name.includes(keyword))) {
+          return false;
+        }
+
+        // MUST have a class scheduled for today
+        const hasClassToday = todaySubjectNames.has(name);
+
+        console.log(`Subject "${subject.name}": hasClassToday=${hasClassToday}`);
+
+        return hasClassToday;
+      });
+
+      console.log(`Filtered subjects: ${validTodaySubjects.length} subjects with classes today`);
+      setSubjects(validTodaySubjects);
     } catch (error) {
       console.error('Error loading subjects:', error);
     } finally {
       setLoading(false);
     }
   }, [user]);
+
+  const convertTo24Hour = (time: string) => {
+    const [timePart, period] = time.split(' ');
+    let [hours, minutes] = timePart.split(':');
+    let hour = parseInt(hours);
+
+    if (period === 'PM' && hour !== 12) hour += 12;
+    if (period === 'AM' && hour === 12) hour = 0;
+
+    return `${hour.toString().padStart(2, '0')}:${minutes}`;
+  };
 
   // Reload data when screen comes into focus
   useFocusEffect(
@@ -170,7 +251,11 @@ export default function AttendanceScreen() {
         elevated
         style={{ backgroundColor: theme.colors.surface }}
       >
-        <Appbar.Content title="Attendance" />
+        <MaterialCommunityIcons name="calendar-check" size={24} color={theme.colors.primary} style={{ marginLeft: 16 }} />
+        <Appbar.Content title="Track Attendance" titleStyle={{ fontWeight: 'bold' }} />
+        <View style={{ marginRight: 16 }}>
+          <ThemeSwitcher />
+        </View>
       </Appbar.Header>
 
       <ScrollView
@@ -178,17 +263,66 @@ export default function AttendanceScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
         showsVerticalScrollIndicator={false}
       >
+        {/* Today's Classes */}
+        {todayClasses.length > 0 && (
+          <Card style={styles.todayCard}>
+            <Card.Content>
+              <View style={styles.todayHeader}>
+                <MaterialCommunityIcons name="calendar-today" size={24} color={theme.colors.primary} />
+                <Text variant="titleLarge" style={styles.todayTitle}>
+                  Today's Classes
+                </Text>
+              </View>
+              <Text variant="bodySmall" style={styles.todaySubtitle}>
+                {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+              </Text>
+              <Divider style={styles.todayDivider} />
+              {todayClasses.map((classEntry, index) => (
+                <View key={`${classEntry.id}-${index}`} style={styles.todayClassItem}>
+                  <View style={styles.todayClassTime}>
+                    <MaterialCommunityIcons name="clock-outline" size={16} color={theme.colors.primary} />
+                    <Text variant="bodySmall" style={styles.timeText}>
+                      {classEntry.startTime}
+                    </Text>
+                  </View>
+                  <View style={styles.todayClassInfo}>
+                    <Text variant="titleSmall">{classEntry.subject}</Text>
+                    {classEntry.room && (
+                      <Text variant="bodySmall" style={styles.todayClassDetail}>
+                        📍 {classEntry.room}
+                      </Text>
+                    )}
+                    {classEntry.faculty && (
+                      <Text variant="bodySmall" style={styles.todayClassDetail}>
+                        👨‍🏫 {classEntry.faculty}
+                      </Text>
+                    )}
+                  </View>
+                  <Chip mode="outlined" compact textStyle={{ fontSize: 10 }}>
+                    {classEntry.type}
+                  </Chip>
+                </View>
+              ))}
+            </Card.Content>
+          </Card>
+        )}
 
-        {/* Subjects List */}
+        {/* Subjects List - Only show subjects with classes today */}
         {subjects.length === 0 ? (
           <Card style={styles.emptyCard}>
             <Card.Content style={styles.emptyContent}>
-              <MaterialCommunityIcons name="book-off-outline" size={64} color={theme.colors.outline} />
+              <MaterialCommunityIcons
+                name={todayClasses.length === 0 ? "calendar-remove" : "school-outline"}
+                size={64}
+                color={theme.colors.outline}
+              />
               <Text variant="titleMedium" style={styles.emptyTitle}>
-                No Subjects Added
+                {todayClasses.length === 0 ? "No Classes Today" : "No Subjects for Today"}
               </Text>
               <Text variant="bodyMedium" style={styles.emptyText}>
-                Add your subjects from the Profile page to start tracking attendance
+                {todayClasses.length === 0
+                  ? "Enjoy your day off! No classes scheduled for today."
+                  : "None of your subjects have classes scheduled for today."}
               </Text>
             </Card.Content>
           </Card>
@@ -207,6 +341,25 @@ export default function AttendanceScreen() {
                           {subject.code}
                         </Text>
                       )}
+                      {subject.faculty && (
+                        <View style={styles.detailRow}>
+                          <MaterialCommunityIcons name="account-tie" size={14} color={theme.colors.onSurface} style={{ opacity: 0.7 }} />
+                          <Text variant="bodySmall" style={styles.detailText}>
+                            {subject.faculty}
+                          </Text>
+                        </View>
+                      )}
+                      {subject.room && (
+                        <View style={styles.detailRow}>
+                          <MaterialCommunityIcons name="map-marker" size={14} color={theme.colors.onSurface} style={{ opacity: 0.7 }} />
+                          <Text variant="bodySmall" style={styles.detailText}>
+                            {subject.room}
+                          </Text>
+                        </View>
+                      )}
+                      <Chip mode="outlined" compact style={styles.typeChip}>
+                        {subject.type}
+                      </Chip>
                     </View>
                     <MaterialCommunityIcons
                       name={getStatusIcon(subject.attendancePercentage)}
@@ -440,6 +593,19 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     marginTop: 4,
   },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 4,
+  },
+  detailText: {
+    opacity: 0.7,
+  },
+  typeChip: {
+    alignSelf: 'flex-start',
+    marginTop: 8,
+  },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -501,5 +667,49 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     flex: 1,
+  },
+  todayCard: {
+    marginBottom: 16,
+    elevation: 2,
+  },
+  todayHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  todayTitle: {
+    fontWeight: 'bold',
+  },
+  todaySubtitle: {
+    opacity: 0.7,
+    marginBottom: 12,
+  },
+  todayDivider: {
+    marginBottom: 12,
+  },
+  todayClassItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+    gap: 12,
+  },
+  todayClassTime: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    width: 80,
+  },
+  timeText: {
+    fontWeight: '600',
+  },
+  todayClassInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  todayClassDetail: {
+    opacity: 0.7,
   },
 });
