@@ -1,6 +1,8 @@
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Surface, useTheme, Appbar } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ThemeSwitcher } from '@/src/components/ThemeSwitcher';
 
 export default function GroupsScreen() {
   const theme = useTheme();
@@ -12,7 +14,11 @@ export default function GroupsScreen() {
         elevated
         style={{ backgroundColor: theme.colors.surface }}
       >
-        <Appbar.Content title="Groups" />
+        <MaterialCommunityIcons name="account-group" size={24} color={theme.colors.primary} style={{ marginLeft: 16 }} />
+        <Appbar.Content title="Class Groups" titleStyle={{ fontWeight: 'bold' }} />
+        <View style={{ marginRight: 16 }}>
+          <ThemeSwitcher />
+        </View>
       </Appbar.Header>
 
       <ScrollView

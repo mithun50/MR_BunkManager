@@ -129,17 +129,15 @@ export default function LoginScreen() {
 
             <Divider style={styles.divider} />
 
-            <View style={styles.signupContainer}>
-              <Text variant="bodyMedium">Don't have an account? </Text>
-              <Button
-                mode="text"
-                onPress={handleSignUp}
-                compact
-                style={styles.signupButton}
-              >
-                Sign Up
-              </Button>
-            </View>
+            <Button
+              mode="outlined"
+              onPress={handleSignUp}
+              style={styles.signupButton}
+              contentStyle={styles.buttonContent}
+              icon="account-plus"
+            >
+              Create New Account
+            </Button>
           </View>
         </View>
       </ScrollView>
@@ -196,13 +194,7 @@ const styles = StyleSheet.create({
   divider: {
     marginVertical: 20,
   },
-  signupContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 8,
-  },
   signupButton: {
-    marginLeft: -8,
+    marginTop: 8,
   },
 });

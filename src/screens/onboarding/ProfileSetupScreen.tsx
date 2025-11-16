@@ -13,6 +13,7 @@ interface ProfileSetupScreenProps {
 export interface ProfileData {
   displayName: string;
   college: string;
+  course: string;
   department: string;
   semester: string;
   rollNumber: string;
@@ -25,6 +26,7 @@ export default function ProfileSetupScreen({ onNext, initialData }: ProfileSetup
   const insets = useSafeAreaInsets();
   const [displayName, setDisplayName] = useState(initialData?.displayName || '');
   const [college, setCollege] = useState(initialData?.college || '');
+  const [course, setCourse] = useState(initialData?.course || '');
   const [department, setDepartment] = useState(initialData?.department || '');
   const [semester, setSemester] = useState(initialData?.semester || '');
   const [rollNumber, setRollNumber] = useState(initialData?.rollNumber || '');
@@ -92,8 +94,13 @@ export default function ProfileSetupScreen({ onNext, initialData }: ProfileSetup
       return;
     }
 
+    if (!course.trim()) {
+      setError('Please enter your course');
+      return;
+    }
+
     if (!department.trim()) {
-      setError('Please enter your department');
+      setError('Please enter your branch');
       return;
     }
 
@@ -103,13 +110,14 @@ export default function ProfileSetupScreen({ onNext, initialData }: ProfileSetup
     }
 
     if (!rollNumber.trim()) {
-      setError('Please enter your roll number');
+      setError('Please enter your USN number');
       return;
     }
 
     onNext({
       displayName: displayName.trim(),
       college: college.trim(),
+      course: course.trim(),
       department: department.trim(),
       semester: semester.trim(),
       rollNumber: rollNumber.trim(),
@@ -121,12 +129,14 @@ export default function ProfileSetupScreen({ onNext, initialData }: ProfileSetup
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 24 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        enableOnAndroid={true}
       >
         <View style={styles.content}>
           {/* Header */}
@@ -192,13 +202,23 @@ export default function ProfileSetupScreen({ onNext, initialData }: ProfileSetup
             />
 
             <TextInput
-              label="Department/Branch *"
+              label="Course *"
+              value={course}
+              onChangeText={setCourse}
+              mode="outlined"
+              left={<TextInput.Icon icon="school-outline" />}
+              style={styles.input}
+              placeholder="e.g., B.Tech, BCA, MCA"
+            />
+
+            <TextInput
+              label="Branch/Stream *"
               value={department}
               onChangeText={setDepartment}
               mode="outlined"
               left={<TextInput.Icon icon="book-open-variant" />}
               style={styles.input}
-              placeholder="e.g., Computer Science"
+              placeholder="e.g., Computer Science, Information Science"
             />
 
             <View style={styles.row}>
@@ -225,12 +245,14 @@ export default function ProfileSetupScreen({ onNext, initialData }: ProfileSetup
             </View>
 
             <TextInput
-              label="Roll Number *"
+              label="USN No / Roll No *"
               value={rollNumber}
               onChangeText={setRollNumber}
               mode="outlined"
               left={<TextInput.Icon icon="card-account-details" />}
               style={styles.input}
+              placeholder="e.g., 1CR21CS001"
+              autoCapitalize="characters"
             />
 
             {error ? (

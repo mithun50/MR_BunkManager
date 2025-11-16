@@ -3,12 +3,12 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack, Redirect, useSegments, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { PaperProvider, ActivityIndicator } from 'react-native-paper';
-import { View } from 'react-native';
+import { View, useColorScheme as useDeviceColorScheme } from 'react-native';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { lightTheme, darkTheme } from '@/src/config/theme';
 import { useAuthStore } from '@/src/store/authStore';
+import { useThemeStore } from '@/src/store/themeStore';
 import firestoreService from '@/src/services/firestoreService';
 
 export const unstable_settings = {
@@ -16,7 +16,6 @@ export const unstable_settings = {
 };
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
   const segments = useSegments();
   const router = useRouter();
   const { user, loading, initialized, initializeAuth } = useAuthStore();
@@ -28,7 +27,7 @@ function RootLayoutNav() {
     return () => unsubscribe();
   }, []);
 
-  // Check onboarding status when user changes or when navigating
+  // Check onboarding status when user changes
   useEffect(() => {
     const checkOnboarding = async () => {
       if (user) {
@@ -49,7 +48,7 @@ function RootLayoutNav() {
     if (initialized && !loading) {
       checkOnboarding();
     }
-  }, [user, initialized, loading, segments]);
+  }, [user, initialized, loading]);
 
   // Handle navigation based on auth state and onboarding
   useEffect(() => {
@@ -69,7 +68,7 @@ function RootLayoutNav() {
       // Logged in and onboarding complete -> go to tabs
       router.replace('/(tabs)');
     }
-  }, [user, segments, initialized, loading, onboardingComplete]);
+  }, [user, initialized, loading, onboardingComplete]); // Removed 'segments' to prevent navigation loop
 
   if (!initialized || loading || (user && onboardingComplete === null)) {
     return (
@@ -90,15 +89,40 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  // Always use light theme (white background with black text)
-  const paperTheme = lightTheme;
-  const navigationTheme = DefaultTheme;
+  const deviceColorScheme = useDeviceColorScheme();
+  const { themeMode, initialize } = useThemeStore();
+  const [isThemeReady, setIsThemeReady] = useState(false);
+
+  // Initialize theme on app start
+  useEffect(() => {
+    const initTheme = async () => {
+      await initialize();
+      setIsThemeReady(true);
+    };
+    initTheme();
+  }, []);
+
+  // Determine effective theme
+  const effectiveTheme = themeMode === 'system'
+    ? (deviceColorScheme === 'dark' ? 'dark' : 'light')
+    : themeMode;
+
+  const paperTheme = effectiveTheme === 'dark' ? darkTheme : lightTheme;
+  const navigationTheme = effectiveTheme === 'dark' ? DarkTheme : DefaultTheme;
+
+  if (!isThemeReady) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
     <PaperProvider theme={paperTheme}>
       <ThemeProvider value={navigationTheme}>
         <RootLayoutNav />
-        <StatusBar style="dark" />
+        <StatusBar style={effectiveTheme === 'dark' ? 'light' : 'dark'} />
       </ThemeProvider>
     </PaperProvider>
   );

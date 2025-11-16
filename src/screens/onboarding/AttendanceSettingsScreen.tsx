@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Button, useTheme, RadioButton, Card } from 'react-native-paper';
+import { Text, Button, useTheme, RadioButton, Card, TextInput } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -13,16 +13,26 @@ const ATTENDANCE_OPTIONS = [
   { value: 80, label: '80%', description: 'Moderate requirement' },
   { value: 85, label: '85%', description: 'High requirement' },
   { value: 90, label: '90%', description: 'Very high requirement' },
-  { value: 100, label: 'Custom', description: 'Set your own percentage' },
+  { value: 0, label: 'Custom', description: 'Set your own percentage' },
 ];
 
 export default function AttendanceSettingsScreen({ onComplete }: AttendanceSettingsScreenProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [selectedPercentage, setSelectedPercentage] = useState(75);
+  const [customValue, setCustomValue] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleComplete = () => {
-    onComplete(selectedPercentage);
+  const handleComplete = async () => {
+    setLoading(true);
+    try {
+      const finalPercentage = selectedPercentage === 0 ? parseInt(customValue) || 75 : selectedPercentage;
+      await onComplete(finalPercentage);
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -81,6 +91,31 @@ export default function AttendanceSettingsScreen({ onComplete }: AttendanceSetti
         ))}
       </View>
 
+      {/* Custom Percentage Input */}
+      {selectedPercentage === 0 && (
+        <Card style={[styles.customCard, { backgroundColor: theme.colors.surfaceVariant }]}>
+          <Card.Content>
+            <Text variant="titleMedium" style={styles.customTitle}>
+              Enter Custom Percentage
+            </Text>
+            <TextInput
+              label="Attendance Percentage"
+              value={customValue}
+              onChangeText={setCustomValue}
+              mode="outlined"
+              keyboardType="numeric"
+              placeholder="Enter 0-100"
+              left={<TextInput.Icon icon="percent" />}
+              style={styles.customInput}
+              maxLength={3}
+            />
+            <Text variant="bodySmall" style={styles.customHint}>
+              Enter a value between 0 and 100
+            </Text>
+          </Card.Content>
+        </Card>
+      )}
+
       {/* Info Card */}
       <Card style={[styles.infoCard, { backgroundColor: theme.colors.secondaryContainer }]}>
         <Card.Content>
@@ -105,11 +140,13 @@ export default function AttendanceSettingsScreen({ onComplete }: AttendanceSetti
       <Button
         mode="contained"
         onPress={handleComplete}
+        loading={loading}
+        disabled={loading || (selectedPercentage === 0 && !customValue)}
         style={styles.button}
         contentStyle={styles.buttonContent}
         icon="check"
       >
-        Complete Setup
+        {loading ? 'Completing...' : 'Complete Setup'}
       </Button>
     </ScrollView>
   );
@@ -183,6 +220,20 @@ const styles = StyleSheet.create({
   infoList: {
     marginLeft: 8,
     gap: 4,
+  },
+  customCard: {
+    marginBottom: 24,
+  },
+  customTitle: {
+    marginBottom: 12,
+    fontWeight: 'bold',
+  },
+  customInput: {
+    marginBottom: 8,
+  },
+  customHint: {
+    opacity: 0.7,
+    marginTop: 4,
   },
   button: {
     marginTop: 8,
