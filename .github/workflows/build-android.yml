@@ -1,4 +1,4 @@
-name: 📦 Expo EAS Local Android Build
+name: 📦 Expo EAS Android Build (Signed)
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:  # allow manual trigger from GitHub
 
 jobs:
-  build-android-local:
+  build-android:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,12 +28,10 @@ jobs:
       - name: 📦 Install dependencies
         run: npm install
 
-      - name: 🏗️ Build Android APK with EAS
+      - name: 🏗️ Build signed Android APK with EAS
         run: |
-          eas build --platform android --profile production --local --non-interactive
+          eas build --platform android --profile production --non-interactive
         env:
-          EAS_NO_VCS: 1
-          EAS_LOCAL_BUILD_SKIP_CLEANUP: 1
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EXPO_PUBLIC_GROQ_API_KEY: ${{ secrets.EXPO_PUBLIC_GROQ_API_KEY }}
           EXPO_PUBLIC_FIREBASE_API_KEY: ${{ secrets.EXPO_PUBLIC_FIREBASE_API_KEY }}
@@ -43,8 +41,41 @@ jobs:
           EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
           EXPO_PUBLIC_FIREBASE_APP_ID: ${{ secrets.EXPO_PUBLIC_FIREBASE_APP_ID }}
 
-      - name: 📤 Upload built APK
+      - name: 📥 Download signed APK from EAS
+        run: |
+          # Wait for build to complete and get build ID
+          BUILD_ID=$(eas build:list --platform=android --limit=1 --json --non-interactive | jq -r '.[0].id')
+          echo "Build ID: $BUILD_ID"
+
+          # Wait for build completion (max 30 minutes)
+          TIMEOUT=1800
+          ELAPSED=0
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            STATUS=$(eas build:view $BUILD_ID --json | jq -r '.status')
+            echo "Build status: $STATUS (${ELAPSED}s elapsed)"
+
+            if [ "$STATUS" = "FINISHED" ]; then
+              echo "✅ Build completed successfully!"
+              break
+            elif [ "$STATUS" = "ERRORED" ] || [ "$STATUS" = "CANCELED" ]; then
+              echo "❌ Build failed with status: $STATUS"
+              exit 1
+            fi
+
+            sleep 30
+            ELAPSED=$((ELAPSED + 30))
+          done
+
+          # Download the signed APK
+          APK_URL=$(eas build:view $BUILD_ID --json | jq -r '.artifacts.buildUrl')
+          echo "Downloading APK from: $APK_URL"
+          curl -L -o bunk-manager-signed.apk "$APK_URL"
+          ls -lh bunk-manager-signed.apk
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 📤 Upload signed APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: expo-android-apk
-          path: /home/runner/work/MR_BunkManager/MR_BunkManager/*.apk
+          name: bunk-manager-signed-apk
+          path: bunk-manager-signed.apk
