@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack, Redirect, useSegments, useRouter } from 'expo-router';
+import { Stack, Redirect, useSegments, useRouter, useRootNavigationState } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { PaperProvider, ActivityIndicator } from 'react-native-paper';
 import { View, useColorScheme as useDeviceColorScheme } from 'react-native';
@@ -11,18 +11,19 @@ import { useAuthStore } from '@/src/store/authStore';
 import { useThemeStore } from '@/src/store/themeStore';
 import firestoreService from '@/src/services/firestoreService';
 
-export const unstable_settings = {
-  initialRouteName: '(auth)',
-};
+// Removed unstable_settings - it doesn't work reliably in production
+// Expo Router uses alphabetical ordering: (auth) < (onboarding) < (tabs)
 
 function RootLayoutNav() {
   const segments = useSegments();
   const router = useRouter();
+  const navigationState = useRootNavigationState();
   const { user, loading, initialized, initializeAuth } = useAuthStore();
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
 
   // Initialize auth listener
   useEffect(() => {
+    console.log('🔑 Initializing auth listener...');
     const unsubscribe = initializeAuth();
     return () => unsubscribe();
   }, []);
@@ -32,15 +33,17 @@ function RootLayoutNav() {
     const checkOnboarding = async () => {
       if (user) {
         try {
+          console.log('📋 Checking onboarding status for user:', user.uid);
           const profile = await firestoreService.getUserProfile(user.uid);
           const isComplete = profile?.onboardingCompleted || false;
-          console.log('Onboarding status check:', isComplete);
+          console.log('✅ Onboarding status:', isComplete);
           setOnboardingComplete(isComplete);
         } catch (error) {
-          console.error('Error checking onboarding:', error);
+          console.error('❌ Error checking onboarding:', error);
           setOnboardingComplete(false);
         }
       } else {
+        console.log('👤 No user - setting onboarding to null');
         setOnboardingComplete(null);
       }
     };
@@ -52,42 +55,49 @@ function RootLayoutNav() {
 
   // Handle navigation based on auth state and onboarding
   useEffect(() => {
-    if (!initialized || loading) return;
+    // Wait for navigation to be ready
+    if (!navigationState?.key || !initialized || loading) {
+      console.log('⏸️ Waiting for navigation/auth initialization...');
+      return;
+    }
 
-    // If no user, onboardingComplete can be null - that's okay
-    if (user && onboardingComplete === null) return;
+    // If user exists but onboarding status not loaded yet, wait
+    if (user && onboardingComplete === null) {
+      console.log('⏸️ Waiting for onboarding status...');
+      return;
+    }
 
     const inAuthGroup = segments[0] === '(auth)';
     const inOnboardingGroup = segments[0] === '(onboarding)';
     const inTabsGroup = segments[0] === '(tabs)';
 
-    console.log('Navigation check:', {
-      user: user ? 'logged in' : 'not logged in',
+    console.log('🧭 Navigation check:', {
+      hasUser: !!user,
       onboardingComplete,
       currentSegment: segments[0],
-      initialized,
-      loading,
+      navigationReady: !!navigationState?.key,
     });
 
     if (!user && !inAuthGroup) {
       // Not logged in -> go to login
-      console.log('Navigating to login (no user)');
+      console.log('➡️ Redirecting to login (no user)');
       router.replace('/(auth)/login');
     } else if (user && !onboardingComplete && !inOnboardingGroup) {
       // Logged in but onboarding not complete -> go to onboarding
-      console.log('Navigating to onboarding (user exists, onboarding incomplete)');
+      console.log('➡️ Redirecting to onboarding (incomplete)');
       router.replace('/(onboarding)');
     } else if (user && onboardingComplete && !inTabsGroup) {
       // Logged in and onboarding complete -> go to tabs
-      console.log('Navigating to tabs (user exists, onboarding complete)');
+      console.log('➡️ Redirecting to tabs (complete)');
       router.replace('/(tabs)');
     }
-  }, [user, initialized, loading, onboardingComplete]); // Removed 'segments' to prevent navigation loop
+  }, [user, initialized, loading, onboardingComplete, navigationState?.key]);
 
-  if (!initialized || loading || (user && onboardingComplete === null)) {
+  // Show loading screen while initializing
+  if (!navigationState?.key || !initialized || loading || (user && onboardingComplete === null)) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+        <ActivityIndicator size="large" color="#0066CC" />
       </View>
     );
   }
