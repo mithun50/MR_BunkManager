@@ -13,12 +13,6 @@
       "versionCode": 1,
       "buildType": "app-bundle",
       "googleServicesFile": "./google-services.json",
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/logo.png",
-        "backgroundImage": "./assets/images/logo.png",
-        "monochromeImage": "./assets/images/logo.png"
-      },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
@@ -26,8 +20,7 @@
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.READ_MEDIA_IMAGES"
-      ],
-      "blockedPermissions": []
+      ]
     },
     "plugins": [
       "expo-router",
