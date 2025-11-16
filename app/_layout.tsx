@@ -52,20 +52,34 @@ function RootLayoutNav() {
 
   // Handle navigation based on auth state and onboarding
   useEffect(() => {
-    if (!initialized || loading || onboardingComplete === null) return;
+    if (!initialized || loading) return;
+
+    // If no user, onboardingComplete can be null - that's okay
+    if (user && onboardingComplete === null) return;
 
     const inAuthGroup = segments[0] === '(auth)';
     const inOnboardingGroup = segments[0] === '(onboarding)';
     const inTabsGroup = segments[0] === '(tabs)';
 
+    console.log('Navigation check:', {
+      user: user ? 'logged in' : 'not logged in',
+      onboardingComplete,
+      currentSegment: segments[0],
+      initialized,
+      loading,
+    });
+
     if (!user && !inAuthGroup) {
       // Not logged in -> go to login
+      console.log('Navigating to login (no user)');
       router.replace('/(auth)/login');
     } else if (user && !onboardingComplete && !inOnboardingGroup) {
       // Logged in but onboarding not complete -> go to onboarding
+      console.log('Navigating to onboarding (user exists, onboarding incomplete)');
       router.replace('/(onboarding)');
     } else if (user && onboardingComplete && !inTabsGroup) {
       // Logged in and onboarding complete -> go to tabs
+      console.log('Navigating to tabs (user exists, onboarding complete)');
       router.replace('/(tabs)');
     }
   }, [user, initialized, loading, onboardingComplete]); // Removed 'segments' to prevent navigation loop
