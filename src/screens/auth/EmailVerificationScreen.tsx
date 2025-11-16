@@ -14,9 +14,10 @@ export default function EmailVerificationScreen() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    // Check if already verified
+    // If already verified, let the root navigation handle routing
+    // It will check onboardingCompleted and route to either onboarding or tabs
     if (user?.emailVerified) {
-      router.replace('/(tabs)');
+      // Don't redirect here - root _layout.tsx will handle it
     }
   }, [user]);
 
@@ -39,10 +40,9 @@ export default function EmailVerificationScreen() {
     try {
       await authService.reloadUser();
       if (authService.isEmailVerified()) {
-        setMessage('Email verified! Redirecting...');
-        setTimeout(() => {
-          router.replace('/(tabs)');
-        }, 1500);
+        setMessage('Email verified! Setting up your account...');
+        // Let the root navigation handle routing based on onboarding status
+        // It will automatically route to onboarding for new users or tabs for existing users
       } else {
         setMessage('Email not verified yet. Please check your inbox and click the verification link.');
       }
