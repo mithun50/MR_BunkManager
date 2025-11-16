@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "MR_BunkManager",
+    "name": "Bunk Manager",
     "slug": "MR_BunkManager",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo.png",
+    "icon": "./assets/images/icon.png",
     "scheme": "mrbunkmanager",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -23,8 +23,10 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
-      ]
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES"
+      ],
+      "blockedPermissions": []
     },
     "plugins": [
       "expo-router",
