@@ -11,6 +11,7 @@
     "android": {
       "package": "com.idtl.mrbunkmanager",
       "versionCode": 1,
+      "buildType": "app-bundle",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
