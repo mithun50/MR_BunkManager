@@ -33,6 +33,8 @@ export default function AttendanceScreen() {
   const [showMarkModal, setShowMarkModal] = useState(false);
   const [markedDates, setMarkedDates] = useState<any>({});
   const [todayClasses, setTodayClasses] = useState<any[]>([]);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [subjectToDelete, setSubjectToDelete] = useState<Subject | null>(null);
 
   // Mark attendance form
   const [attendanceStatus, setAttendanceStatus] = useState<'present' | 'absent' | 'leave'>('present');
@@ -113,7 +115,23 @@ export default function AttendanceScreen() {
       });
 
       console.log(`Filtered subjects: ${validTodaySubjects.length} subjects with classes today`);
-      setSubjects(validTodaySubjects);
+
+      // Remove duplicate subjects (same name+code combination)
+      const uniqueSubjectsMap = new Map<string, Subject>();
+      validTodaySubjects.forEach(subject => {
+        const key = `${subject.name}-${subject.code || 'no-code'}`.toLowerCase().trim();
+        const existing = uniqueSubjectsMap.get(key);
+
+        // Keep the one with more attendance data
+        if (!existing || subject.totalClasses > existing.totalClasses) {
+          uniqueSubjectsMap.set(key, subject);
+        }
+      });
+
+      const deduplicatedSubjects = Array.from(uniqueSubjectsMap.values());
+      console.log(`After deduplication: ${deduplicatedSubjects.length} unique subjects`);
+
+      setSubjects(deduplicatedSubjects);
     } catch (error) {
       console.error('Error loading subjects:', error);
     } finally {
@@ -182,6 +200,23 @@ export default function AttendanceScreen() {
     }
   };
 
+  const handleDeleteSubject = async () => {
+    if (!user || !subjectToDelete) return;
+
+    try {
+      await firestoreService.deleteSubject(user.uid, subjectToDelete.id);
+
+      // Reload subjects
+      await loadSubjects();
+
+      setShowDeleteDialog(false);
+      setSubjectToDelete(null);
+    } catch (error) {
+      console.error('Error deleting subject:', error);
+      alert('Failed to delete subject. Please try again.');
+    }
+  };
+
   const handleMarkAttendance = async () => {
     if (!user || !selectedSubject) return;
 
@@ -199,9 +234,10 @@ export default function AttendanceScreen() {
       }
 
       const attended = attendanceStatus === 'present';
+      const isLeave = attendanceStatus === 'leave';
 
-      // Update subject attendance
-      await firestoreService.updateSubjectAttendance(user.uid, selectedSubject.id, attended);
+      // Update subject attendance (leave days don't count)
+      await firestoreService.updateSubjectAttendance(user.uid, selectedSubject.id, attended, isLeave);
 
       // Add attendance record
       const record: any = {

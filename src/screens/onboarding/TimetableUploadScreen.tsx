@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Image, Alert } from 'react-native';
-import { Text, Button, useTheme, ActivityIndicator, Card, IconButton } from 'react-native-paper';
+import { Text, Button, useTheme, Card, IconButton } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import geminiService from '../../services/geminiService';
 import { TimetableEntry } from '../../types/user';
+import VideoLoadingScreen from '../../components/VideoLoadingScreen';
 
 interface TimetableUploadScreenProps {
   onNext: (timetable: TimetableEntry[]) => void;
@@ -163,15 +164,7 @@ export default function TimetableUploadScreen({ onNext, onSkip }: TimetableUploa
           </Card>
 
           {extracting ? (
-            <View style={styles.extractingContainer}>
-              <ActivityIndicator size="large" color={theme.colors.primary} />
-              <Text variant="bodyLarge" style={styles.extractingText}>
-                Extracting timetable with AI...
-              </Text>
-              <Text variant="bodySmall" style={styles.extractingSubtext}>
-                This may take a few seconds
-              </Text>
-            </View>
+            <VideoLoadingScreen onFinish={() => setExtracting(false)} />
           ) : (
             <Button
               mode="contained"
