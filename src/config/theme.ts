@@ -32,34 +32,50 @@ export const lightTheme = {
   },
 };
 
-// Custom dark theme - Pure black and white only
+// Material Design 3 Dark Theme - Professional dark grays
 export const darkTheme = {
   ...MD3DarkTheme,
   colors: {
     ...MD3DarkTheme.colors,
-    primary: '#FFFFFF', // White
-    secondary: '#FFFFFF', // White
-    tertiary: '#FFFFFF', // White
-    error: '#FFFFFF', // White
-    background: '#000000', // Black
-    surface: '#000000', // Black
-    surfaceVariant: '#000000', // Black
-    surfaceDisabled: '#1A1A1A', // Very dark gray for disabled
-    onPrimary: '#000000', // Black on white
-    onSecondary: '#000000', // Black on white
-    onTertiary: '#000000', // Black on white
-    onBackground: '#FFFFFF', // White on black
-    onSurface: '#FFFFFF', // White on black
-    onSurfaceVariant: '#FFFFFF', // White on black
-    outline: '#333333', // Dark gray for borders
-    outlineVariant: '#1A1A1A',
+    // Primary colors with proper contrast
+    primary: '#BB86FC', // Material purple
+    secondary: '#03DAC6', // Material teal
+    tertiary: '#4CAF50', // Green for success
+    error: '#CF6679', // Soft red for errors
+
+    // Background and surfaces - Material Design recommended
+    background: '#121212', // Material dark background
+    surface: '#1E1E1E', // Slightly elevated from background
+    surfaceVariant: '#2C2C2C', // More elevated surfaces
+    surfaceDisabled: '#1A1A1A', // Disabled state
+
+    // Container colors for cards and components
+    primaryContainer: '#3700B3',
+    secondaryContainer: '#018786',
+    tertiaryContainer: '#2E7D32',
+    errorContainer: '#B00020',
+
+    // Text colors on backgrounds
+    onPrimary: '#000000', // Black text on primary
+    onSecondary: '#000000', // Black text on secondary
+    onTertiary: '#FFFFFF', // White text on tertiary
+    onError: '#000000', // Black text on error
+    onBackground: '#E1E1E1', // Light gray text on dark background
+    onSurface: '#E1E1E1', // Light gray text on surfaces
+    onSurfaceVariant: '#BEBEBE', // Medium gray for secondary text
+
+    // Outline and borders
+    outline: '#424242', // Medium dark gray for borders
+    outlineVariant: '#2C2C2C', // Darker variant
+
+    // Elevation levels - subtle differences for depth
     elevation: {
-      level0: '#000000',
-      level1: '#000000',
-      level2: '#000000',
-      level3: '#000000',
-      level4: '#000000',
-      level5: '#000000',
+      level0: '#121212', // Background level
+      level1: '#1E1E1E', // 1dp elevation
+      level2: '#232323', // 2dp elevation
+      level3: '#252525', // 3dp elevation
+      level4: '#272727', // 4dp elevation
+      level5: '#2C2C2C', // 6dp elevation
     },
   },
 };
