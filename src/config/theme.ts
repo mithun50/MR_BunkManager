@@ -38,7 +38,7 @@ export const darkTheme = {
   colors: {
     ...MD3DarkTheme.colors,
     // Primary colors with proper contrast
-    primary: '#BB86FC', // Material purple
+    primary: '#FFFFFF', // White for primary elements
     secondary: '#03DAC6', // Material teal
     tertiary: '#4CAF50', // Green for success
     error: '#CF6679', // Soft red for errors
@@ -50,13 +50,13 @@ export const darkTheme = {
     surfaceDisabled: '#1A1A1A', // Disabled state
 
     // Container colors for cards and components
-    primaryContainer: '#3700B3',
+    primaryContainer: '#2C2C2C',
     secondaryContainer: '#018786',
     tertiaryContainer: '#2E7D32',
     errorContainer: '#B00020',
 
     // Text colors on backgrounds
-    onPrimary: '#000000', // Black text on primary
+    onPrimary: '#000000', // Black text on white primary
     onSecondary: '#000000', // Black text on secondary
     onTertiary: '#FFFFFF', // White text on tertiary
     onError: '#000000', // Black text on error

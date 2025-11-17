@@ -1,5 +1,5 @@
 import { View, StyleSheet, ScrollView, Alert, Platform, Image, KeyboardAvoidingView } from 'react-native';
-import { Text, Surface, Button, Avatar, useTheme, Divider, Appbar, Card, IconButton, Portal, Modal, SegmentedButtons, TextInput as PaperInput, Dialog } from 'react-native-paper';
+import { Text, Surface, Button, Avatar, useTheme, Divider, Appbar, Card, IconButton, Portal, Modal, SegmentedButtons, TextInput as PaperInput, Dialog, Chip } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/src/store/authStore';
 import authService from '@/src/services/authService';
@@ -1042,6 +1042,126 @@ export default function ProfileScreen() {
         </>
       )}
 
+      {/* Developers Section */}
+      <Surface style={styles.section}>
+        <View style={styles.developersHeader}>
+          <MaterialCommunityIcons name="account-group" size={24} color={theme.colors.primary} />
+          <Text variant="titleMedium" style={styles.sectionTitle}>
+            Development Team
+          </Text>
+        </View>
+        <Divider style={styles.divider} />
+
+        {/* Developer Cards */}
+        {[
+          {
+            name: "Nevil Dsouza",
+            email: "nevilansondsouza@gmail.com",
+            role: "Team Leader",
+            badges: ["Core Dev", "Tester"],
+            avatar: "N",
+            color: "#2196F3",
+          },
+          {
+            name: "Lavanya",
+            email: null,
+            role: "Developer",
+            badges: ["Documentation", "Presentation"],
+            avatar: "L",
+            color: "#E91E63",
+          },
+          {
+            name: "Manas Habbu",
+            email: "manaskiranhabbu@gmail.com",
+            role: "Developer",
+            badges: ["Documentation", "Presentation", "Designer"],
+            avatar: "M",
+            color: "#00BCD4",
+          },
+          {
+            name: "Manasvi R",
+            email: "manasvi0523@gmail.com",
+            role: "Developer",
+            badges: ["Documentation", "Presentation Designer"],
+            avatar: "M",
+            color: "#9C27B0",
+          },
+          {
+            name: "Mithun Gowda B",
+            email: "mithungowda.b7411@gmail.com",
+            role: "Core Developer",
+            badges: ["Main Dev"],
+            avatar: "M",
+            color: "#FF9800",
+          },
+          {
+            name: "Naren V",
+            email: "narenbhaskar2007@gmail.com",
+            role: "Developer",
+            badges: ["UI Designer"],
+            avatar: "N",
+            color: "#4CAF50",
+          },
+        ].map((dev, index) => (
+          <Card key={index} style={styles.developerCard}>
+            <Card.Content>
+              <View style={styles.developerHeader}>
+                <Avatar.Text
+                  size={56}
+                  label={dev.avatar}
+                  style={{ backgroundColor: dev.color }}
+                  labelStyle={{ fontSize: 24, fontWeight: 'bold', color: '#FFFFFF' }}
+                />
+                <View style={styles.developerInfo}>
+                  <Text variant="titleMedium" style={styles.developerName}>
+                    {dev.name}
+                  </Text>
+                  <Text variant="bodySmall" style={styles.developerRole}>
+                    {dev.role}
+                  </Text>
+                  {dev.email && (
+                    <View style={styles.emailContainer}>
+                      <MaterialCommunityIcons name="email-outline" size={12} color={theme.colors.primary} />
+                      <Text variant="bodySmall" style={styles.developerEmail}>
+                        {dev.email}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+              <View style={styles.badgesContainer}>
+                {dev.badges.map((badge, badgeIndex) => (
+                  <Chip
+                    key={badgeIndex}
+                    mode="flat"
+                    compact
+                    style={[styles.badge, { backgroundColor: dev.color + '20' }]}
+                    textStyle={[styles.badgeText, { color: dev.color }]}
+                    icon={() => (
+                      <MaterialCommunityIcons
+                        name={
+                          badge.includes('Core Dev') || badge.includes('Main Dev') ? 'star' :
+                          badge.includes('Tester') ? 'test-tube' :
+                          badge.includes('UI') ? 'palette' :
+                          badge.includes('Documentation') ? 'file-document' :
+                          badge.includes('Presentation') ? 'presentation' :
+                          badge.includes('Designer') ? 'draw' :
+                          'check-circle'
+                        }
+                        size={14}
+                        color={dev.color}
+                      />
+                    )}
+                  >
+                    {badge}
+                  </Chip>
+                ))}
+              </View>
+            </Card.Content>
+          </Card>
+        ))}
+      </Surface>
+
       <Surface style={styles.section}>
         <Text variant="titleMedium" style={styles.sectionTitle}>
           Account Settings
@@ -1887,5 +2007,56 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 8,
     marginBottom: 24,
+  },
+  developersHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  developerCard: {
+    marginBottom: 12,
+    elevation: 2,
+  },
+  developerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 16,
+  },
+  developerInfo: {
+    flex: 1,
+  },
+  developerName: {
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  developerRole: {
+    opacity: 0.7,
+    marginBottom: 6,
+    fontSize: 13,
+  },
+  emailContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  developerEmail: {
+    opacity: 0.6,
+    fontSize: 11,
+  },
+  badgesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 4,
+  },
+  badge: {
+    height: 28,
+  },
+  badgeText: {
+    fontSize: 11,
+    marginVertical: 0,
+    fontWeight: '600',
   },
 });

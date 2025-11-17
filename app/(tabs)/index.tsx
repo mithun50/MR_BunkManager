@@ -231,31 +231,45 @@ export default function DashboardScreen() {
         </View>
       )}
 
-      {/* Subject List */}
+      {/* Subject-wise Charts */}
       {subjects.length > 0 && (
-        <Card style={styles.card}>
-          <Card.Content>
-            <Text variant="titleMedium" style={styles.sectionTitle}>
-              Subject Attendance
-            </Text>
-            {subjects.slice(0, 5).map((subject) => (
-              <View key={subject.id} style={styles.subjectItem}>
-                <View style={styles.subjectInfo}>
-                  <Text variant="titleSmall">{subject.name}</Text>
-                  <Text variant="bodySmall" style={styles.subjectStats}>
-                    {subject.attendedClasses}/{subject.totalClasses} classes
-                  </Text>
+        <>
+          <Text variant="titleLarge" style={styles.sectionTitle}>
+            Subject-wise Attendance
+          </Text>
+          {subjects.map((subject) => (
+            <Card key={subject.id} style={styles.card}>
+              <Card.Content>
+                <View style={styles.subjectHeader}>
+                  <View style={styles.subjectInfo}>
+                    <Text variant="titleMedium" style={styles.subjectName}>
+                      {subject.name}
+                    </Text>
+                    {subject.code && (
+                      <Text variant="bodySmall" style={styles.subjectCode}>
+                        {subject.code}
+                      </Text>
+                    )}
+                  </View>
+                  <MaterialCommunityIcons
+                    name={subject.attendancePercentage >= 85 ? 'check-circle' : subject.attendancePercentage >= 75 ? 'alert-circle' : 'close-circle'}
+                    size={28}
+                    color={getAttendanceColor(subject.attendancePercentage)}
+                  />
                 </View>
-                <Text
-                  variant="titleMedium"
-                  style={{ color: getAttendanceColor(subject.attendancePercentage) }}
-                >
-                  {subject.attendancePercentage.toFixed(1)}%
-                </Text>
-              </View>
-            ))}
-          </Card.Content>
-        </Card>
+
+                {/* Subject Chart */}
+                <DonutChart
+                  attended={subject.attendedClasses}
+                  absent={subject.totalClasses - subject.attendedClasses}
+                  percentage={subject.attendancePercentage}
+                  size={170}
+                  strokeWidth={28}
+                />
+              </Card.Content>
+            </Card>
+          ))}
+        </>
       )}
       </ScrollView>
     </View>
@@ -341,6 +355,20 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontWeight: 'bold',
     marginBottom: 16,
+    marginTop: 8,
+  },
+  subjectHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  subjectName: {
+    fontWeight: 'bold',
+  },
+  subjectCode: {
+    opacity: 0.6,
+    marginTop: 2,
   },
   classItem: {
     flexDirection: 'row',

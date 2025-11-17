@@ -22,7 +22,6 @@ import { useAuthStore } from '../../store/authStore';
 import firestoreService from '../../services/firestoreService';
 import { Subject, AttendanceRecord } from '../../types/user';
 import { ThemeSwitcher } from '../../components/ThemeSwitcher';
-import DonutChart from '../../components/DonutChart';
 
 export default function AttendanceScreen() {
   const theme = useTheme();
@@ -185,6 +184,29 @@ export default function AttendanceScreen() {
             theme.colors.secondary,
         };
       });
+
+      // Mark all Sundays in red (for current and previous months)
+      const today = new Date();
+      const startDate = new Date(today.getFullYear(), today.getMonth() - 2, 1); // Go back 2 months
+      const endDate = new Date(today.getFullYear(), today.getMonth() + 2, 0); // Go forward 2 months
+
+      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        if (d.getDay() === 0) { // Sunday
+          const dateStr = d.toISOString().split('T')[0];
+          marked[dateStr] = {
+            ...marked[dateStr],
+            textColor: '#EF5350', // Brighter red for better visibility
+            disabled: true,
+            disableTouchEvent: true,
+            customStyles: {
+              text: {
+                color: '#EF5350',
+                fontWeight: 'bold',
+              },
+            },
+          };
+        }
+      }
 
       // Add selected date highlighting
       if (selectedDate) {
@@ -450,17 +472,6 @@ export default function AttendanceScreen() {
                     style={styles.progressBar}
                   />
 
-                  {/* Professional Donut Chart */}
-                  {subject.totalClasses > 0 && (
-                    <DonutChart
-                      attended={subject.attendedClasses}
-                      absent={subject.totalClasses - subject.attendedClasses}
-                      percentage={subject.attendancePercentage}
-                      size={170}
-                      strokeWidth={28}
-                    />
-                  )}
-
                   {/* Mark Attendance Button */}
                   <Button
                     mode="contained"
@@ -505,33 +516,82 @@ export default function AttendanceScreen() {
               <Calendar
                 current={selectedDate}
                 onDayPress={(day) => {
-                  // Only allow selecting today or past dates
+                  // Check if it's a Sunday
                   const selectedDateObj = new Date(day.dateString);
+                  const isSunday = selectedDateObj.getDay() === 0;
+
+                  // Don't allow selecting Sundays
+                  if (isSunday) {
+                    return;
+                  }
+
+                  // Only allow selecting today or past dates
                   const today = new Date();
                   today.setHours(23, 59, 59, 999); // End of today
 
                   if (selectedDateObj <= today) {
                     setSelectedDate(day.dateString);
-                    // Update marked dates to highlight new selection
-                    setMarkedDates({
-                      ...markedDates,
-                      [day.dateString]: {
-                        ...markedDates[day.dateString],
-                        selected: true,
-                        selectedColor: theme.colors.primary,
-                      },
+
+                    // Clear previous selection and set new one
+                    const updatedMarkedDates: any = {};
+
+                    // Copy existing marked dates (attendance records and Sundays) without selection
+                    Object.keys(markedDates).forEach(date => {
+                      const dateProps: any = {};
+
+                      if (markedDates[date].marked) {
+                        dateProps.marked = true;
+                        dateProps.dotColor = markedDates[date].dotColor;
+                      }
+
+                      if (markedDates[date].textColor) {
+                        dateProps.textColor = markedDates[date].textColor;
+                      }
+
+                      if (markedDates[date].customStyles) {
+                        dateProps.customStyles = markedDates[date].customStyles;
+                      }
+
+                      if (markedDates[date].disabled) {
+                        dateProps.disabled = true;
+                        dateProps.disableTouchEvent = true;
+                      }
+
+                      updatedMarkedDates[date] = dateProps;
                     });
+
+                    // Add new selection
+                    updatedMarkedDates[day.dateString] = {
+                      ...updatedMarkedDates[day.dateString],
+                      selected: true,
+                      selectedColor: theme.colors.primary,
+                    };
+
+                    setMarkedDates(updatedMarkedDates);
                   }
                 }}
                 maxDate={new Date().toISOString().split('T')[0]} // Disable future dates
                 markedDates={markedDates}
-                markingType={'dot'}
                 theme={{
+                  backgroundColor: theme.dark ? '#1E1E1E' : '#ffffff',
+                  calendarBackground: theme.dark ? '#1E1E1E' : '#ffffff',
+                  textSectionTitleColor: theme.dark ? '#BEBEBE' : '#2d4150',
                   selectedDayBackgroundColor: theme.colors.primary,
+                  selectedDayTextColor: theme.dark ? '#000000' : '#ffffff',
                   todayTextColor: theme.colors.primary,
-                  arrowColor: theme.colors.primary,
-                  textDisabledColor: '#d9d9d9',
+                  dayTextColor: theme.dark ? '#E1E1E1' : '#2d4150',
+                  textDisabledColor: theme.dark ? '#424242' : '#d9d9d9',
                   dotColor: theme.colors.primary,
+                  selectedDotColor: theme.dark ? '#000000' : '#ffffff',
+                  arrowColor: theme.colors.primary,
+                  monthTextColor: theme.dark ? '#E1E1E1' : '#2d4150',
+                  indicatorColor: theme.colors.primary,
+                  textDayFontWeight: '400',
+                  textMonthFontWeight: 'bold',
+                  textDayHeaderFontWeight: '600',
+                  textDayFontSize: 14,
+                  textMonthFontSize: 16,
+                  textDayHeaderFontSize: 12,
                 }}
                 style={styles.calendar}
               />
