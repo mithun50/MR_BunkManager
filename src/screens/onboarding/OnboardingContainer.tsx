@@ -96,29 +96,40 @@ export default function OnboardingContainer() {
           }
         });
 
-        // Create subject records for attendance tracking with all available details
-        const subjectPromises = Array.from(uniqueSubjects.values()).map(entry => {
-          const subject: any = {
-            id: `subject_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            name: entry.subject,
-            code: entry.subjectCode || '',
-            type: entry.type || 'lecture',
-            totalClasses: 0,
-            attendedClasses: 0,
-            attendancePercentage: 0,
-            lastUpdated: new Date(),
-          };
+        // Get existing subjects to avoid duplicates
+        const existingSubjects = await firestoreService.getSubjects(user.uid);
+        const existingSubjectKeys = new Set(
+          existingSubjects.map(s => `${s.name}-${s.code || 'no-code'}`.toLowerCase())
+        );
 
-          // Add optional fields if available
-          if (entry.faculty) {
-            subject.faculty = entry.faculty;
-          }
-          if (entry.room) {
-            subject.room = entry.room;
-          }
+        // Create subject records for attendance tracking with all available details (avoid duplicates)
+        const subjectPromises = Array.from(uniqueSubjects.values())
+          .filter(entry => {
+            const key = `${entry.subject}-${entry.subjectCode || 'no-code'}`.toLowerCase();
+            return !existingSubjectKeys.has(key); // Only add if doesn't exist
+          })
+          .map(entry => {
+            const subject: any = {
+              id: `subject_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              name: entry.subject,
+              code: entry.subjectCode || '',
+              type: entry.type || 'lecture',
+              totalClasses: 0,
+              attendedClasses: 0,
+              attendancePercentage: 0,
+              lastUpdated: new Date(),
+            };
 
-          return firestoreService.addSubject(user.uid, subject);
-        });
+            // Add optional fields if available
+            if (entry.faculty) {
+              subject.faculty = entry.faculty;
+            }
+            if (entry.room) {
+              subject.room = entry.room;
+            }
+
+            return firestoreService.addSubject(user.uid, subject);
+          });
 
         await Promise.all(subjectPromises);
       }

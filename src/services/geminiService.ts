@@ -44,10 +44,20 @@ class GroqService {
 
   async extractTimetableFromImage(imageUri: string): Promise<TimetableEntry[]> {
     try {
+      console.log('Starting timetable extraction from image');
+      console.log('Image URI:', imageUri);
+
+      // Check if API key is configured
+      if (!process.env.EXPO_PUBLIC_GROQ_API_KEY) {
+        throw new Error('API key not configured. Please add EXPO_PUBLIC_GROQ_API_KEY to your .env file.');
+      }
+
       // Read the image file as base64
+      console.log('Reading image as base64...');
       const base64 = await FileSystem.readAsStringAsync(imageUri, {
         encoding: 'base64',
       });
+      console.log('Image loaded, size:', base64.length, 'bytes');
 
       // Enhanced prompt for better accuracy and duplicate prevention
       const prompt = `You are extracting a class timetable from an image. Return ONLY a JSON array.
@@ -215,7 +225,7 @@ Extract now:`;
         };
 
         const timetableEntry: any = {
-          id: `timetable_${Date.now()}_${index}`,
+          id: `timetable_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           day: normalizeDay(entry.day),
           startTime: entry.startTime.trim(),
           endTime: entry.endTime.trim(),
@@ -238,16 +248,25 @@ Extract now:`;
       }) as TimetableEntry[];
     } catch (error: any) {
       console.error('Groq extraction error:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
 
       // Better error messages based on error type
-      if (error.message?.includes('RATE_LIMIT') || error.message?.includes('429')) {
-        throw new Error('API quota exceeded. Please wait a moment and try again, or enter timetable manually.');
-      } else if (error.message?.includes('401') || error.message?.includes('API_KEY')) {
-        throw new Error('Invalid API key. Please check your Groq API configuration.');
-      } else if (error.message?.includes('quota')) {
-        throw new Error('API quota limit reached. You can skip this step and enter your timetable manually later.');
+      if (error.message?.includes('RATE_LIMIT') || error.message?.includes('429') || error.status === 429) {
+        throw new Error('API rate limit reached. Please wait a minute and try again, or skip to enter manually.');
+      } else if (error.message?.includes('401') || error.message?.includes('API_KEY') || error.status === 401) {
+        throw new Error('API authentication failed. Please check your API key configuration.');
+      } else if (error.message?.includes('quota') || error.message?.includes('insufficient_quota')) {
+        throw new Error('API quota exceeded. Please skip and enter timetable manually.');
+      } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        throw new Error('Network error. Please check your internet connection and try again.');
+      } else if (error.message?.includes('timeout')) {
+        throw new Error('Request timed out. Please try again with a clearer image.');
+      } else if (error.message?.includes('JSON')) {
+        throw new Error('Could not understand the timetable format. Please try a clearer image or enter manually.');
       } else {
-        throw new Error('Failed to extract timetable. Please try again or skip to enter manually.');
+        // Include more specific error info for debugging
+        const errorMsg = error.message || error.toString();
+        throw new Error(`Extraction failed: ${errorMsg.substring(0, 100)}. Please try again or skip to enter manually.`);
       }
     }
   }
@@ -413,7 +432,7 @@ Extract now:`;
         };
 
         const timetableEntry: any = {
-          id: `timetable_${Date.now()}_${index}`,
+          id: `timetable_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           day: normalizeDay(entry.day),
           startTime: entry.startTime.trim(),
           endTime: entry.endTime.trim(),

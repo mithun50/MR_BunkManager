@@ -8,7 +8,7 @@ import { useAuthStore } from '../../store/authStore';
 
 export default function EmailVerificationScreen() {
   const theme = useTheme();
-  const { user } = useAuthStore();
+  const { user, refreshUser } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(false);
   const [message, setMessage] = useState('');
@@ -39,10 +39,17 @@ export default function EmailVerificationScreen() {
     setMessage('');
     try {
       await authService.reloadUser();
+      // Refresh the user state in the store to ensure it's in sync
+      refreshUser();
+
       if (authService.isEmailVerified()) {
         setMessage('Email verified! Setting up your account...');
-        // Let the root navigation handle routing based on onboarding status
-        // It will automatically route to onboarding for new users or tabs for existing users
+
+        // Navigate to onboarding directly for new users
+        // The root navigation will handle existing users with completed onboarding
+        setTimeout(() => {
+          router.replace('/(onboarding)');
+        }, 1000); // Brief delay to show the success message
       } else {
         setMessage('Email not verified yet. Please check your inbox and click the verification link.');
       }

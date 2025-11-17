@@ -1,5 +1,5 @@
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import { Text, Surface, Button, Avatar, useTheme, Divider, Appbar, ActivityIndicator, Card, IconButton, Portal, Modal, SegmentedButtons, TextInput as PaperInput, Dialog } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, Alert, Platform, Image, KeyboardAvoidingView } from 'react-native';
+import { Text, Surface, Button, Avatar, useTheme, Divider, Appbar, Card, IconButton, Portal, Modal, SegmentedButtons, TextInput as PaperInput, Dialog } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/src/store/authStore';
 import authService from '@/src/services/authService';
@@ -13,6 +13,9 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import groqService from '@/src/services/geminiService';
 import { ThemeSwitcher } from '@/src/components/ThemeSwitcher';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import VideoLoadingScreen from '@/src/components/VideoLoadingScreen';
+import imageUploadService from '@/src/services/imageUploadService';
 
 export default function ProfileScreen() {
   const theme = useTheme();
@@ -21,19 +24,46 @@ export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
+
+  // Utility functions for consistent ID generation
+  const generateTimetableId = () => `timetable_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const generateSubjectId = () => `subject_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  // Validate time slot to prevent duplicates
+  const validateTimeSlot = (entries: TimetableEntry[], newEntry: any, excludeId: string | null = null) => {
+    const duplicate = entries.find(e =>
+      e.id !== excludeId &&
+      e.day === newEntry.day &&
+      e.startTime === newEntry.startTime
+    );
+
+    if (duplicate) {
+      return {
+        valid: false,
+        message: `${duplicate.subject} is already scheduled on ${newEntry.day} at ${newEntry.startTime}`
+      };
+    }
+
+    return { valid: true, message: '' };
+  };
   const [loading, setLoading] = useState(true);
-  const [showQuickAttendance, setShowQuickAttendance] = useState(false);
-  const [showAddSubject, setShowAddSubject] = useState(false);
-  const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
-  const [attendanceStatus, setAttendanceStatus] = useState<'present' | 'absent' | 'leave'>('present');
   const [showTimetableOptions, setShowTimetableOptions] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
   const [extracting, setExtracting] = useState(false);
+  const [showEditTimetable, setShowEditTimetable] = useState(false);
+  const [selectedTimetableEntry, setSelectedTimetableEntry] = useState<TimetableEntry | null>(null);
+  const [showDeleteTimetableEntryDialog, setShowDeleteTimetableEntryDialog] = useState(false);
+  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
+  const [showEditStartTimePicker, setShowEditStartTimePicker] = useState(false);
+  const [showEditEndTimePicker, setShowEditEndTimePicker] = useState(false);
 
-  // Add subject form
-  const [newSubjectName, setNewSubjectName] = useState('');
-  const [newSubjectCode, setNewSubjectCode] = useState('');
+  // Date objects for time pickers
+  const [manualStartDate, setManualStartDate] = useState(new Date());
+  const [manualEndDate, setManualEndDate] = useState(new Date());
+  const [editStartDate, setEditStartDate] = useState(new Date());
+  const [editEndDate, setEditEndDate] = useState(new Date());
 
   // Manual timetable entry form
   const [manualDay, setManualDay] = useState('Monday');
@@ -44,6 +74,89 @@ export default function ProfileScreen() {
   const [manualType, setManualType] = useState<'lecture' | 'lab' | 'tutorial' | 'practical' | 'seminar'>('lecture');
   const [manualRoom, setManualRoom] = useState('');
   const [manualFaculty, setManualFaculty] = useState('');
+
+  // Edit timetable entry form
+  const [editDay, setEditDay] = useState('Monday');
+  const [editStartTime, setEditStartTime] = useState('');
+  const [editEndTime, setEditEndTime] = useState('');
+  const [editSubject, setEditSubject] = useState('');
+  const [editSubjectCode, setEditSubjectCode] = useState('');
+  const [editType, setEditType] = useState<'lecture' | 'lab' | 'tutorial' | 'practical' | 'seminar'>('lecture');
+  const [editRoom, setEditRoom] = useState('');
+  const [editFaculty, setEditFaculty] = useState('');
+
+  // Edit profile modal
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [editDisplayName, setEditDisplayName] = useState('');
+  const [editCollege, setEditCollege] = useState('');
+  const [editCourse, setEditCourse] = useState('');
+  const [editDepartment, setEditDepartment] = useState('');
+  const [editSemester, setEditSemester] = useState('');
+  const [editSection, setEditSection] = useState('');
+  const [editRollNumber, setEditRollNumber] = useState('');
+  const [editPhotoURL, setEditPhotoURL] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Helper function to convert time to comparable format
+  const convertTo24Hour = (time: string) => {
+    const [timePart, period] = time.split(' ');
+    let [hours, minutes] = timePart.split(':');
+    let hour = parseInt(hours);
+
+    if (period?.toUpperCase() === 'PM' && hour !== 12) hour += 12;
+    if (period?.toUpperCase() === 'AM' && hour === 12) hour = 0;
+
+    return `${hour.toString().padStart(2, '0')}:${minutes}`;
+  };
+
+  // Convert Date object to time string (e.g., "09:00 AM")
+  const formatTimeString = (date: Date) => {
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const h = hours % 12 === 0 ? 12 : hours % 12;
+    const period = hours < 12 ? 'AM' : 'PM';
+    return `${h.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
+
+  // Convert time string to Date object
+  const parseTimeString = (timeStr: string) => {
+    const [time, period] = timeStr.split(' ');
+    const [hours, minutes] = time.split(':');
+    let hour = parseInt(hours);
+
+    if (period === 'PM' && hour !== 12) hour += 12;
+    if (period === 'AM' && hour === 12) hour = 0;
+
+    const date = new Date();
+    date.setHours(hour, parseInt(minutes), 0, 0);
+    return date;
+  };
+
+  // Helper function to sort timetable by day and time
+  const sortTimetable = (entries: TimetableEntry[]) => {
+    const dayOrder: { [key: string]: number } = {
+      'monday': 0,
+      'tuesday': 1,
+      'wednesday': 2,
+      'thursday': 3,
+      'friday': 4,
+      'saturday': 5,
+      'sunday': 6,
+    };
+
+    return [...entries].sort((a, b) => {
+      // Sort by day first (case-insensitive)
+      const dayA = a.day?.toLowerCase() || '';
+      const dayB = b.day?.toLowerCase() || '';
+      const dayDiff = (dayOrder[dayA] ?? 7) - (dayOrder[dayB] ?? 7);
+      if (dayDiff !== 0) return dayDiff;
+
+      // If same day, sort by start time
+      const timeA = convertTo24Hour(a.startTime);
+      const timeB = convertTo24Hour(b.startTime);
+      return timeA.localeCompare(timeB);
+    });
+  };
 
   // Load user profile and subjects from Firestore
   const loadData = useCallback(async () => {
@@ -65,6 +178,20 @@ export default function ProfileScreen() {
           return !invalidKeywords.some(keyword => name.includes(keyword));
         });
 
+        // Remove duplicate subjects (keep the one with most attendance data)
+        const uniqueSubjects = new Map<string, Subject>();
+        validSubjects.forEach(subject => {
+          const key = `${subject.name}-${subject.code || 'no-code'}`.toLowerCase().trim();
+          const existing = uniqueSubjects.get(key);
+
+          // Keep the one with more attendance data, or the first one if equal
+          if (!existing || subject.totalClasses > existing.totalClasses) {
+            uniqueSubjects.set(key, subject);
+          }
+        });
+
+        const deduplicatedSubjects = Array.from(uniqueSubjects.values());
+
         // Filter out invalid timetable entries
         const validTimetable = timetableData.filter(entry => {
           const subject = entry.subject?.toLowerCase()?.trim() || '';
@@ -74,9 +201,12 @@ export default function ProfileScreen() {
           return !invalidKeywords.some(keyword => subject.includes(keyword));
         });
 
+        // Sort timetable by day and time
+        const sortedTimetable = sortTimetable(validTimetable);
+
         setProfile(userProfile);
-        setSubjects(validSubjects);
-        setTimetable(validTimetable);
+        setSubjects(deduplicatedSubjects);
+        setTimetable(sortedTimetable);
       } catch (error) {
         console.error('Error loading profile:', error);
       } finally {
@@ -92,80 +222,6 @@ export default function ProfileScreen() {
     }, [loadData])
   );
 
-  const handleAddSubject = async () => {
-    if (!user || !newSubjectName.trim()) return;
-
-    try {
-      const newSubject: Subject = {
-        id: `subject_${Date.now()}`,
-        name: newSubjectName.trim(),
-        code: newSubjectCode.trim() || undefined,
-        totalClasses: 0,
-        attendedClasses: 0,
-        attendancePercentage: 0,
-        lastUpdated: new Date(),
-      };
-
-      await firestoreService.addSubject(user.uid, newSubject);
-
-      // Reload subjects
-      const updatedSubjects = await firestoreService.getSubjects(user.uid);
-      setSubjects(updatedSubjects);
-
-      // Reset form
-      setNewSubjectName('');
-      setNewSubjectCode('');
-      setShowAddSubject(false);
-    } catch (error) {
-      console.error('Error adding subject:', error);
-    }
-  };
-
-  const handleQuickAttendance = async () => {
-    if (!user || !selectedSubject) return;
-
-    try {
-      const today = new Date();
-
-      // Check if attendance already marked for this subject today
-      const exists = await firestoreService.checkAttendanceExists(
-        user.uid,
-        selectedSubject.id,
-        today
-      );
-
-      if (exists) {
-        alert('Attendance already marked for this subject today!');
-        return;
-      }
-
-      const attended = attendanceStatus === 'present';
-
-      // Update subject attendance
-      await firestoreService.updateSubjectAttendance(user.uid, selectedSubject.id, attended);
-
-      // Add attendance record
-      const record: AttendanceRecord = {
-        id: `attendance_${Date.now()}`,
-        subjectId: selectedSubject.id,
-        date: today,
-        status: attendanceStatus,
-      };
-      await firestoreService.addAttendanceRecord(user.uid, record);
-
-      // Reload subjects
-      const updatedSubjects = await firestoreService.getSubjects(user.uid);
-      setSubjects(updatedSubjects);
-
-      // Reset form
-      setShowQuickAttendance(false);
-      setSelectedSubject(null);
-      setAttendanceStatus('present');
-    } catch (error) {
-      console.error('Error marking attendance:', error);
-    }
-  };
-
   const handleDiscardTimetable = async () => {
     if (!user) {
       Alert.alert('Error', 'User not found');
@@ -175,29 +231,33 @@ export default function ProfileScreen() {
     try {
       console.log('Starting to discard timetable for user:', user.uid);
 
-      // Delete all timetable entries
-      await firestoreService.deleteTimetable(user.uid);
-      console.log('Timetable deleted from Firestore');
+      // Delete all timetable entries AND subjects
+      await Promise.all([
+        firestoreService.deleteTimetable(user.uid),
+        firestoreService.deleteAllSubjects(user.uid)
+      ]);
+      console.log('Timetable and subjects deleted from Firestore');
 
       // Small delay to ensure Firestore propagates the deletion
       await new Promise(resolve => setTimeout(resolve, 300));
 
-      // Immediately clear timetable state
+      // Immediately clear both states
       setTimetable([]);
-      console.log('Timetable state cleared');
+      setSubjects([]);
+      console.log('Timetable and subjects state cleared');
 
       // Reload data to ensure everything is in sync
       await loadData();
-      console.log('Data reloaded, timetable entries:', timetable.length);
+      console.log('Data reloaded');
 
       setShowDiscardDialog(false);
       setShowTimetableOptions(false);
-      Alert.alert('Success', 'Timetable discarded successfully. All timetable data has been removed.');
+      Alert.alert('Success', 'Timetable and subjects discarded successfully. All data has been removed.');
     } catch (error: any) {
       console.error('Error discarding timetable:', error);
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
-      Alert.alert('Error', `Failed to discard timetable: ${error.message || 'Unknown error'}`);
+      Alert.alert('Error', `Failed to discard data: ${error.message || 'Unknown error'}`);
     }
   };
 
@@ -218,25 +278,60 @@ export default function ProfileScreen() {
 
           if (extractedData.length === 0) {
             Alert.alert('No Data', 'Could not extract timetable data from the image');
+            setExtracting(false);
             return;
           }
 
-          // Save timetable
-          if (user) {
-            await firestoreService.saveTimetable(user.uid, extractedData);
+          if (!user) return;
 
-            // Create subjects from timetable
-            const uniqueSubjects = new Map<string, TimetableEntry>();
-            extractedData.forEach(entry => {
-              const uniqueKey = `${entry.subject}-${entry.subjectCode || 'no-code'}`.toLowerCase();
-              if (!uniqueSubjects.has(uniqueKey)) {
-                uniqueSubjects.set(uniqueKey, entry);
-              }
-            });
+          // Filter out entries that conflict with existing time slots
+          const validNewEntries = extractedData.filter(entry => {
+            const validation = validateTimeSlot(timetable, entry);
+            if (!validation.valid) {
+              console.log(`Skipping duplicate: ${validation.message}`);
+              return false;
+            }
+            return true;
+          });
 
-            const subjectPromises = Array.from(uniqueSubjects.values()).map(entry => {
+          if (validNewEntries.length === 0) {
+            Alert.alert('No New Data', 'All extracted entries already exist in your timetable');
+            setExtracting(false);
+            return;
+          }
+
+          // Merge with existing timetable and sort
+          const updatedTimetable = sortTimetable([...timetable, ...validNewEntries]);
+
+          // Update UI immediately
+          setTimetable(updatedTimetable);
+          setExtracting(false);
+
+          // Save to Firestore in background
+          await firestoreService.saveTimetable(user.uid, updatedTimetable);
+
+          // Create subjects from new entries (avoid duplicates)
+          const uniqueSubjects = new Map<string, TimetableEntry>();
+          validNewEntries.forEach(entry => {
+            const uniqueKey = `${entry.subject}-${entry.subjectCode || 'no-code'}`.toLowerCase();
+            if (!uniqueSubjects.has(uniqueKey)) {
+              uniqueSubjects.set(uniqueKey, entry);
+            }
+          });
+
+          const existingSubjects = await firestoreService.getSubjects(user.uid);
+          const existingSubjectKeys = new Set(
+            existingSubjects.map(s => `${s.name}-${s.code || 'no-code'}`.toLowerCase())
+          );
+
+          const subjectPromises = Array.from(uniqueSubjects.values())
+            .filter(entry => {
+              const key = `${entry.subject}-${entry.subjectCode || 'no-code'}`.toLowerCase();
+              return !existingSubjectKeys.has(key);
+            })
+            .map(entry => {
               const subject: any = {
-                id: `subject_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                id: generateSubjectId(),
                 name: entry.subject,
                 code: entry.subjectCode || '',
                 type: entry.type || 'lecture',
@@ -252,15 +347,17 @@ export default function ProfileScreen() {
               return firestoreService.addSubject(user.uid, subject);
             });
 
-            await Promise.all(subjectPromises);
-            await loadData();
+          await Promise.all(subjectPromises);
 
-            Alert.alert('Success', `Extracted ${extractedData.length} classes from timetable`);
-          }
+          const skipped = extractedData.length - validNewEntries.length;
+          const message = skipped > 0
+            ? `Added ${validNewEntries.length} classes (${skipped} duplicates skipped)`
+            : `Added ${validNewEntries.length} classes`;
+
+          Alert.alert('Success', message);
         } catch (error: any) {
           console.error('Extraction error:', error);
           Alert.alert('Extraction Failed', error.message || 'Failed to extract timetable');
-        } finally {
           setExtracting(false);
         }
       }
@@ -286,25 +383,60 @@ export default function ProfileScreen() {
 
           if (extractedData.length === 0) {
             Alert.alert('No Data', 'Could not extract timetable data from the PDF');
+            setExtracting(false);
             return;
           }
 
-          // Save timetable
-          if (user) {
-            await firestoreService.saveTimetable(user.uid, extractedData);
+          if (!user) return;
 
-            // Create subjects from timetable
-            const uniqueSubjects = new Map<string, TimetableEntry>();
-            extractedData.forEach(entry => {
-              const uniqueKey = `${entry.subject}-${entry.subjectCode || 'no-code'}`.toLowerCase();
-              if (!uniqueSubjects.has(uniqueKey)) {
-                uniqueSubjects.set(uniqueKey, entry);
-              }
-            });
+          // Filter out entries that conflict with existing time slots
+          const validNewEntries = extractedData.filter(entry => {
+            const validation = validateTimeSlot(timetable, entry);
+            if (!validation.valid) {
+              console.log(`Skipping duplicate: ${validation.message}`);
+              return false;
+            }
+            return true;
+          });
 
-            const subjectPromises = Array.from(uniqueSubjects.values()).map(entry => {
+          if (validNewEntries.length === 0) {
+            Alert.alert('No New Data', 'All extracted entries already exist in your timetable');
+            setExtracting(false);
+            return;
+          }
+
+          // Merge with existing timetable and sort
+          const updatedTimetable = sortTimetable([...timetable, ...validNewEntries]);
+
+          // Update UI immediately
+          setTimetable(updatedTimetable);
+          setExtracting(false);
+
+          // Save to Firestore in background
+          await firestoreService.saveTimetable(user.uid, updatedTimetable);
+
+          // Create subjects from new entries (avoid duplicates)
+          const uniqueSubjects = new Map<string, TimetableEntry>();
+          validNewEntries.forEach(entry => {
+            const uniqueKey = `${entry.subject}-${entry.subjectCode || 'no-code'}`.toLowerCase();
+            if (!uniqueSubjects.has(uniqueKey)) {
+              uniqueSubjects.set(uniqueKey, entry);
+            }
+          });
+
+          const existingSubjects = await firestoreService.getSubjects(user.uid);
+          const existingSubjectKeys = new Set(
+            existingSubjects.map(s => `${s.name}-${s.code || 'no-code'}`.toLowerCase())
+          );
+
+          const subjectPromises = Array.from(uniqueSubjects.values())
+            .filter(entry => {
+              const key = `${entry.subject}-${entry.subjectCode || 'no-code'}`.toLowerCase();
+              return !existingSubjectKeys.has(key);
+            })
+            .map(entry => {
               const subject: any = {
-                id: `subject_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                id: generateSubjectId(),
                 name: entry.subject,
                 code: entry.subjectCode || '',
                 type: entry.type || 'lecture',
@@ -320,15 +452,17 @@ export default function ProfileScreen() {
               return firestoreService.addSubject(user.uid, subject);
             });
 
-            await Promise.all(subjectPromises);
-            await loadData();
+          await Promise.all(subjectPromises);
 
-            Alert.alert('Success', `Extracted ${extractedData.length} classes from timetable`);
-          }
+          const skipped = extractedData.length - validNewEntries.length;
+          const message = skipped > 0
+            ? `Added ${validNewEntries.length} classes (${skipped} duplicates skipped)`
+            : `Added ${validNewEntries.length} classes`;
+
+          Alert.alert('Success', message);
         } catch (error: any) {
           console.error('Extraction error:', error);
           Alert.alert('Extraction Failed', error.message || 'Failed to extract timetable');
-        } finally {
           setExtracting(false);
         }
       }
@@ -347,7 +481,7 @@ export default function ProfileScreen() {
 
     try {
       const entry: any = {
-        id: `timetable_${Date.now()}`,
+        id: generateTimetableId(),
         day: manualDay,
         startTime: manualStartTime,
         endTime: manualEndTime,
@@ -359,19 +493,43 @@ export default function ProfileScreen() {
       if (manualRoom.trim()) entry.room = manualRoom.trim();
       if (manualFaculty.trim()) entry.faculty = manualFaculty.trim();
 
-      // Add to timetable
-      const updatedTimetable = [...timetable, entry];
+      // Validate time slot
+      const validation = validateTimeSlot(timetable, entry);
+      if (!validation.valid) {
+        Alert.alert('Duplicate Time Slot', validation.message);
+        return;
+      }
+
+      // Add to timetable and sort
+      const updatedTimetable = sortTimetable([...timetable, entry]);
+
+      // Update UI immediately
+      setTimetable(updatedTimetable);
+
+      // Reset form
+      setManualDay('Monday');
+      setManualStartTime('');
+      setManualEndTime('');
+      setManualSubject('');
+      setManualSubjectCode('');
+      setManualType('lecture');
+      setManualRoom('');
+      setManualFaculty('');
+      setShowManualEntry(false);
+
+      // Save to Firestore in background
       await firestoreService.saveTimetable(user.uid, updatedTimetable);
 
-      // Check if subject exists, if not create it
-      const subjectExists = subjects.some(s =>
-        s.name.toLowerCase() === entry.subject.toLowerCase() &&
-        (!entry.subjectCode || s.code === entry.subjectCode)
+      // Check if subject exists, if not create it (check against all subjects in Firestore)
+      const allSubjects = await firestoreService.getSubjects(user.uid);
+      const subjectExists = allSubjects.some(s =>
+        s.name.toLowerCase().trim() === entry.subject.toLowerCase().trim() &&
+        (!entry.subjectCode || s.code?.toLowerCase().trim() === entry.subjectCode.toLowerCase().trim())
       );
 
       if (!subjectExists) {
         const newSubject: any = {
-          id: `subject_${Date.now()}`,
+          id: generateSubjectId(),
           name: entry.subject,
           code: entry.subjectCode || '',
           type: entry.type,
@@ -387,23 +545,132 @@ export default function ProfileScreen() {
         await firestoreService.addSubject(user.uid, newSubject);
       }
 
-      // Reload data and reset form
-      await loadData();
-
-      setManualDay('Monday');
-      setManualStartTime('');
-      setManualEndTime('');
-      setManualSubject('');
-      setManualSubjectCode('');
-      setManualType('lecture');
-      setManualRoom('');
-      setManualFaculty('');
-      setShowManualEntry(false);
-
       Alert.alert('Success', 'Timetable entry added');
     } catch (error) {
       console.error('Error adding manual entry:', error);
       Alert.alert('Error', 'Failed to add timetable entry');
+    }
+  };
+
+  const handleEditTimetableEntry = (entry: TimetableEntry) => {
+    setSelectedTimetableEntry(entry);
+    setEditDay(entry.day);
+    setEditStartTime(entry.startTime);
+    setEditEndTime(entry.endTime);
+    setEditSubject(entry.subject);
+    setEditSubjectCode(entry.subjectCode || '');
+    setEditType(entry.type);
+    setEditRoom(entry.room || '');
+    setEditFaculty(entry.faculty || '');
+
+    // Parse time strings to Date objects for time pickers
+    setEditStartDate(parseTimeString(entry.startTime));
+    setEditEndDate(parseTimeString(entry.endTime));
+
+    setShowEditTimetable(true);
+  };
+
+  const handleSaveEditTimetable = async () => {
+    if (!user || !selectedTimetableEntry || !editSubject.trim() || !editStartTime.trim() || !editEndTime.trim()) {
+      Alert.alert('Missing Fields', 'Please fill in all required fields');
+      return;
+    }
+
+    try {
+      // Validate time slot (excluding current entry)
+      const editedEntry = {
+        day: editDay,
+        startTime: editStartTime,
+        endTime: editEndTime,
+        subject: editSubject.trim(),
+      };
+
+      const validation = validateTimeSlot(timetable, editedEntry, selectedTimetableEntry.id);
+      if (!validation.valid) {
+        Alert.alert('Duplicate Time Slot', validation.message);
+        return;
+      }
+
+      // Update the timetable entry
+      const updatedTimetable = sortTimetable(timetable.map(entry =>
+        entry.id === selectedTimetableEntry.id
+          ? {
+              ...entry,
+              day: editDay,
+              startTime: editStartTime,
+              endTime: editEndTime,
+              subject: editSubject.trim(),
+              subjectCode: editSubjectCode.trim() || undefined,
+              type: editType,
+              room: editRoom.trim() || undefined,
+              faculty: editFaculty.trim() || undefined,
+            }
+          : entry
+      ));
+
+      // Update UI immediately
+      setTimetable(updatedTimetable);
+      setShowEditTimetable(false);
+      setSelectedTimetableEntry(null);
+
+      // Save to Firestore in background
+      await firestoreService.saveTimetable(user.uid, updatedTimetable);
+
+      Alert.alert('Success', 'Timetable entry updated');
+    } catch (error) {
+      console.error('Error updating timetable entry:', error);
+      Alert.alert('Error', 'Failed to update timetable entry');
+      // Reload on error to restore correct state
+      await loadData();
+    }
+  };
+
+  const handleDeleteTimetableEntry = async () => {
+    if (!user || !selectedTimetableEntry) return;
+
+    try {
+      const deletedSubjectName = selectedTimetableEntry.subject;
+
+      // Remove the entry from timetable
+      const updatedTimetable = timetable.filter(entry => entry.id !== selectedTimetableEntry.id);
+
+      // Check if there are any remaining timetable entries for this subject
+      const remainingEntriesForSubject = updatedTimetable.filter(
+        entry => entry.subject.toLowerCase().trim() === deletedSubjectName.toLowerCase().trim()
+      );
+
+      // Update UI immediately
+      setTimetable(updatedTimetable);
+      setShowDeleteTimetableEntryDialog(false);
+      setSelectedTimetableEntry(null);
+
+      // Save to Firestore in background
+      await firestoreService.saveTimetable(user.uid, updatedTimetable);
+
+      // If no more timetable entries for this subject, delete the subject too
+      if (remainingEntriesForSubject.length === 0) {
+        console.log(`No more timetable entries for "${deletedSubjectName}", deleting subject...`);
+
+        // Find and delete the subject
+        const subjectToDelete = subjects.find(
+          s => s.name.toLowerCase().trim() === deletedSubjectName.toLowerCase().trim()
+        );
+
+        if (subjectToDelete) {
+          await firestoreService.deleteSubject(user.uid, subjectToDelete.id);
+          console.log(`Subject "${deletedSubjectName}" deleted`);
+
+          // Update subjects list
+          setSubjects(subjects.filter(s => s.id !== subjectToDelete.id));
+        }
+      }
+
+      Alert.alert('Success', 'Timetable entry deleted');
+    } catch (error) {
+      console.error('Error deleting timetable entry:', error);
+      Alert.alert('Error', 'Failed to delete timetable entry');
+      // Reload on error to restore correct state
+      await loadData();
     }
   };
 
@@ -413,6 +680,147 @@ export default function ProfileScreen() {
       router.replace('/(auth)/login');
     } catch (error) {
       console.error('Logout error:', error);
+    }
+  };
+
+  // Profile editing functions
+  const handleOpenEditProfile = () => {
+    if (profile) {
+      setEditDisplayName(profile.displayName || '');
+      setEditCollege(profile.college || '');
+      setEditCourse(profile.course || '');
+      setEditDepartment(profile.department || '');
+      setEditSemester(profile.semester || '');
+      setEditSection(profile.section || '');
+      setEditRollNumber(profile.rollNumber || '');
+      setEditPhotoURL(profile.photoURL || '');
+      setShowEditProfile(true);
+    }
+  };
+
+  const handlePickAvatar = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please grant gallery permission to upload avatar');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setEditPhotoURL(result.assets[0].uri);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to pick image');
+    }
+  };
+
+  const handleTakePhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please grant camera permission');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setEditPhotoURL(result.assets[0].uri);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to take photo');
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user || !profile) return;
+
+    // Validation
+    if (!editDisplayName.trim()) {
+      Alert.alert('Error', 'Please enter your name');
+      return;
+    }
+    if (!editCollege.trim()) {
+      Alert.alert('Error', 'Please enter your college');
+      return;
+    }
+    if (!editCourse.trim()) {
+      Alert.alert('Error', 'Please enter your course');
+      return;
+    }
+    if (!editDepartment.trim()) {
+      Alert.alert('Error', 'Please enter your department');
+      return;
+    }
+    if (!editSemester.trim()) {
+      Alert.alert('Error', 'Please enter your semester');
+      return;
+    }
+    if (!editRollNumber.trim()) {
+      Alert.alert('Error', 'Please enter your roll number');
+      return;
+    }
+
+    try {
+      setSavingProfile(true);
+
+      let photoURL = editPhotoURL;
+
+      // Upload avatar if it's a local file
+      if (editPhotoURL && editPhotoURL.startsWith('file://')) {
+        try {
+          photoURL = await imageUploadService.uploadImage(editPhotoURL);
+          console.log('Avatar uploaded to Catbox:', photoURL);
+        } catch (uploadError) {
+          console.warn('Avatar upload failed, using existing:', uploadError);
+          photoURL = profile.photoURL; // Keep existing avatar
+        }
+      }
+
+      // Prepare updated profile data
+      const updatedProfile: any = {
+        ...profile,
+        displayName: editDisplayName.trim(),
+        college: editCollege.trim(),
+        course: editCourse.trim(),
+        department: editDepartment.trim(),
+        semester: editSemester.trim(),
+        rollNumber: editRollNumber.trim(),
+        updatedAt: new Date(),
+      };
+
+      // Add optional fields
+      if (photoURL) {
+        updatedProfile.photoURL = photoURL;
+      }
+      if (editSection.trim()) {
+        updatedProfile.section = editSection.trim();
+      }
+
+      // Update profile in Firestore
+      await firestoreService.updateUserProfile(user.uid, updatedProfile);
+
+      // Update local state
+      setProfile(updatedProfile);
+      setShowEditProfile(false);
+      setSavingProfile(false);
+
+      Alert.alert('Success', 'Profile updated successfully');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      Alert.alert('Error', 'Failed to update profile. Please try again.');
+      setSavingProfile(false);
     }
   };
 
@@ -435,9 +843,7 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
+        <VideoLoadingScreen onFinish={() => setLoading(false)} />
       ) : (
         <>
           <Surface style={styles.profileCard}>
@@ -460,65 +866,14 @@ export default function ProfileScreen() {
             <Text variant="bodyMedium" style={styles.email}>
               {user?.email}
             </Text>
-          </Surface>
-
-          {/* Manage Subjects */}
-          <Surface style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text variant="titleMedium" style={styles.sectionTitle}>
-                Manage Subjects
-              </Text>
-              <IconButton
-                icon="plus-circle"
-                size={24}
-                iconColor={theme.colors.primary}
-                onPress={() => setShowAddSubject(true)}
-              />
-            </View>
-            <Divider style={styles.divider} />
-            {subjects.length === 0 ? (
-              <View style={styles.emptySubjects}>
-                <MaterialCommunityIcons name="book-off-outline" size={48} color={theme.colors.outline} />
-                <Text variant="bodyMedium" style={styles.emptyText}>
-                  No subjects added yet
-                </Text>
-                <Button
-                  mode="contained"
-                  icon="plus"
-                  onPress={() => setShowAddSubject(true)}
-                  style={styles.addButton}
-                >
-                  Add Subject
-                </Button>
-              </View>
-            ) : (
-              <>
-                <Text variant="bodySmall" style={styles.infoLabel}>
-                  Tap a subject to mark attendance
-                </Text>
-                <View style={styles.quickAttendanceGrid}>
-                  {subjects.map((subject) => (
-                    <Card
-                      key={subject.id}
-                      style={styles.quickSubjectCard}
-                      onPress={() => {
-                        setSelectedSubject(subject);
-                        setShowQuickAttendance(true);
-                      }}
-                    >
-                      <Card.Content style={styles.quickSubjectContent}>
-                        <Text variant="labelSmall" numberOfLines={2}>
-                          {subject.name}
-                        </Text>
-                        <Text variant="bodySmall" style={{ color: theme.colors.primary }}>
-                          {subject.attendancePercentage.toFixed(0)}%
-                        </Text>
-                      </Card.Content>
-                    </Card>
-                  ))}
-                </View>
-              </>
-            )}
+            <Button
+              mode="contained-tonal"
+              icon="pencil"
+              onPress={handleOpenEditProfile}
+              style={{ marginTop: 16 }}
+            >
+              Edit Profile
+            </Button>
           </Surface>
 
           {/* Manage Timetable */}
@@ -538,12 +893,7 @@ export default function ProfileScreen() {
             )}
 
             {extracting ? (
-              <View style={styles.extractingContainer}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
-                <Text variant="bodyMedium" style={styles.extractingText}>
-                  Extracting timetable...
-                </Text>
-              </View>
+              <VideoLoadingScreen onFinish={() => setExtracting(false)} />
             ) : (
               <View style={styles.timetableButtons}>
                 {timetable.length > 0 && (
@@ -576,6 +926,73 @@ export default function ProfileScreen() {
                   Add Manually
                 </Button>
               </View>
+            )}
+
+            {/* Display Timetable Entries */}
+            {timetable.length > 0 && (
+              <>
+                <Divider style={styles.divider} />
+                <Text variant="titleSmall" style={[styles.sectionTitle, { marginTop: 8 }]}>
+                  Your Schedule ({timetable.length} entries)
+                </Text>
+                <View style={styles.timetableEntriesContainer}>
+                  {sortTimetable(timetable).map((entry, index) => (
+                    <Card key={entry.id || index} style={styles.timetableEntryCard}>
+                      <Card.Content>
+                        <View style={styles.timetableEntryHeader}>
+                          <View style={{ flex: 1 }}>
+                            <Text variant="labelSmall" style={{ opacity: 0.7 }}>
+                              {entry.day} • {entry.startTime} - {entry.endTime}
+                            </Text>
+                            <Text variant="titleMedium" style={{ fontWeight: 'bold', marginTop: 4 }}>
+                              {entry.subject}
+                            </Text>
+                            {entry.subjectCode && (
+                              <Text variant="bodySmall" style={{ opacity: 0.6 }}>
+                                {entry.subjectCode}
+                              </Text>
+                            )}
+                            <View style={styles.timetableEntryDetails}>
+                              {entry.type && (
+                                <Text variant="bodySmall" style={{ color: theme.colors.primary }}>
+                                  {entry.type}
+                                </Text>
+                              )}
+                              {entry.room && (
+                                <Text variant="bodySmall" style={{ opacity: 0.7 }}>
+                                  • {entry.room}
+                                </Text>
+                              )}
+                              {entry.faculty && (
+                                <Text variant="bodySmall" style={{ opacity: 0.7 }}>
+                                  • {entry.faculty}
+                                </Text>
+                              )}
+                            </View>
+                          </View>
+                          <View style={styles.timetableEntryActions}>
+                            <IconButton
+                              icon="pencil"
+                              size={20}
+                              iconColor={theme.colors.primary}
+                              onPress={() => handleEditTimetableEntry(entry)}
+                            />
+                            <IconButton
+                              icon="delete"
+                              size={20}
+                              iconColor={theme.colors.error}
+                              onPress={() => {
+                                setSelectedTimetableEntry(entry);
+                                setShowDeleteTimetableEntryDialog(true);
+                              }}
+                            />
+                          </View>
+                        </View>
+                      </Card.Content>
+                    </Card>
+                  ))}
+                </View>
+              </>
             )}
           </Surface>
 
@@ -641,140 +1058,6 @@ export default function ProfileScreen() {
       </Surface>
       </ScrollView>
 
-      {/* Add Subject Modal */}
-      <Portal>
-        <Modal
-          visible={showAddSubject}
-          onDismiss={() => setShowAddSubject(false)}
-          contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
-        >
-          <Text variant="headlineSmall" style={styles.modalTitle}>
-            Add New Subject
-          </Text>
-
-          <PaperInput
-            label="Subject Name *"
-            value={newSubjectName}
-            onChangeText={setNewSubjectName}
-            mode="outlined"
-            style={styles.input}
-            left={<PaperInput.Icon icon="book" />}
-          />
-
-          <PaperInput
-            label="Subject Code (Optional)"
-            value={newSubjectCode}
-            onChangeText={setNewSubjectCode}
-            mode="outlined"
-            style={styles.input}
-            left={<PaperInput.Icon icon="barcode" />}
-          />
-
-          <View style={styles.modalButtons}>
-            <Button
-              mode="outlined"
-              onPress={() => setShowAddSubject(false)}
-              style={styles.modalButton}
-            >
-              Cancel
-            </Button>
-            <Button
-              mode="contained"
-              onPress={handleAddSubject}
-              style={styles.modalButton}
-              disabled={!newSubjectName.trim()}
-            >
-              Add Subject
-            </Button>
-          </View>
-        </Modal>
-      </Portal>
-
-      {/* Quick Attendance Modal */}
-      <Portal>
-        <Modal
-          visible={showQuickAttendance}
-          onDismiss={() => {
-            setShowQuickAttendance(false);
-            setSelectedSubject(null);
-          }}
-          contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
-        >
-          <Text variant="headlineSmall" style={styles.modalTitle}>
-            Mark Attendance
-          </Text>
-
-          {selectedSubject && (
-            <>
-              <Card style={styles.modalSubjectCard}>
-                <Card.Content>
-                  <Text variant="titleMedium">{selectedSubject.name}</Text>
-                  {selectedSubject.code && (
-                    <Text variant="bodySmall" style={{ opacity: 0.7 }}>
-                      {selectedSubject.code}
-                    </Text>
-                  )}
-                  <View style={styles.modalStats}>
-                    <Text variant="bodySmall">
-                      Current: {selectedSubject.attendedClasses}/{selectedSubject.totalClasses}
-                    </Text>
-                    <Text variant="bodySmall" style={{ color: theme.colors.primary }}>
-                      {selectedSubject.attendancePercentage.toFixed(1)}%
-                    </Text>
-                  </View>
-                </Card.Content>
-              </Card>
-
-              <Text variant="titleSmall" style={styles.modalLabel}>
-                Status
-              </Text>
-              <SegmentedButtons
-                value={attendanceStatus}
-                onValueChange={(value) => setAttendanceStatus(value as any)}
-                buttons={[
-                  {
-                    value: 'present',
-                    label: 'Present',
-                    icon: 'check-circle',
-                  },
-                  {
-                    value: 'absent',
-                    label: 'Absent',
-                    icon: 'close-circle',
-                  },
-                  {
-                    value: 'leave',
-                    label: 'Leave',
-                    icon: 'medical-bag',
-                  },
-                ]}
-                style={styles.segmentedButtons}
-              />
-
-              <View style={styles.modalButtons}>
-                <Button
-                  mode="outlined"
-                  onPress={() => {
-                    setShowQuickAttendance(false);
-                    setSelectedSubject(null);
-                  }}
-                  style={styles.modalButton}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  mode="contained"
-                  onPress={handleQuickAttendance}
-                  style={styles.modalButton}
-                >
-                  Save
-                </Button>
-              </View>
-            </>
-          )}
-        </Modal>
-      </Portal>
-
       {/* Timetable Options Modal */}
       <Portal>
         <Modal
@@ -824,7 +1107,16 @@ export default function ProfileScreen() {
           onDismiss={() => setShowManualEntry(false)}
           contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
         >
-          <ScrollView showsVerticalScrollIndicator={false}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+          >
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              enableOnAndroid={true}
+              contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+            >
             <Text variant="headlineSmall" style={styles.modalTitle}>
               Add Timetable Entry
             </Text>
@@ -855,25 +1147,27 @@ export default function ProfileScreen() {
               />
             </View>
 
-            <PaperInput
-              label="Start Time (e.g., 09:00 AM) *"
-              value={manualStartTime}
-              onChangeText={setManualStartTime}
+            <Text variant="labelMedium" style={styles.fieldLabel}>Start Time *</Text>
+            <Button
               mode="outlined"
-              style={styles.input}
-              left={<PaperInput.Icon icon="clock-start" />}
-              placeholder="09:00 AM"
-            />
+              onPress={() => setShowStartTimePicker(true)}
+              icon="clock-start"
+              style={styles.timeButton}
+              contentStyle={styles.timeButtonContent}
+            >
+              {manualStartTime || 'Select Start Time'}
+            </Button>
 
-            <PaperInput
-              label="End Time (e.g., 10:00 AM) *"
-              value={manualEndTime}
-              onChangeText={setManualEndTime}
+            <Text variant="labelMedium" style={styles.fieldLabel}>End Time *</Text>
+            <Button
               mode="outlined"
-              style={styles.input}
-              left={<PaperInput.Icon icon="clock-end" />}
-              placeholder="10:00 AM"
-            />
+              onPress={() => setShowEndTimePicker(true)}
+              icon="clock-end"
+              style={styles.timeButton}
+              contentStyle={styles.timeButtonContent}
+            >
+              {manualEndTime || 'Select End Time'}
+            </Button>
 
             <PaperInput
               label="Subject Name *"
@@ -940,7 +1234,8 @@ export default function ProfileScreen() {
                 Add Entry
               </Button>
             </View>
-          </ScrollView>
+            </ScrollView>
+          </KeyboardAvoidingView>
         </Modal>
       </Portal>
 
@@ -962,6 +1257,430 @@ export default function ProfileScreen() {
           </Dialog.Actions>
         </Dialog>
       </Portal>
+
+      {/* Edit Timetable Entry Modal */}
+      <Portal>
+        <Modal
+          visible={showEditTimetable}
+          onDismiss={() => setShowEditTimetable(false)}
+          contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
+        >
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+          >
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              enableOnAndroid={true}
+              contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+            >
+            <Text variant="headlineSmall" style={styles.modalTitle}>
+              Edit Timetable Entry
+            </Text>
+
+            <Text variant="labelMedium" style={styles.fieldLabel}>Day *</Text>
+            <View style={styles.dayButtonsRow}>
+              <SegmentedButtons
+                value={editDay}
+                onValueChange={setEditDay}
+                buttons={[
+                  { value: 'Monday', label: 'Mon' },
+                  { value: 'Tuesday', label: 'Tue' },
+                  { value: 'Wednesday', label: 'Wed' },
+                ]}
+                style={styles.segmentedButtons}
+              />
+            </View>
+            <View style={styles.dayButtonsRow}>
+              <SegmentedButtons
+                value={editDay}
+                onValueChange={setEditDay}
+                buttons={[
+                  { value: 'Thursday', label: 'Thu' },
+                  { value: 'Friday', label: 'Fri' },
+                  { value: 'Saturday', label: 'Sat' },
+                ]}
+                style={styles.segmentedButtons}
+              />
+            </View>
+
+            <Text variant="labelMedium" style={styles.fieldLabel}>Start Time *</Text>
+            <Button
+              mode="outlined"
+              onPress={() => setShowEditStartTimePicker(true)}
+              icon="clock-start"
+              style={styles.timeButton}
+              contentStyle={styles.timeButtonContent}
+            >
+              {editStartTime || 'Select Start Time'}
+            </Button>
+
+            <Text variant="labelMedium" style={styles.fieldLabel}>End Time *</Text>
+            <Button
+              mode="outlined"
+              onPress={() => setShowEditEndTimePicker(true)}
+              icon="clock-end"
+              style={styles.timeButton}
+              contentStyle={styles.timeButtonContent}
+            >
+              {editEndTime || 'Select End Time'}
+            </Button>
+
+            <PaperInput
+              label="Subject Name *"
+              value={editSubject}
+              onChangeText={setEditSubject}
+              mode="outlined"
+              style={styles.input}
+              left={<PaperInput.Icon icon="book" />}
+            />
+
+            <PaperInput
+              label="Subject Code (Optional)"
+              value={editSubjectCode}
+              onChangeText={setEditSubjectCode}
+              mode="outlined"
+              style={styles.input}
+              left={<PaperInput.Icon icon="barcode" />}
+            />
+
+            <Text variant="labelMedium" style={styles.fieldLabel}>Class Type</Text>
+            <SegmentedButtons
+              value={editType}
+              onValueChange={(value) => setEditType(value as any)}
+              buttons={[
+                { value: 'lecture', label: 'Lecture' },
+                { value: 'lab', label: 'Lab' },
+                { value: 'tutorial', label: 'Tutorial' },
+              ]}
+              style={styles.segmentedButtons}
+            />
+
+            <PaperInput
+              label="Room (Optional)"
+              value={editRoom}
+              onChangeText={setEditRoom}
+              mode="outlined"
+              style={styles.input}
+              left={<PaperInput.Icon icon="map-marker" />}
+            />
+
+            <PaperInput
+              label="Faculty (Optional)"
+              value={editFaculty}
+              onChangeText={setEditFaculty}
+              mode="outlined"
+              style={styles.input}
+              left={<PaperInput.Icon icon="account-tie" />}
+            />
+
+            <View style={styles.modalButtons}>
+              <Button
+                mode="outlined"
+                onPress={() => setShowEditTimetable(false)}
+                style={styles.modalButton}
+              >
+                Cancel
+              </Button>
+              <Button
+                mode="contained"
+                onPress={handleSaveEditTimetable}
+                style={styles.modalButton}
+                disabled={!editSubject.trim() || !editStartTime.trim() || !editEndTime.trim()}
+              >
+                Save Changes
+              </Button>
+            </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </Modal>
+      </Portal>
+
+      {/* Delete Timetable Entry Confirmation Dialog */}
+      <Portal>
+        <Dialog visible={showDeleteTimetableEntryDialog} onDismiss={() => setShowDeleteTimetableEntryDialog(false)}>
+          <Dialog.Icon icon="delete-alert" color={theme.colors.error} size={48} />
+          <Dialog.Title>Delete Entry?</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              Are you sure you want to delete this timetable entry?
+            </Text>
+            {selectedTimetableEntry && (
+              <Card style={{ marginTop: 12 }}>
+                <Card.Content>
+                  <Text variant="titleMedium">{selectedTimetableEntry.subject}</Text>
+                  <Text variant="bodySmall" style={{ opacity: 0.7 }}>
+                    {selectedTimetableEntry.day} • {selectedTimetableEntry.startTime} - {selectedTimetableEntry.endTime}
+                  </Text>
+                </Card.Content>
+              </Card>
+            )}
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setShowDeleteTimetableEntryDialog(false)}>Cancel</Button>
+            <Button onPress={handleDeleteTimetableEntry} textColor={theme.colors.error}>
+              Delete
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+
+        {/* Edit Profile Modal */}
+        <Modal
+          visible={showEditProfile}
+          onDismiss={() => !savingProfile && setShowEditProfile(false)}
+          contentContainerStyle={[styles.modalContainer, { backgroundColor: theme.colors.background }]}
+        >
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+          >
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              enableOnAndroid={true}
+              contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+            >
+              <View style={styles.modalHeader}>
+                <Text variant="headlineSmall" style={{ fontWeight: 'bold' }}>
+                  Edit Profile
+                </Text>
+                <IconButton
+                  icon="close"
+                  size={24}
+                  onPress={() => !savingProfile && setShowEditProfile(false)}
+                  disabled={savingProfile}
+                />
+              </View>
+
+              {/* Avatar Section - Same as onboarding */}
+              <View style={styles.editAvatarContainer}>
+                {editPhotoURL ? (
+                  <Image source={{ uri: editPhotoURL }} style={styles.editAvatar} />
+                ) : (
+                  <Avatar.Icon
+                    size={100}
+                    icon="account"
+                    style={{ backgroundColor: theme.colors.primaryContainer }}
+                  />
+                )}
+                <View style={styles.avatarButtonsRow}>
+                  <IconButton
+                    icon="camera"
+                    mode="contained"
+                    size={24}
+                    onPress={handleTakePhoto}
+                    containerColor={theme.colors.primary}
+                    iconColor={theme.colors.onPrimary}
+                    disabled={savingProfile}
+                  />
+                  <IconButton
+                    icon="image"
+                    mode="contained"
+                    size={24}
+                    onPress={handlePickAvatar}
+                    containerColor={theme.colors.secondary}
+                    iconColor={theme.colors.onSecondary}
+                    disabled={savingProfile}
+                  />
+                </View>
+              </View>
+
+              {/* Form Fields */}
+              <PaperInput
+                label="Full Name *"
+                value={editDisplayName}
+                onChangeText={setEditDisplayName}
+                mode="outlined"
+                left={<PaperInput.Icon icon="account" />}
+                style={styles.modalInput}
+                disabled={savingProfile}
+              />
+
+              <PaperInput
+                label="College/University *"
+                value={editCollege}
+                onChangeText={setEditCollege}
+                mode="outlined"
+                left={<PaperInput.Icon icon="school" />}
+                style={styles.modalInput}
+                disabled={savingProfile}
+              />
+
+              <PaperInput
+                label="Course *"
+                value={editCourse}
+                onChangeText={setEditCourse}
+                mode="outlined"
+                left={<PaperInput.Icon icon="school-outline" />}
+                style={styles.modalInput}
+                placeholder="e.g., B.Tech, BCA, MCA"
+                disabled={savingProfile}
+              />
+
+              <PaperInput
+                label="Branch/Stream *"
+                value={editDepartment}
+                onChangeText={setEditDepartment}
+                mode="outlined"
+                left={<PaperInput.Icon icon="book-open-variant" />}
+                style={styles.modalInput}
+                placeholder="e.g., Computer Science"
+                disabled={savingProfile}
+              />
+
+              <View style={styles.rowInputs}>
+                <PaperInput
+                  label="Semester *"
+                  value={editSemester}
+                  onChangeText={setEditSemester}
+                  mode="outlined"
+                  left={<PaperInput.Icon icon="numeric" />}
+                  style={[styles.modalInput, { flex: 1 }]}
+                  keyboardType="numeric"
+                  disabled={savingProfile}
+                />
+
+                <PaperInput
+                  label="Section"
+                  value={editSection}
+                  onChangeText={setEditSection}
+                  mode="outlined"
+                  left={<PaperInput.Icon icon="alpha-a" />}
+                  style={[styles.modalInput, { flex: 1 }]}
+                  placeholder="e.g., A"
+                  disabled={savingProfile}
+                />
+              </View>
+
+              <PaperInput
+                label="USN No / Roll No *"
+                value={editRollNumber}
+                onChangeText={setEditRollNumber}
+                mode="outlined"
+                left={<PaperInput.Icon icon="card-account-details" />}
+                style={styles.modalInput}
+                placeholder="e.g., 1CR21CS001"
+                autoCapitalize="characters"
+                disabled={savingProfile}
+              />
+
+              {/* Action Buttons */}
+              <View style={styles.modalActions}>
+                <Button
+                  mode="outlined"
+                  onPress={() => setShowEditProfile(false)}
+                  style={{ flex: 1 }}
+                  disabled={savingProfile}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  mode="contained"
+                  onPress={handleSaveProfile}
+                  style={{ flex: 1 }}
+                  loading={savingProfile}
+                  disabled={savingProfile}
+                >
+                  Save Changes
+                </Button>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </Modal>
+      </Portal>
+
+      {/* Start Time Picker for Manual Entry */}
+      {showStartTimePicker && (
+        <DateTimePicker
+          value={manualStartDate}
+          mode="time"
+          is24Hour={false}
+          display={Platform.OS === 'ios' ? 'spinner' : 'clock'}
+          onChange={(event, selectedDate) => {
+            if (Platform.OS === 'android') {
+              setShowStartTimePicker(false);
+            }
+            if (event.type === 'set' && selectedDate) {
+              setManualStartDate(selectedDate);
+              setManualStartTime(formatTimeString(selectedDate));
+            }
+            if (Platform.OS === 'ios' && selectedDate) {
+              setManualStartDate(selectedDate);
+              setManualStartTime(formatTimeString(selectedDate));
+            }
+          }}
+        />
+      )}
+
+      {/* End Time Picker for Manual Entry */}
+      {showEndTimePicker && (
+        <DateTimePicker
+          value={manualEndDate}
+          mode="time"
+          is24Hour={false}
+          display={Platform.OS === 'ios' ? 'spinner' : 'clock'}
+          onChange={(event, selectedDate) => {
+            if (Platform.OS === 'android') {
+              setShowEndTimePicker(false);
+            }
+            if (event.type === 'set' && selectedDate) {
+              setManualEndDate(selectedDate);
+              setManualEndTime(formatTimeString(selectedDate));
+            }
+            if (Platform.OS === 'ios' && selectedDate) {
+              setManualEndDate(selectedDate);
+              setManualEndTime(formatTimeString(selectedDate));
+            }
+          }}
+        />
+      )}
+
+      {/* Start Time Picker for Edit Entry */}
+      {showEditStartTimePicker && (
+        <DateTimePicker
+          value={editStartDate}
+          mode="time"
+          is24Hour={false}
+          display={Platform.OS === 'ios' ? 'spinner' : 'clock'}
+          onChange={(event, selectedDate) => {
+            if (Platform.OS === 'android') {
+              setShowEditStartTimePicker(false);
+            }
+            if (event.type === 'set' && selectedDate) {
+              setEditStartDate(selectedDate);
+              setEditStartTime(formatTimeString(selectedDate));
+            }
+            if (Platform.OS === 'ios' && selectedDate) {
+              setEditStartDate(selectedDate);
+              setEditStartTime(formatTimeString(selectedDate));
+            }
+          }}
+        />
+      )}
+
+      {/* End Time Picker for Edit Entry */}
+      {showEditEndTimePicker && (
+        <DateTimePicker
+          value={editEndDate}
+          mode="time"
+          is24Hour={false}
+          display={Platform.OS === 'ios' ? 'spinner' : 'clock'}
+          onChange={(event, selectedDate) => {
+            if (Platform.OS === 'android') {
+              setShowEditEndTimePicker(false);
+            }
+            if (event.type === 'set' && selectedDate) {
+              setEditEndDate(selectedDate);
+              setEditEndTime(formatTimeString(selectedDate));
+            }
+            if (Platform.OS === 'ios' && selectedDate) {
+              setEditEndDate(selectedDate);
+              setEditEndTime(formatTimeString(selectedDate));
+            }
+          }}
+        />
+      )}
     </View>
   );
 }
@@ -997,12 +1716,6 @@ const styles = StyleSheet.create({
     elevation: 2,
     marginBottom: 16,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
   sectionTitle: {
     marginBottom: 12,
     fontWeight: 'bold',
@@ -1033,23 +1746,6 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'right',
   },
-  quickAttendanceGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 12,
-  },
-  quickSubjectCard: {
-    flex: 1,
-    minWidth: '45%',
-    maxWidth: '48%',
-    elevation: 1,
-  },
-  quickSubjectContent: {
-    padding: 8,
-    minHeight: 60,
-    justifyContent: 'space-between',
-  },
   modal: {
     margin: 20,
     padding: 20,
@@ -1059,15 +1755,6 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontWeight: 'bold',
     marginBottom: 16,
-  },
-  modalSubjectCard: {
-    marginBottom: 16,
-    elevation: 1,
-  },
-  modalStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
   },
   modalLabel: {
     marginBottom: 8,
@@ -1086,18 +1773,6 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     flex: 1,
-  },
-  emptySubjects: {
-    alignItems: 'center',
-    paddingVertical: 24,
-  },
-  emptyText: {
-    opacity: 0.7,
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  addButton: {
-    marginTop: 8,
   },
   input: {
     marginBottom: 16,
@@ -1139,5 +1814,78 @@ const styles = StyleSheet.create({
   fieldLabel: {
     marginBottom: 8,
     marginTop: 4,
+  },
+  timetableEntriesContainer: {
+    marginTop: 12,
+    gap: 8,
+  },
+  timetableEntryCard: {
+    marginBottom: 8,
+    elevation: 1,
+  },
+  timetableEntryHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  timetableEntryDetails: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: 4,
+  },
+  timetableEntryActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  timeButton: {
+    marginBottom: 16,
+    justifyContent: 'flex-start',
+  },
+  timeButtonContent: {
+    paddingVertical: 8,
+    justifyContent: 'flex-start',
+  },
+  modalContainer: {
+    margin: 20,
+    padding: 20,
+    borderRadius: 12,
+    maxHeight: '90%',
+  },
+  modalContent: {
+    paddingBottom: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  editAvatarContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  editAvatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  avatarButtonsRow: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 12,
+  },
+  modalInput: {
+    marginBottom: 16,
+  },
+  rowInputs: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+    marginBottom: 24,
   },
 });

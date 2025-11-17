@@ -10,6 +10,7 @@ interface AuthState {
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
   initializeAuth: () => void;
+  refreshUser: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -27,5 +28,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     return unsubscribe;
+  },
+
+  refreshUser: () => {
+    // Manually update the user state from Firebase
+    const currentUser = auth.currentUser;
+    set({ user: currentUser });
   },
 }));

@@ -1,5 +1,5 @@
-import { View, StyleSheet, ScrollView, Platform, StatusBar } from 'react-native';
-import { Text, Surface, Card, useTheme, ProgressBar, Appbar, ActivityIndicator } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, Platform, StatusBar, RefreshControl } from 'react-native';
+import { Text, Surface, Card, useTheme, ProgressBar, Appbar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/src/store/authStore';
@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Subject, UserProfile } from '@/src/types/user';
 import { useFocusEffect } from '@react-navigation/native';
 import { ThemeSwitcher } from '@/src/components/ThemeSwitcher';
+import VideoLoadingScreen from '@/src/components/VideoLoadingScreen';
 
 export default function DashboardScreen() {
   const theme = useTheme();
@@ -16,6 +17,7 @@ export default function DashboardScreen() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -68,6 +70,13 @@ export default function DashboardScreen() {
     }, [loadData])
   );
 
+  // Pull to refresh handler
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  }, [loadData]);
+
   // Calculate overall statistics
   const totalClasses = subjects.reduce((sum, s) => sum + (s.totalClasses || 0), 0);
   const attendedClasses = subjects.reduce((sum, s) => sum + (s.attendedClasses || 0), 0);
@@ -79,6 +88,11 @@ export default function DashboardScreen() {
     ? Math.floor((attendedClasses - (minimumAttendance / 100) * totalClasses) / (minimumAttendance / 100))
     : 0;
 
+  // Calculate how many classes must be attended to reach minimum (when below minimum)
+  const mustAttend = totalClasses > 0 && canBunk < 0
+    ? Math.ceil(((minimumAttendance / 100) * totalClasses - attendedClasses) / (1 - minimumAttendance / 100))
+    : 0;
+
   const getAttendanceColor = (percentage: number) => {
     if (percentage >= 85) return theme.colors.tertiary;
     if (percentage >= 75) return theme.colors.secondary;
@@ -86,20 +100,7 @@ export default function DashboardScreen() {
   };
 
   if (loading) {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Appbar.Header elevated style={{ backgroundColor: theme.colors.surface }}>
-          <MaterialCommunityIcons name="view-dashboard" size={24} color={theme.colors.primary} style={{ marginLeft: 16 }} />
-          <Appbar.Content title="Bunk Manager" titleStyle={{ fontWeight: 'bold' }} />
-          <View style={{ marginRight: 16 }}>
-            <ThemeSwitcher />
-          </View>
-        </Appbar.Header>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
-      </View>
-    );
+    return <VideoLoadingScreen onFinish={() => setLoading(false)} />;
   }
 
   return (
@@ -120,6 +121,14 @@ export default function DashboardScreen() {
         style={styles.scrollContainer}
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 16 }]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[theme.colors.primary]}
+            tintColor={theme.colors.primary}
+          />
+        }
       >
       {/* Header */}
       <View style={styles.header}>
@@ -186,7 +195,7 @@ export default function DashboardScreen() {
               color={canBunk >= 0 ? theme.colors.secondary : theme.colors.error}
             />
             <Text variant="headlineSmall" style={styles.statNumber}>
-              {canBunk >= 0 ? canBunk : 0}
+              {canBunk >= 0 ? canBunk : mustAttend}
             </Text>
             <Text variant="bodySmall" style={styles.statLabel}>
               {canBunk >= 0 ? 'Can Bunk' : 'Must Attend'}

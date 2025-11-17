@@ -119,14 +119,16 @@ class FirestoreService {
     const subjectsRef = collection(db, 'users', uid, 'subjects');
     const querySnapshot = await getDocs(subjectsRef);
 
-    return querySnapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        lastUpdated: data.lastUpdated?.toDate() || new Date(),
-      };
-    }) as Subject[];
+    return querySnapshot.docs
+      .map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          lastUpdated: data.lastUpdated?.toDate() || new Date(),
+        };
+      })
+      .filter(subject => !subject.deleted) as Subject[]; // Filter out soft-deleted subjects
   }
 
   async addSubject(uid: string, subject: Subject): Promise<void> {
@@ -137,12 +139,20 @@ class FirestoreService {
     });
   }
 
-  async updateSubjectAttendance(uid: string, subjectId: string, attended: boolean): Promise<void> {
+  async updateSubjectAttendance(uid: string, subjectId: string, attended: boolean, isLeave: boolean = false): Promise<void> {
     const subjectRef = doc(db, 'users', uid, 'subjects', subjectId);
     const subjectSnap = await getDoc(subjectRef);
 
     if (subjectSnap.exists()) {
       const currentData = subjectSnap.data() as Subject;
+
+      // If it's a leave day, don't count it at all
+      if (isLeave) {
+        // Leave days don't affect attendance calculations
+        // We only store the record but don't update totals
+        return;
+      }
+
       const newTotalClasses = (currentData.totalClasses || 0) + 1;
       const newAttendedClasses = (currentData.attendedClasses || 0) + (attended ? 1 : 0);
       const attendancePercentage = newTotalClasses > 0 ? (newAttendedClasses / newTotalClasses) * 100 : 0;
@@ -159,6 +169,33 @@ class FirestoreService {
   async deleteSubject(uid: string, subjectId: string): Promise<void> {
     const subjectRef = doc(db, 'users', uid, 'subjects', subjectId);
     await updateDoc(subjectRef, { deleted: true });
+  }
+
+  async deleteAllSubjects(uid: string): Promise<void> {
+    try {
+      console.log('deleteAllSubjects called for uid:', uid);
+      const subjectsRef = collection(db, 'users', uid, 'subjects');
+      const querySnapshot = await getDocs(subjectsRef);
+
+      console.log('Found subjects:', querySnapshot.docs.length);
+
+      if (querySnapshot.docs.length === 0) {
+        console.log('No subjects to delete');
+        return;
+      }
+
+      // Delete all subject documents
+      const deletePromises = querySnapshot.docs.map(doc => {
+        console.log('Deleting subject:', doc.id);
+        return deleteDoc(doc.ref);
+      });
+
+      await Promise.all(deletePromises);
+      console.log('All subjects deleted successfully');
+    } catch (error) {
+      console.error('Error in deleteAllSubjects:', error);
+      throw error;
+    }
   }
 
   // Attendance Records

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
-import { Text, Card, Chip, useTheme, Appbar, Divider, ActivityIndicator } from 'react-native-paper';
+import { Text, Card, Chip, useTheme, Appbar, Divider } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -8,6 +8,7 @@ import { useAuthStore } from '@/src/store/authStore';
 import firestoreService from '@/src/services/firestoreService';
 import { TimetableEntry } from '@/src/types/user';
 import { ThemeSwitcher } from '@/src/components/ThemeSwitcher';
+import VideoLoadingScreen from '@/src/components/VideoLoadingScreen';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -116,20 +117,7 @@ export default function TimetableScreen() {
   };
 
   if (loading) {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Appbar.Header elevated style={{ backgroundColor: theme.colors.surface }}>
-          <MaterialCommunityIcons name="calendar-clock" size={24} color={theme.colors.primary} style={{ marginLeft: 16 }} />
-          <Appbar.Content title="My Timetable" titleStyle={{ fontWeight: 'bold' }} />
-          <View style={{ marginRight: 16 }}>
-            <ThemeSwitcher />
-          </View>
-        </Appbar.Header>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
-      </View>
-    );
+    return <VideoLoadingScreen onFinish={() => setLoading(false)} />;
   }
 
   return (

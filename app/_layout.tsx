@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, Redirect, useSegments, useRouter, useRootNavigationState } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { PaperProvider, ActivityIndicator } from 'react-native-paper';
+import { PaperProvider } from 'react-native-paper';
 import { View, useColorScheme as useDeviceColorScheme } from 'react-native';
 import 'react-native-reanimated';
 
@@ -10,6 +10,8 @@ import { lightTheme, darkTheme } from '@/src/config/theme';
 import { useAuthStore } from '@/src/store/authStore';
 import { useThemeStore } from '@/src/store/themeStore';
 import firestoreService from '@/src/services/firestoreService';
+import VideoLoadingScreen from '@/src/components/VideoLoadingScreen';
+import NetworkMonitor from '@/src/components/NetworkMonitor';
 
 // Removed unstable_settings - it doesn't work reliably in production
 // Expo Router uses alphabetical ordering: (auth) < (onboarding) < (tabs)
@@ -95,11 +97,7 @@ function RootLayoutNav() {
 
   // Show loading screen while initializing
   if (!navigationState?.key || !initialized || loading || (user && onboardingComplete === null)) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
-        <ActivityIndicator size="large" color="#0066CC" />
-      </View>
-    );
+    return <VideoLoadingScreen onFinish={() => {}} />;
   }
 
   return (
@@ -134,18 +132,16 @@ export default function RootLayout() {
   const paperTheme = effectiveTheme === 'dark' ? darkTheme : lightTheme;
   const navigationTheme = effectiveTheme === 'dark' ? DarkTheme : DefaultTheme;
 
+  // Show loading while theme initializes
   if (!isThemeReady) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
+    return <VideoLoadingScreen onFinish={() => setIsThemeReady(true)} />;
   }
 
   return (
     <PaperProvider theme={paperTheme}>
       <ThemeProvider value={navigationTheme}>
         <RootLayoutNav />
+        <NetworkMonitor />
         <StatusBar style={effectiveTheme === 'dark' ? 'light' : 'dark'} />
       </ThemeProvider>
     </PaperProvider>
