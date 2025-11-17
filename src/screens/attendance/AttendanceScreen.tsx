@@ -22,6 +22,7 @@ import { useAuthStore } from '../../store/authStore';
 import firestoreService from '../../services/firestoreService';
 import { Subject, AttendanceRecord } from '../../types/user';
 import { ThemeSwitcher } from '../../components/ThemeSwitcher';
+import DonutChart from '../../components/DonutChart';
 
 export default function AttendanceScreen() {
   const theme = useTheme();
@@ -408,18 +409,26 @@ export default function AttendanceScreen() {
                   <View style={styles.statsContainer}>
                     <View style={styles.statItem}>
                       <Text variant="bodySmall" style={styles.statLabel}>
-                        Attended
+                        Total Classes
                       </Text>
                       <Text variant="titleMedium" style={styles.statValue}>
+                        {subject.totalClasses}
+                      </Text>
+                    </View>
+                    <View style={styles.statItem}>
+                      <Text variant="bodySmall" style={styles.statLabel}>
+                        Attended
+                      </Text>
+                      <Text variant="titleMedium" style={[styles.statValue, { color: theme.colors.tertiary }]}>
                         {subject.attendedClasses}
                       </Text>
                     </View>
                     <View style={styles.statItem}>
                       <Text variant="bodySmall" style={styles.statLabel}>
-                        Total
+                        Absent
                       </Text>
-                      <Text variant="titleMedium" style={styles.statValue}>
-                        {subject.totalClasses}
+                      <Text variant="titleMedium" style={[styles.statValue, { color: theme.colors.error }]}>
+                        {subject.totalClasses - subject.attendedClasses}
                       </Text>
                     </View>
                     <View style={styles.statItem}>
@@ -440,6 +449,17 @@ export default function AttendanceScreen() {
                     color={getAttendanceColor(subject.attendancePercentage)}
                     style={styles.progressBar}
                   />
+
+                  {/* Professional Donut Chart */}
+                  {subject.totalClasses > 0 && (
+                    <DonutChart
+                      attended={subject.attendedClasses}
+                      absent={subject.totalClasses - subject.attendedClasses}
+                      percentage={subject.attendancePercentage}
+                      size={170}
+                      strokeWidth={28}
+                    />
+                  )}
 
                   {/* Mark Attendance Button */}
                   <Button
@@ -660,7 +680,6 @@ const styles = StyleSheet.create({
   progressBar: {
     height: 8,
     borderRadius: 4,
-    marginBottom: 16,
   },
   markButton: {
     marginTop: 8,

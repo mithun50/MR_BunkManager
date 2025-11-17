@@ -9,6 +9,7 @@ import { Subject, UserProfile } from '@/src/types/user';
 import { useFocusEffect } from '@react-navigation/native';
 import { ThemeSwitcher } from '@/src/components/ThemeSwitcher';
 import VideoLoadingScreen from '@/src/components/VideoLoadingScreen';
+import DonutChart from '@/src/components/DonutChart';
 
 export default function DashboardScreen() {
   const theme = useTheme();
@@ -167,6 +168,22 @@ export default function DashboardScreen() {
             <Text variant="bodySmall" style={styles.attendanceText}>
               {attendedClasses} classes attended out of {totalClasses}
             </Text>
+
+            {/* Professional Donut Chart */}
+            {totalClasses > 0 && (
+              <View style={styles.chartContainer}>
+                <Text variant="titleSmall" style={styles.chartTitle}>
+                  Attendance Breakdown
+                </Text>
+                <DonutChart
+                  attended={attendedClasses}
+                  absent={totalClasses - attendedClasses}
+                  percentage={overallPercentage}
+                  size={200}
+                  strokeWidth={35}
+                />
+              </View>
+            )}
           </Card.Content>
         </Card>
       ) : (
@@ -290,6 +307,15 @@ const styles = StyleSheet.create({
   attendanceText: {
     textAlign: 'center',
     opacity: 0.7,
+  },
+  chartContainer: {
+    marginTop: 8,
+  },
+  chartTitle: {
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+    opacity: 0.8,
   },
   statsContainer: {
     flexDirection: 'row',
