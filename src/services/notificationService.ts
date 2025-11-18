@@ -71,11 +71,14 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
   // Configure Android notification channel
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
-      name: 'Default',
+      name: 'MR BunkManager',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF6B6B',
       sound: 'default',
+      showBadge: true,
+      enableLights: true,
+      enableVibrate: true,
     });
   }
 
