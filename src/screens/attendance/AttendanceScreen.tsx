@@ -22,6 +22,7 @@ import { useAuthStore } from '../../store/authStore';
 import firestoreService from '../../services/firestoreService';
 import { Subject, AttendanceRecord } from '../../types/user';
 import { ThemeSwitcher } from '../../components/ThemeSwitcher';
+import OnlineButton from '../../components/OnlineButton';
 
 export default function AttendanceScreen() {
   const theme = useTheme();
@@ -648,9 +649,16 @@ export default function AttendanceScreen() {
                 >
                   Cancel
                 </Button>
-                <Button mode="contained" onPress={handleMarkAttendance} style={styles.modalButton}>
+                <OnlineButton
+                  mode="contained"
+                  onPress={handleMarkAttendance}
+                  style={styles.modalButton}
+                  requiresOnline={false}
+                  allowOfflineWithWarning={true}
+                  offlineMessage="Attendance will be saved and synced when you're back online"
+                >
                   Save Attendance
-                </Button>
+                </OnlineButton>
               </View>
             </>
           )}
