@@ -36,17 +36,33 @@ function RootLayoutNav() {
       if (user) {
         try {
           console.log('📋 Checking onboarding status for user:', user.uid);
+
+          // Try to get cached onboarding status first for instant load
+          const { default: cacheService } = await import('@/src/services/cacheService');
+          const cachedStatus = await cacheService.getCachedOnboardingStatus(user.uid);
+
+          if (cachedStatus !== null) {
+            console.log('📦 Using cached onboarding status:', cachedStatus);
+            setOnboardingComplete(cachedStatus);
+          }
+
+          // Then fetch from Firestore to update cache
           const profile = await firestoreService.getUserProfile(user.uid);
           const isComplete = profile?.onboardingCompleted || false;
-          console.log('✅ Onboarding status:', isComplete);
+          console.log('✅ Onboarding status from server:', isComplete);
           setOnboardingComplete(isComplete);
         } catch (error: any) {
           console.error('❌ Error checking onboarding:', error);
 
-          // If offline and we have a cached result from Firestore, it would have returned
-          // If we get an error, it means either:
-          // 1. Network error AND no cache (new user opened app offline) - keep null, show loading
-          // 2. Other error - treat as incomplete
+          // Try cache as fallback
+          const { default: cacheService } = await import('@/src/services/cacheService');
+          const cachedStatus = await cacheService.getCachedOnboardingStatus(user.uid);
+
+          if (cachedStatus !== null) {
+            console.log('✅ Using cached onboarding status (offline):', cachedStatus);
+            setOnboardingComplete(cachedStatus);
+            return;
+          }
 
           // Check if it's a network error
           const isNetworkError = error?.code === 'unavailable' ||
@@ -55,7 +71,7 @@ function RootLayoutNav() {
 
           if (isNetworkError) {
             // Stay in loading state - don't redirect anywhere
-            console.log('🌐 Network error detected, keeping current state');
+            console.log('🌐 Network error detected, no cache available');
             // Don't change onboardingComplete - keep it as null to show loading
           } else {
             // Other error - treat as incomplete onboarding
