@@ -1,0 +1,30 @@
+# Environment Variables
+.env
+
+# Firebase Service Account Key (IMPORTANT: Never commit this!)
+config/serviceAccountKey.json
+
+# Node Modules
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build
+dist/
+build/

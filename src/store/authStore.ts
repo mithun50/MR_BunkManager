@@ -2,6 +2,11 @@ import { create } from 'zustand';
 import { User } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import {
+  registerForPushNotificationsAsync,
+  savePushToken,
+  deletePushToken,
+} from '../services/notificationService';
 
 interface AuthState {
   user: User | null;
@@ -23,8 +28,24 @@ export const useAuthStore = create<AuthState>((set) => ({
   setLoading: (loading) => set({ loading }),
 
   initializeAuth: () => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       set({ user, loading: false, initialized: true });
+
+      // Register push notifications when user logs in
+      if (user) {
+        try {
+          console.log('👤 User logged in, registering push notifications...');
+          const token = await registerForPushNotificationsAsync();
+          if (token) {
+            await savePushToken(user.uid, token);
+            console.log('✅ Push notifications registered successfully');
+          }
+        } catch (error) {
+          console.error('❌ Error registering push notifications:', error);
+        }
+      } else {
+        console.log('👋 User logged out');
+      }
     });
 
     return unsubscribe;
