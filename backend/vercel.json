@@ -14,6 +14,6 @@
   ],
   "env": {
     "APP_ENV": "production",
-    "TZ": "Asia/Kolkata"
+    "TIMEZONE": "Asia/Kolkata"
   }
 }

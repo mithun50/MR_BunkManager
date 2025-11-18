@@ -15,7 +15,7 @@ WORKDIR /app
 
 # Set to production
 ENV APP_ENV=production
-ENV TZ=Asia/Kolkata
+ENV TIMEZONE=Asia/Kolkata
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs

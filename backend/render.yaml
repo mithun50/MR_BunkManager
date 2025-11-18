@@ -11,7 +11,7 @@ services:
         value: production
       - key: PORT
         value: 3000
-      - key: TZ
+      - key: TIMEZONE
         value: Asia/Kolkata
       - key: FIREBASE_DATABASE_URL
         sync: false
