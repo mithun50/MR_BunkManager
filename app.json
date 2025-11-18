@@ -10,8 +10,9 @@
     "newArchEnabled": true,
     "notification": {
       "icon": "./assets/images/logo.png",
-      "color": "#FF6B6B",
-      "androidMode": "default"
+      "color": "#3B82F6",
+      "androidMode": "default",
+      "androidCollapsedTitle": "MR BunkManager Updates"
     },
     "android": {
       "package": "com.idtl.mrbunkmanager",
