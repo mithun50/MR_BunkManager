@@ -20,16 +20,25 @@ let adminApp;
 /**
  * Initialize Firebase Admin with service account credentials
  *
- * IMPORTANT: You need to download your Firebase service account key:
- * 1. Go to Firebase Console → Project Settings → Service Accounts
- * 2. Click "Generate New Private Key"
- * 3. Save the JSON file as 'serviceAccountKey.json' in the config folder
+ * Supports two methods:
+ * 1. Environment variable FIREBASE_SERVICE_ACCOUNT (for Vercel/serverless)
+ * 2. File-based serviceAccountKey.json (for Railway/Render/local)
  */
 export function initializeFirebase() {
   try {
-    // Read service account key from file
-    const serviceAccountPath = join(__dirname, 'serviceAccountKey.json');
-    const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
+    let serviceAccount;
+
+    // Method 1: Try to get from environment variable (Vercel/serverless)
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+      console.log('📦 Loading Firebase credentials from environment variable');
+      serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    }
+    // Method 2: Try to read from file (Railway/Render/local)
+    else {
+      console.log('📁 Loading Firebase credentials from file');
+      const serviceAccountPath = join(__dirname, 'serviceAccountKey.json');
+      serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
+    }
 
     // Initialize Firebase Admin
     adminApp = admin.initializeApp({
@@ -44,10 +53,11 @@ export function initializeFirebase() {
     return { db, admin: adminApp };
   } catch (error) {
     console.error('❌ Error initializing Firebase Admin:', error.message);
-    console.error('\nMake sure you have:');
-    console.error('1. Downloaded your Firebase service account key');
-    console.error('2. Saved it as config/serviceAccountKey.json');
-    console.error('3. Set FIREBASE_DATABASE_URL in your .env file');
+    console.error('\nMake sure you have EITHER:');
+    console.error('1. FIREBASE_SERVICE_ACCOUNT environment variable set (for Vercel)');
+    console.error('   OR');
+    console.error('2. config/serviceAccountKey.json file (for Railway/Render/local)');
+    console.error('3. FIREBASE_DATABASE_URL environment variable set');
     throw error;
   }
 }
