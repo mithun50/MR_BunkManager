@@ -653,9 +653,8 @@ export default function AttendanceScreen() {
                   mode="contained"
                   onPress={handleMarkAttendance}
                   style={styles.modalButton}
-                  requiresOnline={false}
-                  allowOfflineWithWarning={true}
-                  offlineMessage="Attendance will be saved and synced when you're back online"
+                  requiresOnline={true}
+                  offlineMessage="You need internet connection to save attendance"
                 >
                   Save Attendance
                 </OnlineButton>
