@@ -1,18 +1,17 @@
 /**
- * Push Notification Service using Expo Server SDK
+ * Push Notification Service using Firebase Cloud Messaging
  *
- * This module handles sending push notifications to users via Expo Push Notification service.
+ * This module handles sending push notifications to users via Firebase Cloud Messaging (FCM).
  * It includes logic to send context-aware notifications about:
  * - Upcoming classes (tomorrow's schedule)
  * - Attendance percentages
  * - Lab sessions
  */
 
-import { Expo } from 'expo-server-sdk';
-import { getFirestore } from '../config/firebase.js';
+import { getFirestore, getAdmin } from '../config/firebase.js';
 
-// Create a new Expo SDK client
-const expo = new Expo();
+// Get Firebase Admin messaging instance
+const getMessaging = () => getAdmin().messaging();
 
 /**
  * Get the day name for tomorrow
@@ -169,7 +168,7 @@ async function createNotificationMessage(userId) {
 /**
  * Get all push tokens for a user from Firestore
  * @param {string} userId - User ID
- * @returns {Promise<Array>} Array of Expo push tokens
+ * @returns {Promise<Array>} Array of FCM push tokens
  */
 async function getUserPushTokens(userId) {
   const db = getFirestore();
@@ -181,9 +180,10 @@ async function getUserPushTokens(userId) {
       .collection('deviceTokens')
       .get();
 
+    // Return all tokens (both FCM and Expo tokens)
     return tokensSnapshot.docs
       .map(doc => doc.data().token)
-      .filter(token => Expo.isExpoPushToken(token));
+      .filter(token => token && token.length > 0);
   } catch (error) {
     console.error('Error fetching push tokens:', error);
     return [];
@@ -244,42 +244,46 @@ export async function sendNotificationToUser(userId, customMessage = null) {
     // Create notification message
     const message = customMessage || await createNotificationMessage(userId);
 
-    // Create notification messages for each token
-    const messages = pushTokens.map(token => ({
-      to: token,
-      sound: 'default',
-      title: message.title,
-      body: message.body,
-      data: message.data || {},
-      priority: 'high',
-      channelId: 'default'
-    }));
+    // Prepare FCM message for multicast
+    const fcmMessage = {
+      notification: {
+        title: message.title,
+        body: message.body,
+      },
+      data: message.data ? Object.fromEntries(
+        Object.entries(message.data).map(([k, v]) => [k, String(v)])
+      ) : {},
+      android: {
+        notification: {
+          color: '#3B82F6',
+          sound: 'default',
+          priority: 'high',
+          channelId: 'default',
+        },
+      },
+      apns: {
+        payload: {
+          aps: {
+            sound: 'default',
+            badge: 1,
+          },
+        },
+      },
+      tokens: pushTokens,
+    };
 
-    // Send notifications in chunks
-    const chunks = expo.chunkPushNotifications(messages);
-    const tickets = [];
+    // Send notification using Firebase Cloud Messaging
+    const messaging = getMessaging();
+    const response = await messaging.sendEachForMulticast(fcmMessage);
 
-    for (const chunk of chunks) {
-      try {
-        const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
-        tickets.push(...ticketChunk);
-      } catch (error) {
-        console.error('Error sending chunk:', error);
-      }
-    }
-
-    // Log results
-    const successful = tickets.filter(t => t.status === 'ok').length;
-    const failed = tickets.filter(t => t.status === 'error').length;
-
-    console.log(`📤 Sent to user ${userId}: ${successful} successful, ${failed} failed`);
+    console.log(`📤 Sent to user ${userId}: ${response.successCount} successful, ${response.failureCount} failed`);
 
     return {
       success: true,
       userId,
-      sent: successful,
-      failed,
-      tickets
+      sent: response.successCount,
+      failed: response.failureCount,
+      responses: response.responses
     };
   } catch (error) {
     console.error('Error sending notification to user:', error);
@@ -388,12 +392,20 @@ export async function sendDailyReminders() {
 }
 
 /**
- * Validate Expo push token
- * @param {string} token - Expo push token to validate
+ * Validate push token (FCM or Expo)
+ * @param {string} token - Push token to validate
  * @returns {boolean} True if valid
  */
 export function isValidExpoPushToken(token) {
-  return Expo.isExpoPushToken(token);
+  // Accept both FCM tokens (long alphanumeric) and Expo tokens
+  if (!token || typeof token !== 'string') return false;
+
+  // FCM tokens are typically 152+ characters
+  // Expo tokens start with "ExponentPushToken["
+  return token.length > 20 && (
+    token.startsWith('ExponentPushToken[') ||
+    /^[a-zA-Z0-9_-]+$/.test(token)
+  );
 }
 
 /**
