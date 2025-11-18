@@ -28,18 +28,25 @@ class FirestoreService {
   }
 
   async getUserProfile(uid: string): Promise<UserProfile | null> {
-    const userRef = doc(db, 'users', uid);
-    const userSnap = await getDoc(userRef);
+    try {
+      const userRef = doc(db, 'users', uid);
+      const userSnap = await getDoc(userRef);
 
-    if (userSnap.exists()) {
-      const data = userSnap.data();
-      return {
-        ...data,
-        createdAt: data.createdAt?.toDate() || new Date(),
-        updatedAt: data.updatedAt?.toDate() || new Date(),
-      } as UserProfile;
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        return {
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date(),
+          updatedAt: data.updatedAt?.toDate() || new Date(),
+        } as UserProfile;
+      }
+      return null;
+    } catch (error: any) {
+      // If offline and cache is available, Firestore will return cached data
+      // If truly no data available (new user offline), rethrow
+      console.error('Error fetching user profile:', error);
+      throw error;
     }
-    return null;
   }
 
   async updateUserProfile(uid: string, data: Partial<UserProfile>): Promise<void> {
