@@ -31,6 +31,8 @@ const PORT = process.env.PORT || 3000;
 // Use APP_ENV instead of NODE_ENV (some platforms reserve NODE_ENV)
 const APP_ENV = process.env.APP_ENV || process.env.NODE_ENV || 'development';
 const IS_PRODUCTION = APP_ENV === 'production';
+// Use TIMEZONE instead of TZ (more explicit and less likely to conflict)
+const TIMEZONE = process.env.TIMEZONE || process.env.TZ || 'Asia/Kolkata';
 
 // CORS Configuration for production
 const allowedOrigins = process.env.ALLOWED_ORIGINS

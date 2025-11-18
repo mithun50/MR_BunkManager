@@ -22,7 +22,7 @@ APP_ENV=production
 PORT=3000
 
 # Timezone
-TZ=Asia/Kolkata
+TIMEZONE=Asia/Kolkata
 
 # Firebase Database URL
 FIREBASE_DATABASE_URL=https://mr-bunkmanager-default-rtdb.firebaseio.com
@@ -51,7 +51,7 @@ RATE_LIMIT_MAX_REQUESTS=100
 
 ```
 APP_ENV = production
-TZ = Asia/Kolkata
+TIMEZONE = Asia/Kolkata
 FIREBASE_DATABASE_URL = https://mr-bunkmanager-default-rtdb.firebaseio.com
 ```
 
@@ -66,7 +66,7 @@ FIREBASE_DATABASE_URL = https://mr-bunkmanager-default-rtdb.firebaseio.com
 
 ```
 APP_ENV = production
-TZ = Asia/Kolkata
+TIMEZONE = Asia/Kolkata
 FIREBASE_DATABASE_URL = https://mr-bunkmanager-default-rtdb.firebaseio.com
 ```
 
@@ -82,7 +82,7 @@ FIREBASE_DATABASE_URL = https://mr-bunkmanager-default-rtdb.firebaseio.com
 
 ```
 APP_ENV = production
-TZ = Asia/Kolkata
+TIMEZONE = Asia/Kolkata
 FIREBASE_DATABASE_URL = https://mr-bunkmanager-default-rtdb.firebaseio.com
 FIREBASE_SERVICE_ACCOUNT = <paste entire JSON here>
 ```
@@ -143,7 +143,7 @@ If you see errors about missing variables, double-check the variable names match
 ```
 APP_ENV=production
 PORT=3000
-TZ=Asia/Kolkata
+TIMEZONE=Asia/Kolkata
 FIREBASE_DATABASE_URL=https://mr-bunkmanager-default-rtdb.firebaseio.com
 ```
 
