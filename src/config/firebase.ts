@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, initializeAuth, getReactNativePersistence } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -44,8 +44,20 @@ try {
   auth = getAuth(app);
 }
 
-// Initialize Firestore
-const db = getFirestore(app);
+// Initialize Firestore with offline persistence
+let db;
+try {
+  // Enable offline persistence with persistent cache
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager()
+    })
+  });
+  console.log('✅ Firestore initialized with offline persistence');
+} catch (error) {
+  console.warn('⚠️ Firestore offline persistence failed, using default:', error);
+  db = getFirestore(app);
+}
 
 // Initialize Storage
 const storage = getStorage(app);

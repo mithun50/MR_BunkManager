@@ -40,9 +40,27 @@ function RootLayoutNav() {
           const isComplete = profile?.onboardingCompleted || false;
           console.log('✅ Onboarding status:', isComplete);
           setOnboardingComplete(isComplete);
-        } catch (error) {
+        } catch (error: any) {
           console.error('❌ Error checking onboarding:', error);
-          setOnboardingComplete(false);
+
+          // If offline and we have a cached result from Firestore, it would have returned
+          // If we get an error, it means either:
+          // 1. Network error AND no cache (new user opened app offline) - keep null, show loading
+          // 2. Other error - treat as incomplete
+
+          // Check if it's a network error
+          const isNetworkError = error?.code === 'unavailable' ||
+                                 error?.message?.includes('network') ||
+                                 error?.message?.includes('offline');
+
+          if (isNetworkError) {
+            // Stay in loading state - don't redirect anywhere
+            console.log('🌐 Network error detected, keeping current state');
+            // Don't change onboardingComplete - keep it as null to show loading
+          } else {
+            // Other error - treat as incomplete onboarding
+            setOnboardingComplete(false);
+          }
         }
       } else {
         console.log('👤 No user - setting onboarding to null');
