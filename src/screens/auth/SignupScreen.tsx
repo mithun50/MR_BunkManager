@@ -10,6 +10,7 @@ import {
 } from 'react-native-paper';
 import { router } from 'expo-router';
 import authService from '../../services/authService';
+import OnlineButton from '../../components/OnlineButton';
 
 export default function SignupScreen() {
   const theme = useTheme();
@@ -172,16 +173,18 @@ export default function SignupScreen() {
               </HelperText>
             ) : null}
 
-            <Button
+            <OnlineButton
               mode="contained"
               onPress={handleSignup}
               loading={loading}
               disabled={loading}
               style={styles.signupButton}
               contentStyle={styles.buttonContent}
+              requiresOnline={true}
+              offlineMessage="You need an internet connection to create an account"
             >
               Sign Up
-            </Button>
+            </OnlineButton>
 
             <Divider style={styles.divider} />
 

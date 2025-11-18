@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
-import { Portal, Dialog, Button, Text, useTheme, Banner, ActivityIndicator } from 'react-native-paper';
+import { View, StyleSheet } from 'react-native';
+import { Portal, Dialog, Button, Text, useTheme, Snackbar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNetworkStore } from '../store/networkStore';
 import offlineQueueService from '../services/offlineQueueService';
@@ -73,64 +73,62 @@ export default function NetworkMonitor() {
 
   return (
     <>
-      {/* Offline Banner - less intrusive than dialog */}
-      {isOffline && (
-        <Portal>
-          <Banner
-            visible={isOffline}
-            icon={({ size }) => (
-              <MaterialCommunityIcons
-                name="cloud-off-outline"
-                size={size}
-                color={theme.colors.onSurface}
-              />
-            )}
-            style={{
-              backgroundColor: theme.colors.errorContainer,
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              zIndex: 1000,
-            }}
-          >
-            <View>
-              <Text variant="bodyMedium" style={{ fontWeight: 'bold', color: theme.colors.onErrorContainer }}>
-                You're offline
-              </Text>
-              <Text variant="bodySmall" style={{ color: theme.colors.onErrorContainer, opacity: 0.8 }}>
-                {queueLength > 0
-                  ? `${queueLength} change${queueLength > 1 ? 's' : ''} will sync when online`
-                  : 'You can still view cached data'}
-              </Text>
-            </View>
-          </Banner>
-        </Portal>
-      )}
-
-      {/* Syncing Indicator */}
-      {isSyncing && (
-        <Portal>
-          <Banner
-            visible={isSyncing}
-            icon={({ size }) => (
-              <ActivityIndicator size={size} />
-            )}
-            style={{
-              backgroundColor: theme.colors.primaryContainer,
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              zIndex: 1001,
-            }}
-          >
-            <Text variant="bodyMedium" style={{ color: theme.colors.onPrimaryContainer }}>
-              Syncing {queueLength} pending change{queueLength > 1 ? 's' : ''}...
+      {/* Offline Snackbar - bottom positioned, less intrusive */}
+      <Snackbar
+        visible={isOffline && !showOfflineDialog}
+        onDismiss={() => {}}
+        duration={Snackbar.DURATION_INDEFINITE}
+        style={{
+          backgroundColor: theme.colors.errorContainer,
+          marginBottom: 8,
+        }}
+        action={{
+          label: 'Dismiss',
+          onPress: () => {},
+        }}
+      >
+        <View style={styles.snackbarContent}>
+          <MaterialCommunityIcons
+            name="cloud-off-outline"
+            size={20}
+            color={theme.colors.onErrorContainer}
+            style={{ marginRight: 8 }}
+          />
+          <View style={{ flex: 1 }}>
+            <Text variant="bodyMedium" style={{ fontWeight: 'bold', color: theme.colors.onErrorContainer }}>
+              You're offline
             </Text>
-          </Banner>
-        </Portal>
-      )}
+            <Text variant="bodySmall" style={{ color: theme.colors.onErrorContainer, opacity: 0.9 }}>
+              {queueLength > 0
+                ? `${queueLength} change${queueLength > 1 ? 's' : ''} will sync when online`
+                : 'Viewing cached data'}
+            </Text>
+          </View>
+        </View>
+      </Snackbar>
+
+      {/* Syncing Snackbar */}
+      <Snackbar
+        visible={isSyncing}
+        onDismiss={() => {}}
+        duration={Snackbar.DURATION_SHORT}
+        style={{
+          backgroundColor: theme.colors.primaryContainer,
+          marginBottom: 8,
+        }}
+      >
+        <View style={styles.snackbarContent}>
+          <MaterialCommunityIcons
+            name="sync"
+            size={20}
+            color={theme.colors.onPrimaryContainer}
+            style={{ marginRight: 8 }}
+          />
+          <Text variant="bodyMedium" style={{ color: theme.colors.onPrimaryContainer }}>
+            Syncing {queueLength} change{queueLength > 1 ? 's' : ''}...
+          </Text>
+        </View>
+      </Snackbar>
 
       {/* Initial offline dialog (dismissable) */}
       <Portal>
@@ -171,3 +169,10 @@ export default function NetworkMonitor() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  snackbarContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+});
