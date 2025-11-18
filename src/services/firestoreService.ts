@@ -14,6 +14,9 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { UserProfile, TimetableEntry, Subject, AttendanceRecord } from '../types/user';
+import cacheService from './cacheService';
+import offlineQueueService from './offlineQueueService';
+import { useNetworkStore } from '../store/networkStore';
 
 class FirestoreService {
   // User Profile Operations
@@ -34,22 +37,46 @@ class FirestoreService {
 
       if (userSnap.exists()) {
         const data = userSnap.data();
-        return {
+        const profile = {
           ...data,
           createdAt: data.createdAt?.toDate() || new Date(),
           updatedAt: data.updatedAt?.toDate() || new Date(),
         } as UserProfile;
+
+        // Cache the profile for offline use
+        await cacheService.cacheUserProfile(uid, profile);
+        await cacheService.cacheOnboardingStatus(uid, profile.onboardingCompleted || false);
+
+        return profile;
       }
       return null;
     } catch (error: any) {
-      // If offline and cache is available, Firestore will return cached data
-      // If truly no data available (new user offline), rethrow
       console.error('Error fetching user profile:', error);
+
+      // Try to get from local cache if offline
+      const { isConnected, isInternetReachable } = useNetworkStore.getState();
+      if (!isConnected || isInternetReachable === false) {
+        console.log('📦 Attempting to load profile from cache...');
+        const cachedProfile = await cacheService.getCachedUserProfile(uid);
+        if (cachedProfile) {
+          console.log('✅ Loaded profile from cache');
+          return cachedProfile;
+        }
+      }
+
       throw error;
     }
   }
 
   async updateUserProfile(uid: string, data: Partial<UserProfile>): Promise<void> {
+    const { isConnected, isInternetReachable } = useNetworkStore.getState();
+
+    if (!isConnected || isInternetReachable === false) {
+      console.log('📡 Offline - queueing profile update');
+      await offlineQueueService.addToQueue('profile', 'update', { uid, profileData: data });
+      return;
+    }
+
     const userRef = doc(db, 'users', uid);
     await updateDoc(userRef, {
       ...data,
@@ -123,19 +150,41 @@ class FirestoreService {
 
   // Subject Operations
   async getSubjects(uid: string): Promise<Subject[]> {
-    const subjectsRef = collection(db, 'users', uid, 'subjects');
-    const querySnapshot = await getDocs(subjectsRef);
+    try {
+      const subjectsRef = collection(db, 'users', uid, 'subjects');
+      const querySnapshot = await getDocs(subjectsRef);
 
-    return querySnapshot.docs
-      .map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          lastUpdated: data.lastUpdated?.toDate() || new Date(),
-        };
-      })
-      .filter(subject => !subject.deleted) as Subject[]; // Filter out soft-deleted subjects
+      const subjects = querySnapshot.docs
+        .map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            lastUpdated: data.lastUpdated?.toDate() || new Date(),
+          };
+        })
+        .filter(subject => !subject.deleted) as Subject[];
+
+      // Cache subjects for offline use
+      await cacheService.cacheSubjects(uid, subjects);
+
+      return subjects;
+    } catch (error) {
+      console.error('Error fetching subjects:', error);
+
+      // Try to get from cache if offline
+      const { isConnected, isInternetReachable } = useNetworkStore.getState();
+      if (!isConnected || isInternetReachable === false) {
+        console.log('📦 Attempting to load subjects from cache...');
+        const cachedSubjects = await cacheService.getCachedSubjects(uid);
+        if (cachedSubjects) {
+          console.log(`✅ Loaded ${cachedSubjects.length} subjects from cache`);
+          return cachedSubjects;
+        }
+      }
+
+      throw error;
+    }
   }
 
   async addSubject(uid: string, subject: Subject): Promise<void> {
@@ -147,6 +196,14 @@ class FirestoreService {
   }
 
   async updateSubjectAttendance(uid: string, subjectId: string, attended: boolean, isLeave: boolean = false): Promise<void> {
+    const { isConnected, isInternetReachable } = useNetworkStore.getState();
+
+    if (!isConnected || isInternetReachable === false) {
+      console.log('📡 Offline - queueing attendance update');
+      await offlineQueueService.addToQueue('attendance', 'update', { uid, subjectId, attended, isLeave });
+      return;
+    }
+
     const subjectRef = doc(db, 'users', uid, 'subjects', subjectId);
     const subjectSnap = await getDoc(subjectRef);
 
