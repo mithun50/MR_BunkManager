@@ -33,6 +33,21 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
 
   // Push notifications only work on physical devices
   if (Device.isDevice) {
+    // Configure Android notification channel FIRST (before getting token)
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'MR BunkManager',
+        description: 'MR BunkManager - Class & Attendance Updates',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#3B82F6',
+        sound: 'default',
+        enableLights: true,
+        enableVibrate: true,
+        showBadge: true,
+      });
+    }
+
     // Check existing permissions
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
@@ -50,36 +65,29 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
       return;
     }
 
-    // Get Expo push token
+    // Get device-specific FCM token for production (works in standalone APK)
+    // Falls back to Expo token for development in Expo Go
     try {
-      const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
-
-      token = (await Notifications.getExpoPushTokenAsync({
-        projectId,
-      })).data;
-
-      console.log('✅ Push token obtained:', token);
-    } catch (error) {
-      console.error('❌ Error getting push token:', error);
-      alert('Failed to get push notification token. Please try again.');
+      const deviceToken = await Notifications.getDevicePushTokenAsync();
+      token = deviceToken.data;
+      console.log('✅ FCM Push Token (Production):', token);
+    } catch (deviceTokenError) {
+      console.log('⚠️  Could not get FCM token, falling back to Expo token (Development)');
+      try {
+        const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
+        const expoPushToken = await Notifications.getExpoPushTokenAsync({
+          projectId,
+        });
+        token = expoPushToken.data;
+        console.log('✅ Expo Push Token (Development):', token);
+      } catch (error) {
+        console.error('❌ Error getting push token:', error);
+        alert('Failed to get push notification token. Please try again.');
+      }
     }
   } else {
     console.log('⚠️  Must use physical device for push notifications');
     alert('Push notifications only work on physical devices, not emulators.');
-  }
-
-  // Configure Android notification channel
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'MR BunkManager',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF6B6B',
-      sound: 'default',
-      showBadge: true,
-      enableLights: true,
-      enableVibrate: true,
-    });
   }
 
   return token;
