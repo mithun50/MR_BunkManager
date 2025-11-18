@@ -1,0 +1,73 @@
+module.exports = {
+  expo: {
+    name: "Bunk Manager",
+    slug: "MR_BunkManager",
+    version: "1.0.0",
+    orientation: "portrait",
+    icon: "./assets/images/logo.png",
+    scheme: "mrbunkmanager",
+    userInterfaceStyle: "automatic",
+    newArchEnabled: true,
+    notification: {
+      icon: "./assets/images/logo.png",
+      color: "#3B82F6",
+      androidMode: "default",
+      androidCollapsedTitle: "MR BunkManager Updates"
+    },
+    android: {
+      package: "com.idtl.mrbunkmanager",
+      versionCode: 4,
+      buildType: "app-bundle",
+      googleServicesFile: "./google-services.json",
+      edgeToEdgeEnabled: true,
+      predictiveBackGestureEnabled: false,
+      useNextNotificationsApi: true,
+      icon: "./assets/images/logo.png",
+      adaptiveIcon: {
+        foregroundImage: "./assets/images/logo.png",
+        backgroundColor: "#ffffff"
+      },
+      permissions: [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.POST_NOTIFICATIONS"
+      ]
+    },
+    plugins: [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          image: "./assets/images/logo.png",
+          imageWidth: 200,
+          resizeMode: "contain",
+          backgroundColor: "#ffffff",
+          dark: {
+            backgroundColor: "#000000"
+          }
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          icon: "./assets/images/logo.png",
+          color: "#3B82F6",
+          defaultChannel: "default"
+        }
+      ]
+    ],
+    experiments: {
+      typedRoutes: true,
+      reactCompiler: true
+    },
+    extra: {
+      router: {},
+      eas: {
+        projectId: "88ab37d3-3eb1-45f6-ba36-dd155dd6a8f1"
+      }
+    },
+    owner: "mithun7411"
+  }
+};
