@@ -16,6 +16,7 @@ import { ThemeSwitcher } from '@/src/components/ThemeSwitcher';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import VideoLoadingScreen from '@/src/components/VideoLoadingScreen';
 import imageUploadService from '@/src/services/imageUploadService';
+import OnlineButton from '@/src/components/OnlineButton';
 
 export default function ProfileScreen() {
   const theme = useTheme();
@@ -1192,23 +1193,27 @@ export default function ProfileScreen() {
             Choose a method to extract your timetable
           </Text>
 
-          <Button
+          <OnlineButton
             mode="contained"
             icon="image"
             onPress={handleExtractFromImage}
             style={styles.optionButton}
+            requiresOnline={true}
+            offlineMessage="Need internet to extract timetable from image"
           >
             From Image
-          </Button>
+          </OnlineButton>
 
-          <Button
+          <OnlineButton
             mode="contained"
             icon="file-pdf-box"
             onPress={handleExtractFromPDF}
             style={styles.optionButton}
+            requiresOnline={true}
+            offlineMessage="Need internet to extract timetable from PDF"
           >
             From PDF
-          </Button>
+          </OnlineButton>
 
           <Button
             mode="outlined"
@@ -1345,14 +1350,17 @@ export default function ProfileScreen() {
               >
                 Cancel
               </Button>
-              <Button
+              <OnlineButton
                 mode="contained"
                 onPress={handleAddManualEntry}
                 style={styles.modalButton}
                 disabled={!manualSubject.trim() || !manualStartTime.trim() || !manualEndTime.trim()}
+                requiresOnline={false}
+                allowOfflineWithWarning={true}
+                offlineMessage="Entry will be saved and synced when online"
               >
                 Add Entry
-              </Button>
+              </OnlineButton>
             </View>
             </ScrollView>
           </KeyboardAvoidingView>
@@ -1371,9 +1379,14 @@ export default function ProfileScreen() {
           </Dialog.Content>
           <Dialog.Actions>
             <Button onPress={() => setShowDiscardDialog(false)}>Cancel</Button>
-            <Button onPress={handleDiscardTimetable} textColor={theme.colors.error}>
+            <OnlineButton
+              onPress={handleDiscardTimetable}
+              textColor={theme.colors.error}
+              requiresOnline={true}
+              offlineMessage="Cannot delete timetable while offline"
+            >
               Discard
-            </Button>
+            </OnlineButton>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -1503,14 +1516,17 @@ export default function ProfileScreen() {
               >
                 Cancel
               </Button>
-              <Button
+              <OnlineButton
                 mode="contained"
                 onPress={handleSaveEditTimetable}
                 style={styles.modalButton}
                 disabled={!editSubject.trim() || !editStartTime.trim() || !editEndTime.trim()}
+                requiresOnline={false}
+                allowOfflineWithWarning={true}
+                offlineMessage="Changes will be saved and synced when online"
               >
                 Save Changes
-              </Button>
+              </OnlineButton>
             </View>
             </ScrollView>
           </KeyboardAvoidingView>
@@ -1695,15 +1711,18 @@ export default function ProfileScreen() {
                 >
                   Cancel
                 </Button>
-                <Button
+                <OnlineButton
                   mode="contained"
                   onPress={handleSaveProfile}
                   style={{ flex: 1 }}
                   loading={savingProfile}
                   disabled={savingProfile}
+                  requiresOnline={false}
+                  allowOfflineWithWarning={true}
+                  offlineMessage="Profile changes will be saved and synced when online"
                 >
                   Save Changes
-                </Button>
+                </OnlineButton>
               </View>
             </ScrollView>
           </KeyboardAvoidingView>
