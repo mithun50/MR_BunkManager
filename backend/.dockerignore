@@ -1,0 +1,11 @@
+node_modules
+npm-debug.log
+.env
+.env.local
+.env.production
+config/serviceAccountKey.json
+*.md
+.git
+.gitignore
+test-send-now.js
+src/test-notification.js
