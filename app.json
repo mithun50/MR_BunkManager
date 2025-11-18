@@ -16,12 +16,13 @@
     },
     "android": {
       "package": "com.idtl.mrbunkmanager",
-      "versionCode": 2,
+      "versionCode": 3,
       "buildType": "app-bundle",
       "googleServicesFile": "./google-services.json",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "useNextNotificationsApi": true,
+      "icon": "./assets/images/logo.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#ffffff"
