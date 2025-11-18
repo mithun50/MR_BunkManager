@@ -11,6 +11,7 @@ import {
 import { router } from 'expo-router';
 import authService from '../../services/authService';
 import { useAuthStore } from '../../store/authStore';
+import OnlineButton from '../../components/OnlineButton';
 
 export default function LoginScreen() {
   const theme = useTheme();
@@ -116,16 +117,18 @@ export default function LoginScreen() {
               Forgot Password?
             </Button>
 
-            <Button
+            <OnlineButton
               mode="contained"
               onPress={handleLogin}
               loading={loading}
               disabled={loading}
               style={styles.loginButton}
               contentStyle={styles.buttonContent}
+              requiresOnline={true}
+              offlineMessage="You need an internet connection to login"
             >
               Login
-            </Button>
+            </OnlineButton>
 
             <Divider style={styles.divider} />
 
