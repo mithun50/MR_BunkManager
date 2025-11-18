@@ -1355,9 +1355,8 @@ export default function ProfileScreen() {
                 onPress={handleAddManualEntry}
                 style={styles.modalButton}
                 disabled={!manualSubject.trim() || !manualStartTime.trim() || !manualEndTime.trim()}
-                requiresOnline={false}
-                allowOfflineWithWarning={true}
-                offlineMessage="Entry will be saved and synced when online"
+                requiresOnline={true}
+                offlineMessage="You need internet connection to add timetable entry"
               >
                 Add Entry
               </OnlineButton>
@@ -1521,9 +1520,8 @@ export default function ProfileScreen() {
                 onPress={handleSaveEditTimetable}
                 style={styles.modalButton}
                 disabled={!editSubject.trim() || !editStartTime.trim() || !editEndTime.trim()}
-                requiresOnline={false}
-                allowOfflineWithWarning={true}
-                offlineMessage="Changes will be saved and synced when online"
+                requiresOnline={true}
+                offlineMessage="You need internet connection to save timetable changes"
               >
                 Save Changes
               </OnlineButton>
@@ -1717,9 +1715,8 @@ export default function ProfileScreen() {
                   style={{ flex: 1 }}
                   loading={savingProfile}
                   disabled={savingProfile}
-                  requiresOnline={false}
-                  allowOfflineWithWarning={true}
-                  offlineMessage="Profile changes will be saved and synced when online"
+                  requiresOnline={true}
+                  offlineMessage="You need internet connection to save profile changes"
                 >
                   Save Changes
                 </OnlineButton>
