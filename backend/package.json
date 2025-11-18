@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "node src/test-notification.js"
+    "test": "node src/test-notification.js",
+    "prod": "APP_ENV=production node src/index.js"
   },
   "keywords": [
     "expo",

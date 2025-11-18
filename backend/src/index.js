@@ -28,12 +28,60 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 3000;
+// Use APP_ENV instead of NODE_ENV (some platforms reserve NODE_ENV)
+const APP_ENV = process.env.APP_ENV || process.env.NODE_ENV || 'development';
+const IS_PRODUCTION = APP_ENV === 'production';
+
+// CORS Configuration for production
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:8081', 'http://localhost:19000', 'http://localhost:19006'];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
+};
 
 // Middleware
 app.use(helmet()); // Security headers
-app.use(cors()); // Enable CORS
-app.use(express.json()); // Parse JSON bodies
-app.use(morgan('combined')); // HTTP request logging
+app.use(cors(corsOptions)); // Enable CORS with configuration
+app.use(express.json({ limit: '10mb' })); // Parse JSON bodies with size limit
+app.use(morgan(IS_PRODUCTION ? 'combined' : 'dev')); // HTTP request logging
+
+// Rate limiting (simple implementation)
+const requestCounts = new Map();
+const RATE_LIMIT_WINDOW = parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000; // 15 minutes
+const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100;
+
+app.use((req, res, next) => {
+  const ip = req.ip;
+  const now = Date.now();
+
+  if (!requestCounts.has(ip)) {
+    requestCounts.set(ip, []);
+  }
+
+  const requests = requestCounts.get(ip).filter(time => now - time < RATE_LIMIT_WINDOW);
+
+  if (requests.length >= RATE_LIMIT_MAX) {
+    return res.status(429).json({
+      success: false,
+      error: 'Too many requests, please try again later'
+    });
+  }
+
+  requests.push(now);
+  requestCounts.set(ip, requests);
+  next();
+});
 
 // Initialize Firebase Admin
 initializeFirebase();

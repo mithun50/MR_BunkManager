@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: mr-bunkmanager-backend
+    env: node
+    region: singapore
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: TZ
+        value: Asia/Kolkata
+      - key: FIREBASE_DATABASE_URL
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+    healthCheckPath: /health
+    autoDeploy: true
