@@ -12,6 +12,7 @@ import { useThemeStore } from '@/src/store/themeStore';
 import firestoreService from '@/src/services/firestoreService';
 import VideoLoadingScreen from '@/src/components/VideoLoadingScreen';
 import NetworkMonitor from '@/src/components/NetworkMonitor';
+import { setupNotificationListeners } from '@/src/services/notificationService';
 
 // Removed unstable_settings - it doesn't work reliably in production
 // Expo Router uses alphabetical ordering: (auth) < (onboarding) < (tabs)
@@ -28,6 +29,27 @@ function RootLayoutNav() {
     console.log('🔑 Initializing auth listener...');
     const unsubscribe = initializeAuth();
     return () => unsubscribe();
+  }, []);
+
+  // Setup notification listeners
+  useEffect(() => {
+    console.log('🔔 Setting up notification listeners...');
+
+    const cleanup = setupNotificationListeners(
+      // When notification received (app in foreground)
+      (notification) => {
+        console.log('📩 Notification received in foreground:', notification.request.content);
+        // You can show an in-app alert or toast here if needed
+      },
+      // When notification tapped
+      (response) => {
+        console.log('👆 Notification tapped:', response.notification.request.content);
+        // Navigate to relevant screen based on notification data
+        // Example: router.push('/attendance');
+      }
+    );
+
+    return cleanup;
   }, []);
 
   // Check onboarding status when user changes
