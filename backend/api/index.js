@@ -278,10 +278,11 @@ app.post('/send-daily-reminders', async (req, res) => {
   }
 });
 
-// Send class reminders
-app.post('/send-class-reminders', async (req, res) => {
+// Send class reminders (supports both POST body and GET query params for Vercel cron)
+app.all('/send-class-reminders', async (req, res) => {
   try {
-    const { minutesBefore = 30 } = req.body;
+    // Support both POST body and GET query parameters for Vercel cron
+    const minutesBefore = parseInt(req.body.minutesBefore || req.query.minutesBefore || 30);
 
     if (minutesBefore !== 30 && minutesBefore !== 10) {
       return res.status(400).json({
