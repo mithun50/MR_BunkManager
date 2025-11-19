@@ -3,16 +3,36 @@ import { getAuth, initializeAuth, getReactNativePersistence } from 'firebase/aut
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
-// Firebase configuration with fallback values
+// Firebase configuration - priority order:
+// 1. Environment variables (from .env for development)
+// 2. App config extra (embedded at build time from .env or EAS secrets)
 const firebaseConfig = {
-  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || 'AIzaSyDONcwK_OTNhejSl5UnabpZAhah6fMXsf8',
-  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || 'mr-bunkmanager.firebaseapp.com',
-  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || 'mr-bunkmanager',
-  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || 'mr-bunkmanager.firebasestorage.app',
-  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '1057431059560',
-  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '1:1057431059560:android:3bfa104eb14ac23e574fdd',
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ||
+          Constants.expoConfig?.extra?.firebaseApiKey,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN ||
+              Constants.expoConfig?.extra?.firebaseAuthDomain,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ||
+             Constants.expoConfig?.extra?.firebaseProjectId,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET ||
+                 Constants.expoConfig?.extra?.firebaseStorageBucket,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ||
+                     Constants.expoConfig?.extra?.firebaseMessagingSenderId,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID ||
+         Constants.expoConfig?.extra?.firebaseAppId,
 };
+
+// Validate Firebase config
+const missingKeys = Object.entries(firebaseConfig)
+  .filter(([_, value]) => !value)
+  .map(([key]) => key);
+
+if (missingKeys.length > 0) {
+  const error = `Firebase configuration incomplete. Missing: ${missingKeys.join(', ')}`;
+  console.error('❌', error);
+  throw new Error(error);
+}
 
 // Log Firebase config status (only in dev)
 if (__DEV__) {
