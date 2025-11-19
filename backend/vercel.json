@@ -15,19 +15,5 @@
   "env": {
     "APP_ENV": "production",
     "TIMEZONE": "Asia/Kolkata"
-  },
-  "crons": [
-    {
-      "path": "/send-daily-reminders",
-      "schedule": "0 20 * * *"
-    },
-    {
-      "path": "/send-class-reminders?minutesBefore=30",
-      "schedule": "* * * * *"
-    },
-    {
-      "path": "/send-class-reminders?minutesBefore=10",
-      "schedule": "* * * * *"
-    }
-  ]
+  }
 }
