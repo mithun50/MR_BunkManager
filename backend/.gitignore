@@ -1,5 +1,14 @@
 # Environment Variables
 .env
+.env.*
+.env.local
+.env.production
+.env.development
+env.txt
+
+# KEEP example files
+!.env.example
+!.example.env
 
 # Firebase Service Account Key (IMPORTANT: Never commit this!)
 config/serviceAccountKey.json
