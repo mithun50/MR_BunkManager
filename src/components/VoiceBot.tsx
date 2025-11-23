@@ -44,6 +44,10 @@ export default function VoiceBot({ attendanceContext, onClose }: VoiceBotProps) 
   const [error, setError] = useState<string | null>(null);
   const [conversationHistory, setConversationHistory] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
 
+  // Refs to prevent duplicate processing
+  const isProcessingRef = useRef(false);
+  const lastProcessedTextRef = useRef('');
+
   // Animation for the mic button
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const waveAnim = useRef(new Animated.Value(0)).current;
@@ -105,8 +109,24 @@ export default function VoiceBot({ attendanceContext, onClose }: VoiceBotProps) 
     const text = event.results?.[0]?.transcript || '';
     setTranscript(text);
 
-    // If final result, process it
+    // If final result, process it (with duplicate prevention)
     if (event.isFinal && text) {
+      const normalizedText = text.trim().toLowerCase();
+
+      // Skip if already processing or same text as last processed
+      if (isProcessingRef.current) {
+        console.log('Skipping - already processing');
+        return;
+      }
+      if (normalizedText === lastProcessedTextRef.current) {
+        console.log('Skipping - duplicate text');
+        return;
+      }
+
+      // Mark as processing and store the text
+      isProcessingRef.current = true;
+      lastProcessedTextRef.current = normalizedText;
+
       processUserInput(text);
     }
   });
@@ -142,6 +162,11 @@ export default function VoiceBot({ attendanceContext, onClose }: VoiceBotProps) 
       setState('idle');
       setError('Failed to get response. Please try again.');
       console.error('Voice bot error:', err);
+    } finally {
+      // Reset processing flag after a short delay to prevent rapid re-triggers
+      setTimeout(() => {
+        isProcessingRef.current = false;
+      }, 500);
     }
   };
 
@@ -184,7 +209,11 @@ export default function VoiceBot({ attendanceContext, onClose }: VoiceBotProps) 
       return;
     }
 
+    // Reset for new listening session
     setError(null);
+    lastProcessedTextRef.current = '';
+    isProcessingRef.current = false;
+
     ExpoSpeechRecognitionModule.start({
       lang: 'en-US',
       interimResults: true,
