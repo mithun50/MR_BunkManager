@@ -2,18 +2,21 @@
  * MR BunkManager - Standalone Cron Service
  *
  * Separate service that triggers backend notification endpoints
- * Deploy this separately on Render as a Background Worker
+ * Deploy on Render as Web Service (needs port for health check)
  *
  * Environment Variables:
  *   BACKEND_URL - Your backend API URL (e.g., https://mr-bunkmanager-api.onrender.com)
+ *   PORT - Port for health check server (default: 5000)
  */
 
+import http from 'http';
 import cron from 'node-cron';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
+const PORT = process.env.PORT || 5000;
 
 /**
  * Format IST time for logging
@@ -109,17 +112,34 @@ function startCronJobs() {
 // Start the cron jobs
 startCronJobs();
 
-// Keep the process alive
-setInterval(() => {
-  // Heartbeat - keeps the process running
-}, 60000);
+// Health check HTTP server (required by Render)
+const server = http.createServer((req, res) => {
+  if (req.url === '/health' || req.url === '/') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      status: 'healthy',
+      service: 'MR BunkManager Cron Service',
+      backend: BACKEND_URL,
+      timestamp: formatIST()
+    }));
+  } else {
+    res.writeHead(404);
+    res.end('Not Found');
+  }
+});
+
+server.listen(PORT, () => {
+  console.log(`\n🌐 Health check server running on port ${PORT}`);
+});
 
 process.on('SIGTERM', () => {
   console.log(`\n🛑 Cron service stopping at ${formatIST()}`);
+  server.close();
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
   console.log(`\n🛑 Cron service stopped at ${formatIST()}`);
+  server.close();
   process.exit(0);
 });
