@@ -127,15 +127,26 @@ function startCronJobs() {
   // Log startup
   log('success', 'Cron service started', { backend: BACKEND_URL });
 
-  // Daily reminders at 8:00 PM IST
-  cron.schedule('0 20 * * *', async () => {
-    console.log(`\n📅 [DAILY REMINDER] Triggered at ${formatIST()}`);
-    await triggerEndpoint('/send-daily-reminders');
-  }, {
-    scheduled: true,
-    timezone: 'Asia/Kolkata'
+  // Daily reminders at multiple times (IST)
+  const dailyReminderTimes = [
+    { hour: 6, label: '6:00 AM' },
+    { hour: 7, label: '7:00 AM' },
+    { hour: 8, label: '8:00 AM' },
+    { hour: 18, label: '6:00 PM' },
+    { hour: 19, label: '7:00 PM' },
+    { hour: 20, label: '8:00 PM' }
+  ];
+
+  dailyReminderTimes.forEach(({ hour, label }) => {
+    cron.schedule(`0 ${hour} * * *`, async () => {
+      log('info', `[DAILY REMINDER] Triggered at ${label}`);
+      await triggerEndpoint('/send-daily-reminders');
+    }, {
+      scheduled: true,
+      timezone: 'Asia/Kolkata'
+    });
   });
-  console.log('✅ Daily reminders scheduled: 8:00 PM IST');
+  console.log('✅ Daily reminders scheduled: 6 AM, 7 AM, 8 AM, 6 PM, 7 PM, 8 PM IST');
 
   // 30-minute class reminders - Every minute
   cron.schedule('* * * * *', async () => {
