@@ -81,14 +81,20 @@ async function getTomorrowClasses(userId) {
 }
 
 /**
- * Get user's overall attendance percentage
+ * Get user's attendance data including percentage and minimum requirement
  * @param {string} userId - User ID
- * @returns {Promise<number>} Overall attendance percentage
+ * @returns {Promise<Object>} { percentage, minimumRequired }
  */
-async function getUserAttendancePercentage(userId) {
+async function getUserAttendanceData(userId) {
   const db = getFirestore();
 
   try {
+    // Get user's minimum attendance setting
+    const userDoc = await db.collection('users').doc(userId).get();
+    const userData = userDoc.data() || {};
+    const minimumRequired = userData.minimumAttendance || userData.minAttendance || 75;
+
+    // Calculate overall attendance
     const subjectsSnapshot = await db
       .collection('users')
       .doc(userId)
@@ -106,13 +112,23 @@ async function getUserAttendancePercentage(userId) {
       }
     });
 
-    if (totalClasses === 0) return 0;
+    const percentage = totalClasses === 0 ? 0 : Math.round((attendedClasses / totalClasses) * 100);
 
-    return Math.round((attendedClasses / totalClasses) * 100);
+    return { percentage, minimumRequired };
   } catch (error) {
     console.error('Error calculating attendance:', error);
-    return 0;
+    return { percentage: 0, minimumRequired: 75 };
   }
+}
+
+/**
+ * Get user's overall attendance percentage (backward compatible)
+ * @param {string} userId - User ID
+ * @returns {Promise<number>} Overall attendance percentage
+ */
+async function getUserAttendancePercentage(userId) {
+  const { percentage } = await getUserAttendanceData(userId);
+  return percentage;
 }
 
 /**
@@ -122,15 +138,37 @@ async function getUserAttendancePercentage(userId) {
  */
 async function createNotificationMessage(userId) {
   const tomorrowClasses = await getTomorrowClasses(userId);
-  const attendancePercentage = await getUserAttendancePercentage(userId);
+  const { percentage: attendancePercentage, minimumRequired } = await getUserAttendanceData(userId);
 
+  // No classes tomorrow - send attendance-based message
   if (tomorrowClasses.length === 0) {
-    return {
-      title: '🎉 No Classes Tomorrow!',
-      body: `Your overall attendance is ${attendancePercentage}%. Enjoy your day off!`
-    };
+    let title, body;
+
+    if (attendancePercentage >= minimumRequired + 15) {
+      // Well above minimum
+      title = '🌟 Excellent Attendance!';
+      body = `Your attendance is ${attendancePercentage}% (min: ${minimumRequired}%). Keep it up! No classes tomorrow.`;
+    } else if (attendancePercentage >= minimumRequired) {
+      // Above minimum
+      title = '✅ Good Attendance!';
+      body = `Your attendance is ${attendancePercentage}% (min: ${minimumRequired}%). You're on track! No classes tomorrow.`;
+    } else if (attendancePercentage >= minimumRequired - 10) {
+      // Slightly below minimum
+      title = '⚠️ Attendance Alert';
+      body = `Your attendance is ${attendancePercentage}% (min: ${minimumRequired}%). Attend more classes to reach your goal! No classes tomorrow.`;
+    } else if (attendancePercentage > 0) {
+      // Well below minimum
+      title = '🚨 Low Attendance Warning!';
+      body = `Your attendance is only ${attendancePercentage}% (min: ${minimumRequired}%). You need ${minimumRequired - attendancePercentage}% more! No classes tomorrow.`;
+    } else {
+      title = '📚 MR BunkManager';
+      body = `No classes tomorrow. Start tracking your attendance to stay on top!`;
+    }
+
+    return { title, body, data: { attendancePercentage, minimumRequired, type: 'attendance_update' } };
   }
 
+  // Has classes tomorrow
   const firstClass = tomorrowClasses[0];
   const classType = firstClass.type === 'lab' ? 'Lab' : 'Class';
   const hasLab = tomorrowClasses.some(c => c.type === 'lab');
@@ -140,17 +178,18 @@ async function createNotificationMessage(userId) {
   if (hasLab) {
     const labClass = tomorrowClasses.find(c => c.type === 'lab');
     title = `🔬 You have ${labClass.subject} Lab Tomorrow!`;
-    body = `${labClass.subject} lab at ${formatTime(labClass.startTime)}. Your overall attendance is ${attendancePercentage}%.`;
+    body = `${labClass.subject} lab at ${formatTime(labClass.startTime)}. Attendance: ${attendancePercentage}%`;
   } else {
     title = `📚 You have ${firstClass.subject} ${classType} Tomorrow!`;
-    body = `${firstClass.subject} class at ${formatTime(firstClass.startTime)}. Your overall attendance is ${attendancePercentage}%.`;
+    body = `${firstClass.subject} class at ${formatTime(firstClass.startTime)}. Attendance: ${attendancePercentage}%`;
   }
 
-  if (attendancePercentage < 75) {
-    body += ` ⚠️ Attendance below 75%!`;
+  // Add warning if below minimum
+  if (attendancePercentage < minimumRequired) {
+    body += ` ⚠️ Below ${minimumRequired}%!`;
   }
 
-  return { title, body, data: { tomorrowClasses, attendancePercentage } };
+  return { title, body, data: { tomorrowClasses, attendancePercentage, minimumRequired } };
 }
 
 /**
