@@ -157,6 +157,7 @@ Firestore Database
 │       ├── displayName: string
 │       ├── photoURL: string
 │       ├── createdAt: timestamp
+│       ├── minimumAttendance: number    # User's min attendance goal (default: 75)
 │       └── settings: object
 │
 ├── pushTokens/                   # Flat collection (Reshme_Info pattern)
@@ -239,7 +240,12 @@ curl -s --location 'https://mr-bunk-manager.vercel.app/send-class-reminders' \
 
 | Schedule | Cron Expression | Endpoint | Description |
 |----------|-----------------|----------|-------------|
-| 8:00 PM daily | `0 20 * * *` | `/send-daily-reminders` | Tomorrow's class info |
+| 6:00 AM | `0 6 * * *` | `/send-daily-reminders` | Morning reminder |
+| 7:00 AM | `0 7 * * *` | `/send-daily-reminders` | Morning reminder |
+| 8:00 AM | `0 8 * * *` | `/send-daily-reminders` | Morning reminder |
+| 6:00 PM | `0 18 * * *` | `/send-daily-reminders` | Evening reminder |
+| 7:00 PM | `0 19 * * *` | `/send-daily-reminders` | Evening reminder |
+| 8:00 PM | `0 20 * * *` | `/send-daily-reminders` | Evening reminder |
 | Every minute | `* * * * *` | `/send-class-reminders` | 30-min before alert |
 | Every minute | `* * * * *` | `/send-class-reminders` | 10-min before alert |
 
@@ -278,20 +284,21 @@ The cron service includes automatic retry with exponential backoff:
 - Only retries on network/HTTP errors
 - Does NOT retry if API returns `{ success: false }` (valid response)
 
-```javascript
-// Retry logic
-for (let attempt = 1; attempt <= 3; attempt++) {
-  try {
-    const response = await fetch(url, options);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return await response.json();
-  } catch (error) {
-    if (attempt < 3) {
-      await sleep(Math.pow(2, attempt) * 1000); // 2s, 4s
-    }
-  }
-}
-```
+### Web Dashboard
+
+Access the cron service dashboard to view live logs:
+
+| URL | Description |
+|-----|-------------|
+| `/` or `/dashboard` | HTML dashboard with live logs (auto-refresh 30s) |
+| `/logs` | JSON array of recent logs |
+| `/health` | Health check with log count |
+
+**Features:**
+- In-memory log buffer (last 100 logs)
+- Color-coded log types (info, success, error, warning, retry)
+- Mobile-responsive design
+- Auto-refresh every 30 seconds
 
 ### Cron Service Code Structure
 
@@ -360,14 +367,29 @@ http.createServer((req, res) => {
 
 ### Notification Types
 
+**With Classes Tomorrow:**
 | Type | Title | Body |
 |------|-------|------|
 | Lab Session | 🔬 You have {subject} Lab Tomorrow! | {subject} lab at {time}. Attendance: {%} |
 | Regular Class | 📚 You have {subject} Class Tomorrow! | {subject} class at {time}. Attendance: {%} |
-| Low Attendance | ⚠️ Warning | Attendance below 75%! |
-| No Classes | 🎉 No Classes Tomorrow! | Enjoy your day off! |
-| 30-min Reminder | ⏰ Class in 30 minutes | {subject} at {time} in {room} |
-| 10-min Reminder | 🔔 Class starting soon! | {subject} starts in 10 minutes |
+| Below Minimum | (same as above) | ...Attendance: {%} ⚠️ Below {min}%! |
+
+**No Classes Tomorrow (Attendance-Based):**
+| Condition | Title | Body |
+|-----------|-------|------|
+| >= min + 15% | 🌟 Excellent Attendance! | Your attendance is {%} (min: {min}%). Keep it up! |
+| >= min | ✅ Good Attendance! | Your attendance is {%} (min: {min}%). You're on track! |
+| >= min - 10% | ⚠️ Attendance Alert | Your attendance is {%} (min: {min}%). Attend more classes! |
+| < min - 10% | 🚨 Low Attendance Warning! | Your attendance is only {%} (min: {min}%). You need {X}% more! |
+| = 0% | 📚 MR BunkManager | Start tracking your attendance! |
+
+**Class Reminders:**
+| Type | Title | Body |
+|------|-------|------|
+| 30-min Reminder | 📚 {subject} Class Starting Soon! | Starts in 30 minutes at {time}. Attendance: {%} |
+| 10-min Reminder | 🔔 {subject} Class Starting Soon! | Starts in 10 minutes at {time}. Attendance: {%} |
+
+**Note:** `{min}` = User's minimum attendance setting from their profile (default: 75%)
 
 ---
 
