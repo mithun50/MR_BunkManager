@@ -248,7 +248,7 @@ curl -s --location 'https://mr-bunk-manager.vercel.app/send-class-reminders' \
 ```
 Cron Service (Render:5000)
          │
-         │  HTTP POST (every schedule trigger)
+         │  HTTP POST (with retry mechanism)
          ▼
 Backend API (Vercel)
          │
@@ -260,6 +260,37 @@ FCM (Firebase Cloud Messaging)
          │  Push notification
          ▼
 User's Mobile Device
+```
+
+### Retry Mechanism
+
+The cron service includes automatic retry with exponential backoff:
+
+| Attempt | Delay | Total Wait |
+|---------|-------|------------|
+| 1 | Immediate | 0s |
+| 2 | 2 seconds | 2s |
+| 3 | 4 seconds | 6s |
+
+**Behavior:**
+- Max 3 retry attempts per request
+- Exponential backoff (2^attempt seconds)
+- Only retries on network/HTTP errors
+- Does NOT retry if API returns `{ success: false }` (valid response)
+
+```javascript
+// Retry logic
+for (let attempt = 1; attempt <= 3; attempt++) {
+  try {
+    const response = await fetch(url, options);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    if (attempt < 3) {
+      await sleep(Math.pow(2, attempt) * 1000); // 2s, 4s
+    }
+  }
+}
 ```
 
 ### Cron Service Code Structure

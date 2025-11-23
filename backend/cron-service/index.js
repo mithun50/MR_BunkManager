@@ -35,34 +35,62 @@ function formatIST() {
 }
 
 /**
- * Call backend endpoint
+ * Sleep helper
  */
-async function triggerEndpoint(endpoint, body = {}) {
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Call backend endpoint with retry mechanism
+ * @param {string} endpoint - API endpoint
+ * @param {object} body - Request body
+ * @param {number} maxRetries - Maximum retry attempts (default: 3)
+ */
+async function triggerEndpoint(endpoint, body = {}, maxRetries = 3) {
   const url = `${BACKEND_URL}${endpoint}`;
-  console.log(`📡 Calling ${url} at ${formatIST()}`);
 
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    console.log(`📡 [Attempt ${attempt}/${maxRetries}] Calling ${url} at ${formatIST()}`);
 
-    const data = await response.json();
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
 
-    if (data.success) {
-      console.log(`✅ Success:`, data.message || 'OK');
-      if (data.result) {
-        console.log(`   Sent: ${data.result.sent || 0}, Failed: ${data.result.failed || 0}`);
+      // Check if response is OK
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-    } else {
-      console.log(`⚠️ Failed:`, data.error || 'Unknown error');
-    }
 
-    return data;
-  } catch (error) {
-    console.error(`❌ Error calling ${endpoint}:`, error.message);
-    return { success: false, error: error.message };
+      const data = await response.json();
+
+      if (data.success) {
+        console.log(`✅ Success:`, data.message || 'OK');
+        if (data.result) {
+          console.log(`   Sent: ${data.result.sent || 0}, Failed: ${data.result.failed || 0}`);
+        }
+        return data;
+      } else {
+        console.log(`⚠️ API returned failure:`, data.error || 'Unknown error');
+        // Don't retry if API explicitly returned failure (not a network issue)
+        return data;
+      }
+    } catch (error) {
+      console.error(`❌ Attempt ${attempt} failed:`, error.message);
+
+      if (attempt < maxRetries) {
+        // Exponential backoff: 2s, 4s, 8s...
+        const delay = Math.pow(2, attempt) * 1000;
+        console.log(`⏳ Retrying in ${delay / 1000}s...`);
+        await sleep(delay);
+      } else {
+        console.error(`🚫 All ${maxRetries} attempts failed for ${endpoint}`);
+        return { success: false, error: error.message, attempts: maxRetries };
+      }
+    }
   }
 }
 
