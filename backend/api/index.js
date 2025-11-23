@@ -1,6 +1,9 @@
 /**
  * Vercel Serverless Function Entry Point
- * This is a wrapper for Express app to work with Vercel serverless
+ *
+ * Pattern: Same as Reshme_Info project
+ * - Flat token storage in pushTokens collection
+ * - Token as document ID for easy lookup and cleanup
  */
 
 import express from 'express';
@@ -24,19 +27,9 @@ const app = express();
 const APP_ENV = process.env.APP_ENV || process.env.NODE_ENV || 'development';
 const IS_PRODUCTION = APP_ENV === 'production';
 
-// CORS Configuration
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:8081', 'http://localhost:19000', 'http://localhost:19006'];
-
+// CORS Configuration - Allow all origins for mobile app
 const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true, // Allow all origins
   credentials: true,
   optionsSuccessStatus: 200
 };
@@ -75,7 +68,8 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     message: 'MR BunkManager Notification Server (Vercel Serverless)',
     timestamp: formatISTDateTime(),
-    timezone: 'Asia/Kolkata (IST)'
+    timezone: 'Asia/Kolkata (IST)',
+    pattern: 'Reshme_Info (flat pushTokens collection)'
   });
 });
 
@@ -83,6 +77,7 @@ app.get('/', (req, res) => {
   res.json({
     success: true,
     message: 'MR BunkManager Notification Server',
+    pattern: 'Reshme_Info (flat pushTokens collection)',
     endpoints: [
       'GET /health',
       'POST /save-token',
@@ -96,10 +91,13 @@ app.get('/', (req, res) => {
   });
 });
 
-// Save push token
+/**
+ * Save push token to flat pushTokens collection (Reshme_Info pattern)
+ * Token is used as document ID for easy lookup and cleanup
+ */
 app.post('/save-token', async (req, res) => {
   try {
-    const { userId, token, deviceId } = req.body;
+    const { userId, token } = req.body;
 
     if (!userId || !token) {
       return res.status(400).json({
@@ -111,30 +109,29 @@ app.post('/save-token', async (req, res) => {
     if (!isValidExpoPushToken(token)) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid Expo push token format'
+        error: 'Invalid push token format'
       });
     }
 
-    const finalDeviceId = deviceId || `device_${Date.now()}`;
-    const tokenRef = db
-      .collection('users')
-      .doc(userId)
-      .collection('deviceTokens')
-      .doc(finalDeviceId);
+    const tokenType = token.startsWith('ExponentPushToken') ? 'expo' : 'fcm';
 
-    await tokenRef.set({
-      token,
-      deviceId: finalDeviceId,
+    // Save to flat pushTokens collection with token as document ID (Reshme_Info pattern)
+    await db.collection('pushTokens').doc(token).set({
+      token: token,
+      userId: userId,
+      tokenType: tokenType,
       createdAt: new Date(),
       updatedAt: new Date(),
       active: true
     }, { merge: true });
 
+    console.log(`✅ Token saved for user ${userId} (${tokenType})`);
+
     res.json({
       success: true,
       message: 'Push token saved successfully',
       userId,
-      deviceId: finalDeviceId,
+      tokenType,
       timestamp: formatISTDateTime()
     });
   } catch (error) {
@@ -147,29 +144,55 @@ app.post('/save-token', async (req, res) => {
   }
 });
 
-// Delete push token
+/**
+ * Delete push token from flat pushTokens collection
+ */
 app.delete('/delete-token', async (req, res) => {
   try {
-    const { userId, deviceId } = req.body;
+    const { token, userId } = req.body;
 
-    if (!userId || !deviceId) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields: userId and deviceId'
+    // If token is provided, delete directly
+    if (token) {
+      await db.collection('pushTokens').doc(token).delete();
+      console.log(`🗑️ Token deleted: ${token.substring(0, 20)}...`);
+
+      return res.json({
+        success: true,
+        message: 'Push token deleted successfully',
+        timestamp: formatISTDateTime()
       });
     }
 
-    await db
-      .collection('users')
-      .doc(userId)
-      .collection('deviceTokens')
-      .doc(deviceId)
-      .delete();
+    // If only userId is provided, delete all tokens for that user
+    if (userId) {
+      const tokensSnapshot = await db
+        .collection('pushTokens')
+        .where('userId', '==', userId)
+        .get();
 
-    res.json({
-      success: true,
-      message: 'Push token deleted successfully',
-      timestamp: formatISTDateTime()
+      if (tokensSnapshot.empty) {
+        return res.json({
+          success: true,
+          message: 'No tokens found for user',
+          timestamp: formatISTDateTime()
+        });
+      }
+
+      const deletePromises = tokensSnapshot.docs.map(doc => doc.ref.delete());
+      await Promise.all(deletePromises);
+
+      console.log(`🗑️ Deleted ${tokensSnapshot.size} tokens for user ${userId}`);
+
+      return res.json({
+        success: true,
+        message: `Deleted ${tokensSnapshot.size} tokens for user`,
+        timestamp: formatISTDateTime()
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      error: 'Missing required field: token or userId'
     });
   } catch (error) {
     console.error('Error deleting token:', error);
@@ -181,7 +204,9 @@ app.delete('/delete-token', async (req, res) => {
   }
 });
 
-// Send notification to specific user
+/**
+ * Send notification to specific user
+ */
 app.post('/send-notification', async (req, res) => {
   try {
     const { userId, title, body, data } = req.body;
@@ -222,7 +247,9 @@ app.post('/send-notification', async (req, res) => {
   }
 });
 
-// Send notification to all users
+/**
+ * Send notification to all users (Reshme_Info pattern)
+ */
 app.post('/send-notification-all', async (req, res) => {
   try {
     const { title, body, data } = req.body;
@@ -256,7 +283,9 @@ app.post('/send-notification-all', async (req, res) => {
   }
 });
 
-// Send daily reminders
+/**
+ * Send daily reminders
+ */
 app.post('/send-daily-reminders', async (req, res) => {
   try {
     const result = await sendDailyReminders();
@@ -278,10 +307,11 @@ app.post('/send-daily-reminders', async (req, res) => {
   }
 });
 
-// Send class reminders (supports both POST body and GET query params for Vercel cron)
+/**
+ * Send class reminders (supports both POST body and GET query params for Vercel cron)
+ */
 app.all('/send-class-reminders', async (req, res) => {
   try {
-    // Support both POST body and GET query parameters for Vercel cron
     const minutesBefore = parseInt(req.body.minutesBefore || req.query.minutesBefore || 30);
 
     if (minutesBefore !== 30 && minutesBefore !== 10) {
@@ -311,15 +341,17 @@ app.all('/send-class-reminders', async (req, res) => {
   }
 });
 
-// Get user tokens
+/**
+ * Get user tokens from flat pushTokens collection
+ */
 app.get('/tokens/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
 
+    // Query from flat pushTokens collection
     const tokensSnapshot = await db
-      .collection('users')
-      .doc(userId)
-      .collection('deviceTokens')
+      .collection('pushTokens')
+      .where('userId', '==', userId)
       .get();
 
     const tokens = tokensSnapshot.docs.map(doc => ({
@@ -336,6 +368,35 @@ app.get('/tokens/:userId', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching tokens:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch tokens',
+      details: error.message,
+      timestamp: formatISTDateTime()
+    });
+  }
+});
+
+/**
+ * Get all tokens (admin endpoint)
+ */
+app.get('/tokens', async (req, res) => {
+  try {
+    const tokensSnapshot = await db.collection('pushTokens').get();
+
+    const tokens = tokensSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    res.json({
+      success: true,
+      tokens,
+      count: tokens.length,
+      timestamp: formatISTDateTime()
+    });
+  } catch (error) {
+    console.error('Error fetching all tokens:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch tokens',

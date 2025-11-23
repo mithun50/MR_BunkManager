@@ -1,11 +1,10 @@
 /**
  * Push Notification Service using Firebase Cloud Messaging
  *
- * This module handles sending push notifications to users via Firebase Cloud Messaging (FCM).
- * It includes logic to send context-aware notifications about:
- * - Upcoming classes (tomorrow's schedule)
- * - Attendance percentages
- * - Lab sessions
+ * Pattern: Same as Reshme_Info project
+ * - FCM only (Firebase Cloud Messaging)
+ * - Flat token storage in pushTokens collection
+ * - Auto-cleanup of invalid tokens
  */
 
 import { getFirestore, getAdmin } from '../config/firebase.js';
@@ -34,41 +33,6 @@ function formatTime(time) {
 }
 
 /**
- * Get tomorrow's classes for a user
- * @param {string} userId - User ID
- * @returns {Promise<Array>} Array of timetable entries for tomorrow
- */
-async function getTomorrowClasses(userId) {
-  const db = getFirestore();
-  const tomorrowDay = getTomorrowDayName();
-
-  try {
-    // Get user's timetable from Firestore
-    const timetableSnapshot = await db
-      .collection('users')
-      .doc(userId)
-      .collection('timetable')
-      .get();
-
-    // Filter classes for tomorrow and sort by start time
-    const tomorrowClasses = timetableSnapshot.docs
-      .map(doc => doc.data())
-      .filter(entry => entry.day === tomorrowDay)
-      .sort((a, b) => {
-        // Convert to 24-hour format for sorting
-        const timeA = convertTo24Hour(a.startTime);
-        const timeB = convertTo24Hour(b.startTime);
-        return timeA.localeCompare(timeB);
-      });
-
-    return tomorrowClasses;
-  } catch (error) {
-    console.error('Error fetching tomorrow\'s classes:', error);
-    return [];
-  }
-}
-
-/**
  * Convert 12-hour time to 24-hour format for sorting
  * @param {string} time - Time in 12-hour format (e.g., "09:00 AM")
  * @returns {string} Time in 24-hour format (e.g., "09:00")
@@ -85,6 +49,38 @@ function convertTo24Hour(time) {
 }
 
 /**
+ * Get tomorrow's classes for a user
+ * @param {string} userId - User ID
+ * @returns {Promise<Array>} Array of timetable entries for tomorrow
+ */
+async function getTomorrowClasses(userId) {
+  const db = getFirestore();
+  const tomorrowDay = getTomorrowDayName();
+
+  try {
+    const timetableSnapshot = await db
+      .collection('users')
+      .doc(userId)
+      .collection('timetable')
+      .get();
+
+    const tomorrowClasses = timetableSnapshot.docs
+      .map(doc => doc.data())
+      .filter(entry => entry.day === tomorrowDay)
+      .sort((a, b) => {
+        const timeA = convertTo24Hour(a.startTime);
+        const timeB = convertTo24Hour(b.startTime);
+        return timeA.localeCompare(timeB);
+      });
+
+    return tomorrowClasses;
+  } catch (error) {
+    console.error('Error fetching tomorrow\'s classes:', error);
+    return [];
+  }
+}
+
+/**
  * Get user's overall attendance percentage
  * @param {string} userId - User ID
  * @returns {Promise<number>} Overall attendance percentage
@@ -93,7 +89,6 @@ async function getUserAttendancePercentage(userId) {
   const db = getFirestore();
 
   try {
-    // Get all subjects for the user
     const subjectsSnapshot = await db
       .collection('users')
       .doc(userId)
@@ -103,7 +98,6 @@ async function getUserAttendancePercentage(userId) {
     let totalClasses = 0;
     let attendedClasses = 0;
 
-    // Calculate overall attendance
     subjectsSnapshot.docs.forEach(doc => {
       const subject = doc.data();
       if (!subject.deleted) {
@@ -131,21 +125,16 @@ async function createNotificationMessage(userId) {
   const attendancePercentage = await getUserAttendancePercentage(userId);
 
   if (tomorrowClasses.length === 0) {
-    // No classes tomorrow
     return {
       title: '🎉 No Classes Tomorrow!',
       body: `Your overall attendance is ${attendancePercentage}%. Enjoy your day off!`
     };
   }
 
-  // Get first class of the day
   const firstClass = tomorrowClasses[0];
   const classType = firstClass.type === 'lab' ? 'Lab' : 'Class';
-
-  // Check if there's a lab tomorrow
   const hasLab = tomorrowClasses.some(c => c.type === 'lab');
 
-  // Create notification message
   let title, body;
 
   if (hasLab) {
@@ -157,7 +146,6 @@ async function createNotificationMessage(userId) {
     body = `${firstClass.subject} class at ${formatTime(firstClass.startTime)}. Your overall attendance is ${attendancePercentage}%.`;
   }
 
-  // Add reminder if attendance is low
   if (attendancePercentage < 75) {
     body += ` ⚠️ Attendance below 75%!`;
   }
@@ -166,24 +154,25 @@ async function createNotificationMessage(userId) {
 }
 
 /**
- * Get all push tokens for a user from Firestore
- * @param {string} userId - User ID
- * @returns {Promise<Array>} Array of FCM push tokens
+ * Get all push tokens from flat pushTokens collection (Reshme_Info pattern)
+ * @returns {Promise<Array>} Array of token objects
  */
-async function getUserPushTokens(userId) {
+async function getAllPushTokens() {
   const db = getFirestore();
 
   try {
-    const tokensSnapshot = await db
-      .collection('users')
-      .doc(userId)
-      .collection('deviceTokens')
-      .get();
+    const tokensSnapshot = await db.collection('pushTokens').get();
 
-    // Return all tokens (both FCM and Expo tokens)
-    return tokensSnapshot.docs
-      .map(doc => doc.data().token)
-      .filter(token => token && token.length > 0);
+    if (tokensSnapshot.empty) {
+      return [];
+    }
+
+    return tokensSnapshot.docs.map(doc => ({
+      token: doc.data().token,
+      docId: doc.id,
+      userId: doc.data().userId,
+      ...doc.data()
+    }));
   } catch (error) {
     console.error('Error fetching push tokens:', error);
     return [];
@@ -191,49 +180,74 @@ async function getUserPushTokens(userId) {
 }
 
 /**
- * Get all users who have push tokens enabled
- * @returns {Promise<Array>} Array of user IDs
+ * Get push tokens for a specific user
+ * @param {string} userId - User ID
+ * @returns {Promise<Array>} Array of token objects
  */
-async function getAllUsersWithTokens() {
+async function getUserPushTokens(userId) {
   const db = getFirestore();
 
   try {
-    // Get all users
-    const usersSnapshot = await db.collection('users').get();
-    const userIds = [];
+    const tokensSnapshot = await db
+      .collection('pushTokens')
+      .where('userId', '==', userId)
+      .get();
 
-    // Check each user for device tokens
-    for (const userDoc of usersSnapshot.docs) {
-      const tokensSnapshot = await db
-        .collection('users')
-        .doc(userDoc.id)
-        .collection('deviceTokens')
-        .get();
-
-      if (tokensSnapshot.size > 0) {
-        userIds.push(userDoc.id);
-      }
-    }
-
-    return userIds;
+    return tokensSnapshot.docs.map(doc => ({
+      token: doc.data().token,
+      docId: doc.id,
+      ...doc.data()
+    }));
   } catch (error) {
-    console.error('Error fetching users with tokens:', error);
+    console.error('Error fetching user push tokens:', error);
     return [];
   }
 }
 
 /**
- * Send push notification to a specific user
+ * Clean up invalid tokens after failed send (Reshme_Info pattern)
+ * @param {Array} tokens - Array of token strings
+ * @param {Array} responses - Array of send responses
+ * @returns {Promise<number>} Number of tokens removed
+ */
+async function cleanupInvalidTokens(tokens, responses) {
+  const db = getFirestore();
+  const invalidTokens = [];
+
+  responses.forEach((resp, idx) => {
+    if (!resp.success) {
+      invalidTokens.push(tokens[idx]);
+      console.error(`❌ Failed token ${idx}:`, resp.error?.code, resp.error?.message);
+    }
+  });
+
+  if (invalidTokens.length > 0) {
+    console.log(`🗑️ Cleaning up ${invalidTokens.length} invalid tokens...`);
+
+    const deletePromises = invalidTokens.map(token =>
+      db.collection('pushTokens').doc(token).delete().catch(err => {
+        console.error(`Failed to delete token ${token}:`, err.message);
+      })
+    );
+
+    await Promise.all(deletePromises);
+    console.log(`✅ Cleaned up ${invalidTokens.length} invalid tokens`);
+  }
+
+  return invalidTokens.length;
+}
+
+/**
+ * Send notification to a specific user
  * @param {string} userId - User ID to send notification to
  * @param {Object} customMessage - Optional custom message {title, body, data}
  * @returns {Promise<Object>} Result of sending notification
  */
 export async function sendNotificationToUser(userId, customMessage = null) {
   try {
-    // Get user's push tokens
-    const pushTokens = await getUserPushTokens(userId);
+    const tokenObjects = await getUserPushTokens(userId);
 
-    if (pushTokens.length === 0) {
+    if (tokenObjects.length === 0) {
       return {
         success: false,
         message: 'No push tokens found for user',
@@ -241,17 +255,18 @@ export async function sendNotificationToUser(userId, customMessage = null) {
       };
     }
 
-    // Create notification message
+    const tokens = tokenObjects.map(t => t.token);
     const message = customMessage || await createNotificationMessage(userId);
 
-    // Prepare FCM message for multicast
+    console.log(`📱 Sending to ${tokens.length} FCM tokens for user ${userId}...`);
+
     const fcmMessage = {
       notification: {
         title: message.title,
         body: message.body,
       },
       data: message.data ? Object.fromEntries(
-        Object.entries(message.data).map(([k, v]) => [k, String(v)])
+        Object.entries(message.data).map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)])
       ) : {},
       android: {
         notification: {
@@ -269,20 +284,23 @@ export async function sendNotificationToUser(userId, customMessage = null) {
           },
         },
       },
-      tokens: pushTokens,
+      tokens: tokens,
     };
 
-    // Send notification using Firebase Cloud Messaging
     const messaging = getMessaging();
     const response = await messaging.sendEachForMulticast(fcmMessage);
 
-    console.log(`📤 Sent to user ${userId}: ${response.successCount} successful, ${response.failureCount} failed`);
+    console.log(`✅ FCM sent: ${response.successCount}, ❌ Failed: ${response.failureCount}`);
+
+    // Clean up invalid tokens (Reshme_Info pattern)
+    const invalidRemoved = await cleanupInvalidTokens(tokens, response.responses);
 
     return {
       success: true,
       userId,
       sent: response.successCount,
       failed: response.failureCount,
+      invalidTokensRemoved: invalidRemoved,
       responses: response.responses
     };
   } catch (error) {
@@ -296,43 +314,73 @@ export async function sendNotificationToUser(userId, customMessage = null) {
 }
 
 /**
- * Send push notification to all users
+ * Send notification to all users (Reshme_Info pattern)
  * @param {Object} customMessage - Optional custom message {title, body, data}
  * @returns {Promise<Object>} Summary of sending results
  */
 export async function sendNotificationToAllUsers(customMessage = null) {
   try {
-    console.log('📡 Fetching all users with push tokens...');
-    const userIds = await getAllUsersWithTokens();
+    console.log('📡 Fetching all push tokens...');
+    const tokenObjects = await getAllPushTokens();
 
-    if (userIds.length === 0) {
+    if (tokenObjects.length === 0) {
       return {
         success: false,
-        message: 'No users with push tokens found'
+        message: 'No push tokens found'
       };
     }
 
-    console.log(`📤 Sending notifications to ${userIds.length} users...`);
+    const tokens = tokenObjects.map(t => t.token);
 
-    // Send notifications to all users
-    const results = [];
-    for (const userId of userIds) {
-      const result = await sendNotificationToUser(userId, customMessage);
-      results.push(result);
-    }
+    console.log(`📱 Sending to ${tokens.length} FCM tokens...`);
 
-    // Summarize results
-    const totalSent = results.reduce((sum, r) => sum + (r.sent || 0), 0);
-    const totalFailed = results.reduce((sum, r) => sum + (r.failed || 0), 0);
+    // Create message
+    const message = customMessage || {
+      title: '📚 MR BunkManager Update',
+      body: 'Check your attendance and upcoming classes!'
+    };
 
-    console.log(`✅ Notifications sent: ${totalSent} successful, ${totalFailed} failed`);
+    const fcmMessage = {
+      notification: {
+        title: message.title,
+        body: message.body,
+      },
+      data: message.data ? Object.fromEntries(
+        Object.entries(message.data).map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)])
+      ) : {},
+      android: {
+        notification: {
+          color: '#3B82F6',
+          sound: 'default',
+          priority: 'high',
+          channelId: 'default',
+        },
+      },
+      apns: {
+        payload: {
+          aps: {
+            sound: 'default',
+            badge: 1,
+          },
+        },
+      },
+      tokens: tokens,
+    };
+
+    const messaging = getMessaging();
+    const response = await messaging.sendEachForMulticast(fcmMessage);
+
+    console.log(`✅ FCM sent: ${response.successCount}, ❌ Failed: ${response.failureCount}`);
+
+    // Clean up invalid tokens (Reshme_Info pattern)
+    const invalidRemoved = await cleanupInvalidTokens(tokens, response.responses);
 
     return {
       success: true,
-      totalUsers: userIds.length,
-      sent: totalSent,
-      failed: totalFailed,
-      details: results
+      totalTokens: tokens.length,
+      sent: response.successCount,
+      failed: response.failureCount,
+      invalidTokensRemoved: invalidRemoved
     };
   } catch (error) {
     console.error('Error sending notifications to all users:', error);
@@ -345,34 +393,85 @@ export async function sendNotificationToAllUsers(customMessage = null) {
 
 /**
  * Send daily reminder notifications to all users
- * This function is designed to be called by a cron job daily
  * @returns {Promise<Object>} Summary of sending results
  */
 export async function sendDailyReminders() {
   console.log('⏰ Starting daily reminder notifications...');
 
   try {
-    const userIds = await getAllUsersWithTokens();
+    const tokenObjects = await getAllPushTokens();
 
-    if (userIds.length === 0) {
-      console.log('No users to send reminders to');
-      return { success: true, sent: 0 };
+    if (tokenObjects.length === 0) {
+      console.log('No tokens to send reminders to');
+      return { success: true, sent: 0, failed: 0 };
     }
 
+    // Group tokens by userId for personalized messages
+    const userTokens = {};
+    tokenObjects.forEach(t => {
+      if (t.userId) {
+        if (!userTokens[t.userId]) {
+          userTokens[t.userId] = [];
+        }
+        userTokens[t.userId].push(t.token);
+      }
+    });
+
     const results = [];
+    let totalSent = 0;
+    let totalFailed = 0;
+    let totalInvalidRemoved = 0;
 
     // Send personalized reminders to each user
-    for (const userId of userIds) {
-      // Each user gets a personalized message based on their schedule
-      const result = await sendNotificationToUser(userId, null);
-      results.push(result);
+    for (const [userId, tokens] of Object.entries(userTokens)) {
+      const message = await createNotificationMessage(userId);
+
+      const fcmMessage = {
+        notification: {
+          title: message.title,
+          body: message.body,
+        },
+        data: message.data ? Object.fromEntries(
+          Object.entries(message.data).map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)])
+        ) : {},
+        android: {
+          notification: {
+            color: '#3B82F6',
+            sound: 'default',
+            priority: 'high',
+            channelId: 'default',
+          },
+        },
+        apns: {
+          payload: {
+            aps: {
+              sound: 'default',
+              badge: 1,
+            },
+          },
+        },
+        tokens: tokens,
+      };
+
+      const messaging = getMessaging();
+      const response = await messaging.sendEachForMulticast(fcmMessage);
+
+      totalSent += response.successCount;
+      totalFailed += response.failureCount;
+
+      // Clean up invalid tokens
+      const invalidRemoved = await cleanupInvalidTokens(tokens, response.responses);
+      totalInvalidRemoved += invalidRemoved;
+
+      results.push({
+        userId,
+        sent: response.successCount,
+        failed: response.failureCount
+      });
 
       // Small delay to avoid rate limiting
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-
-    const totalSent = results.reduce((sum, r) => sum + (r.sent || 0), 0);
-    const totalFailed = results.reduce((sum, r) => sum + (r.failed || 0), 0);
 
     console.log(`✅ Daily reminders completed: ${totalSent} sent, ${totalFailed} failed`);
 
@@ -380,6 +479,7 @@ export async function sendDailyReminders() {
       success: true,
       sent: totalSent,
       failed: totalFailed,
+      invalidTokensRemoved: totalInvalidRemoved,
       details: results
     };
   } catch (error) {
@@ -392,19 +492,18 @@ export async function sendDailyReminders() {
 }
 
 /**
- * Validate push token (FCM or Expo)
+ * Validate push token (FCM format)
  * @param {string} token - Push token to validate
- * @returns {boolean} True if valid
+ * @returns {boolean} True if valid FCM token
  */
 export function isValidExpoPushToken(token) {
-  // Accept both FCM tokens (long alphanumeric) and Expo tokens
   if (!token || typeof token !== 'string') return false;
 
-  // FCM tokens are typically 152+ characters
-  // Expo tokens start with "ExponentPushToken["
+  // FCM tokens are typically 150+ characters alphanumeric
+  // Also accept Expo tokens for development
   return token.length > 20 && (
     token.startsWith('ExponentPushToken[') ||
-    /^[a-zA-Z0-9_-]+$/.test(token)
+    /^[a-zA-Z0-9_:-]+$/.test(token)
   );
 }
 
@@ -420,21 +519,18 @@ async function getTodayClassesForAllUsers() {
   });
 
   try {
-    // Get all users
     const usersSnapshot = await db.collection('users').get();
     const usersWithClasses = [];
 
     for (const userDoc of usersSnapshot.docs) {
       const userId = userDoc.id;
 
-      // Get user's timetable
       const timetableSnapshot = await db
         .collection('users')
         .doc(userId)
         .collection('timetable')
         .get();
 
-      // Filter classes for today
       const todayClasses = timetableSnapshot.docs
         .map(doc => doc.data())
         .filter(entry => entry.day === todayDay)
@@ -466,7 +562,6 @@ function isClassStartingSoon(startTime, minutesBefore) {
   const now = new Date();
   const istTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
 
-  // Parse class time
   const [time, period] = startTime.split(' ');
   let [hours, minutes] = time.split(':').map(Number);
 
@@ -476,10 +571,8 @@ function isClassStartingSoon(startTime, minutesBefore) {
   const classTime = new Date(istTime);
   classTime.setHours(hours, minutes, 0, 0);
 
-  // Calculate time difference in minutes
   const diffMinutes = Math.floor((classTime - istTime) / (1000 * 60));
 
-  // Check if within the specified window (e.g., 29-31 minutes for 30-min reminder)
   return diffMinutes >= (minutesBefore - 1) && diffMinutes <= (minutesBefore + 1);
 }
 
@@ -493,44 +586,71 @@ export async function sendClassReminders(minutesBefore = 30) {
 
   try {
     const usersWithClasses = await getTodayClassesForAllUsers();
-    const results = [];
+    let totalSent = 0;
+    let totalFailed = 0;
+    let totalInvalidRemoved = 0;
 
     for (const { userId, classes } of usersWithClasses) {
-      // Find classes starting soon
       const upcomingClasses = classes.filter(cls =>
         isClassStartingSoon(cls.startTime, minutesBefore)
       );
 
       if (upcomingClasses.length === 0) continue;
 
-      // Get user's attendance
       const attendancePercentage = await getUserAttendancePercentage(userId);
+      const tokenObjects = await getUserPushTokens(userId);
 
-      // Send notification for each upcoming class
+      if (tokenObjects.length === 0) continue;
+
+      const tokens = tokenObjects.map(t => t.token);
+
       for (const upcomingClass of upcomingClasses) {
         const classType = upcomingClass.type === 'lab' ? 'Lab' : 'Class';
         const emoji = upcomingClass.type === 'lab' ? '🔬' : '📚';
 
-        const message = {
-          title: `${emoji} ${upcomingClass.subject} ${classType} Starting Soon!`,
-          body: `Your ${upcomingClass.subject} ${classType.toLowerCase()} starts in ${minutesBefore} minutes at ${upcomingClass.startTime}. Overall attendance: ${attendancePercentage}%.`,
+        const fcmMessage = {
+          notification: {
+            title: `${emoji} ${upcomingClass.subject} ${classType} Starting Soon!`,
+            body: `Your ${upcomingClass.subject} ${classType.toLowerCase()} starts in ${minutesBefore} minutes at ${upcomingClass.startTime}. Overall attendance: ${attendancePercentage}%.`,
+          },
           data: {
             type: 'class_reminder',
-            minutesBefore,
-            classInfo: upcomingClass,
-            attendancePercentage
-          }
+            minutesBefore: String(minutesBefore),
+            subject: upcomingClass.subject,
+            attendancePercentage: String(attendancePercentage)
+          },
+          android: {
+            notification: {
+              color: '#3B82F6',
+              sound: 'default',
+              priority: 'high',
+              channelId: 'default',
+            },
+          },
+          apns: {
+            payload: {
+              aps: {
+                sound: 'default',
+                badge: 1,
+              },
+            },
+          },
+          tokens: tokens,
         };
 
-        const result = await sendNotificationToUser(userId, message);
-        results.push(result);
+        const messaging = getMessaging();
+        const response = await messaging.sendEachForMulticast(fcmMessage);
+
+        totalSent += response.successCount;
+        totalFailed += response.failureCount;
+
+        // Clean up invalid tokens
+        const invalidRemoved = await cleanupInvalidTokens(tokens, response.responses);
+        totalInvalidRemoved += invalidRemoved;
 
         console.log(`📤 Sent ${minutesBefore}-min reminder to user ${userId} for ${upcomingClass.subject}`);
       }
     }
-
-    const totalSent = results.reduce((sum, r) => sum + (r.sent || 0), 0);
-    const totalFailed = results.reduce((sum, r) => sum + (r.failed || 0), 0);
 
     console.log(`✅ ${minutesBefore}-min reminders completed: ${totalSent} sent, ${totalFailed} failed`);
 
@@ -539,7 +659,7 @@ export async function sendClassReminders(minutesBefore = 30) {
       minutesBefore,
       sent: totalSent,
       failed: totalFailed,
-      details: results
+      invalidTokensRemoved: totalInvalidRemoved
     };
   } catch (error) {
     console.error(`Error sending ${minutesBefore}-min reminders:`, error);

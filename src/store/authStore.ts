@@ -2,26 +2,48 @@ import { create } from 'zustand';
 import { User } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../config/firebase';
-import {
-  registerForPushNotificationsAsync,
-  savePushToken,
-  deletePushToken,
-} from '../services/notificationService';
 
 interface AuthState {
   user: User | null;
   loading: boolean;
   initialized: boolean;
+  pushToken: string | null;
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
   initializeAuth: () => void;
   refreshUser: () => void;
 }
 
+/**
+ * Register push notifications with dynamic import
+ * This prevents expo-notifications from breaking the app in Expo Go (SDK 53+)
+ */
+async function registerPushNotifications(userId: string): Promise<string | null> {
+  try {
+    // Dynamic import to avoid breaking Expo Go
+    const notificationService = await import('../services/notificationService');
+
+    console.log('👤 User logged in, registering push notifications...');
+    const token = await notificationService.registerForPushNotificationsAsync();
+
+    if (token) {
+      await notificationService.savePushToken(userId, token);
+      console.log('✅ Push notifications registered successfully');
+      return token;
+    }
+    return null;
+  } catch (error) {
+    // Silently handle error in Expo Go (SDK 53+ doesn't support push notifications)
+    console.log('⚠️ Push notifications not available (use development build for full support)');
+    return null;
+  }
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   loading: true,
   initialized: false,
+  pushToken: null,
 
   setUser: (user) => set({ user, loading: false }),
 
@@ -33,18 +55,13 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       // Register push notifications when user logs in
       if (user) {
-        try {
-          console.log('👤 User logged in, registering push notifications...');
-          const token = await registerForPushNotificationsAsync();
-          if (token) {
-            await savePushToken(user.uid, token);
-            console.log('✅ Push notifications registered successfully');
-          }
-        } catch (error) {
-          console.error('❌ Error registering push notifications:', error);
+        const token = await registerPushNotifications(user.uid);
+        if (token) {
+          set({ pushToken: token });
         }
       } else {
         console.log('👋 User logged out');
+        set({ pushToken: null });
       }
     });
 
