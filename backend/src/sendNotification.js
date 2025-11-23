@@ -147,22 +147,22 @@ async function createNotificationMessage(userId) {
     if (attendancePercentage >= minimumRequired + 15) {
       // Well above minimum
       title = '🌟 Excellent Attendance!';
-      body = `Your attendance is ${attendancePercentage}% (min: ${minimumRequired}%). Keep it up! No classes tomorrow.`;
+      body = `Your attendance is ${attendancePercentage}% (min: ${minimumRequired}%). Keep up the great work!`;
     } else if (attendancePercentage >= minimumRequired) {
       // Above minimum
       title = '✅ Good Attendance!';
-      body = `Your attendance is ${attendancePercentage}% (min: ${minimumRequired}%). You're on track! No classes tomorrow.`;
+      body = `Your attendance is ${attendancePercentage}% (min: ${minimumRequired}%). You're on track!`;
     } else if (attendancePercentage >= minimumRequired - 10) {
       // Slightly below minimum
       title = '⚠️ Attendance Alert';
-      body = `Your attendance is ${attendancePercentage}% (min: ${minimumRequired}%). Attend more classes to reach your goal! No classes tomorrow.`;
+      body = `Your attendance is ${attendancePercentage}% (min: ${minimumRequired}%). Attend more classes to reach your goal!`;
     } else if (attendancePercentage > 0) {
       // Well below minimum
       title = '🚨 Low Attendance Warning!';
-      body = `Your attendance is only ${attendancePercentage}% (min: ${minimumRequired}%). You need ${minimumRequired - attendancePercentage}% more! No classes tomorrow.`;
+      body = `Your attendance is only ${attendancePercentage}% (min: ${minimumRequired}%). You need ${minimumRequired - attendancePercentage}% more!`;
     } else {
       title = '📚 MR BunkManager';
-      body = `No classes tomorrow. Start tracking your attendance to stay on top!`;
+      body = `Start tracking your attendance to stay on top of your classes!`;
     }
 
     return { title, body, data: { attendancePercentage, minimumRequired, type: 'attendance_update' } };
