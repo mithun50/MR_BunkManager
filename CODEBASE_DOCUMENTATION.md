@@ -493,10 +493,40 @@ curl https://mr-bunk-manager.vercel.app/health
 | Issue | Solution |
 |-------|----------|
 | Notifications not received | Check FCM token in Firestore, verify app permissions |
-| "Bad Request" from API | Use `--location` flag in curl for redirects |
+| "Bad Request" from API | Use `-L` flag in curl for redirects |
+| Intermittent API failures | Vercel cold start issue - add delay between requests |
 | Cron not triggering | Check Render logs, verify BACKEND_URL env var |
 | Firebase init error | Verify all FIREBASE_* env vars are set |
 | Offline data not syncing | Check network connectivity, restart app |
+
+### Vercel Serverless Behavior (Important)
+
+**Issue:** Rapid successive API calls may return empty responses or "Bad Request"
+
+**Root Cause:**
+- Vercel serverless functions have **cold starts** (function spins down when idle)
+- Rapid requests during function scaling can fail
+- In-memory rate limiter (`requestCounts` Map) resets on each cold start
+
+**Pattern Observed:**
+```
+Request 1: ✅ Success (wakes function)
+Request 2: ✅ Success (function warm)
+Request 3: ❌ Empty/Failed (scaling issue)
+After 3s delay: ✅ Success (stabilized)
+```
+
+**Solutions:**
+1. **Use `-L` flag** with curl (handles redirects)
+2. **Add delays** between rapid requests (2-3 seconds)
+3. **Cron service** naturally spaces requests (no issue in production)
+
+**Recommended curl format:**
+```bash
+curl -s -L -X POST "https://mr-bunk-manager.vercel.app/endpoint" \
+  -H "Content-Type: application/json" \
+  -d '{"key":"value"}'
+```
 
 ---
 
