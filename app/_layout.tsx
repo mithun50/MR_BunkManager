@@ -4,6 +4,7 @@ import { Stack, Redirect, useSegments, useRouter, useRootNavigationState } from 
 import { StatusBar } from 'expo-status-bar';
 import { PaperProvider } from 'react-native-paper';
 import { View, useColorScheme as useDeviceColorScheme } from 'react-native';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import 'react-native-reanimated';
 
 import { lightTheme, darkTheme } from '@/src/config/theme';
@@ -207,12 +208,14 @@ export default function RootLayout() {
   }
 
   return (
-    <PaperProvider theme={paperTheme}>
-      <ThemeProvider value={navigationTheme}>
-        <RootLayoutNav />
-        <NetworkMonitor />
-        <StatusBar style={effectiveTheme === 'dark' ? 'light' : 'dark'} />
-      </ThemeProvider>
-    </PaperProvider>
+    <KeyboardProvider>
+      <PaperProvider theme={paperTheme}>
+        <ThemeProvider value={navigationTheme}>
+          <RootLayoutNav />
+          <NetworkMonitor />
+          <StatusBar style={effectiveTheme === 'dark' ? 'light' : 'dark'} />
+        </ThemeProvider>
+      </PaperProvider>
+    </KeyboardProvider>
   );
 }

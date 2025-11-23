@@ -43,6 +43,7 @@ module.exports = ({ config }) => {
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
       useNextNotificationsApi: true,
+      softwareKeyboardLayoutMode: "pan",
       icon: "./assets/images/logo.png",
       adaptiveIcon: {
         foregroundImage: "./assets/images/logo.png",
@@ -53,7 +54,8 @@ module.exports = ({ config }) => {
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     plugins: [
@@ -76,6 +78,12 @@ module.exports = ({ config }) => {
           icon: "./assets/images/logo.png",
           color: "#3B82F6",
           defaultChannel: "default"
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          microphonePermission: "Allow Bunk Manager to use the microphone for voice input."
         }
       ]
     ],
