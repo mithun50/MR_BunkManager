@@ -110,6 +110,10 @@ function startCronJobs() {
 startCronJobs();
 
 // Keep the process alive
+setInterval(() => {
+  // Heartbeat - keeps the process running
+}, 60000);
+
 process.on('SIGTERM', () => {
   console.log(`\n🛑 Cron service stopping at ${formatIST()}`);
   process.exit(0);
