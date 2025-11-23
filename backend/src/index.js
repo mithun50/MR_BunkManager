@@ -12,7 +12,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
-import cron from 'node-cron';
 import { initializeFirebase, getFirestore } from '../config/firebase.js';
 import {
   sendNotificationToUser,
@@ -34,20 +33,9 @@ const IS_PRODUCTION = APP_ENV === 'production';
 // Use TIMEZONE instead of TZ (more explicit and less likely to conflict)
 const TIMEZONE = process.env.TIMEZONE || process.env.TZ || 'Asia/Kolkata';
 
-// CORS Configuration for production
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:8081', 'http://localhost:19000', 'http://localhost:19006'];
-
+// CORS Configuration - Allow all origins for mobile app
 const corsOptions = {
-  origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true,
   credentials: true,
   optionsSuccessStatus: 200
 };
@@ -134,21 +122,13 @@ app.get('/health', (req, res) => {
 });
 
 /**
- * Save or update Expo push token for a user
- * POST /save-token
- *
- * Body:
- * {
- *   "userId": "user123",
- *   "token": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
- *   "deviceId": "unique-device-id" (optional)
- * }
+ * Save push token to flat pushTokens collection (Reshme_Info pattern)
+ * Token is used as document ID for easy lookup and cleanup
  */
 app.post('/save-token', async (req, res) => {
   try {
-    const { userId, token, deviceId } = req.body;
+    const { userId, token } = req.body;
 
-    // Validate input
     if (!userId || !token) {
       return res.status(400).json({
         success: false,
@@ -156,39 +136,32 @@ app.post('/save-token', async (req, res) => {
       });
     }
 
-    // Validate Expo push token format
     if (!isValidExpoPushToken(token)) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid Expo push token format'
+        error: 'Invalid push token format'
       });
     }
 
-    // Generate device ID if not provided
-    const finalDeviceId = deviceId || `device_${Date.now()}`;
+    const tokenType = token.startsWith('ExponentPushToken') ? 'expo' : 'fcm';
 
-    // Save token to Firestore: users/{userId}/deviceTokens/{tokenId}
-    const tokenRef = db
-      .collection('users')
-      .doc(userId)
-      .collection('deviceTokens')
-      .doc(finalDeviceId);
-
-    await tokenRef.set({
-      token,
-      deviceId: finalDeviceId,
+    // Save to flat pushTokens collection with token as document ID
+    await db.collection('pushTokens').doc(token).set({
+      token: token,
+      userId: userId,
+      tokenType: tokenType,
       createdAt: new Date(),
       updatedAt: new Date(),
       active: true
     }, { merge: true });
 
-    console.log(`✅ Token saved for user ${userId} at ${formatISTDateTime()}`);
+    console.log(`✅ Token saved for user ${userId} (${tokenType}) at ${formatISTDateTime()}`);
 
     res.json({
       success: true,
       message: 'Push token saved successfully',
       userId,
-      deviceId: finalDeviceId,
+      tokenType,
       timestamp: formatISTDateTime()
     });
   } catch (error) {
@@ -202,40 +175,50 @@ app.post('/save-token', async (req, res) => {
 });
 
 /**
- * Delete a push token for a user
- * DELETE /delete-token
- *
- * Body:
- * {
- *   "userId": "user123",
- *   "deviceId": "unique-device-id"
- * }
+ * Delete push token from flat pushTokens collection
  */
 app.delete('/delete-token', async (req, res) => {
   try {
-    const { userId, deviceId } = req.body;
+    const { token, userId } = req.body;
 
-    if (!userId || !deviceId) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields: userId and deviceId'
+    if (token) {
+      await db.collection('pushTokens').doc(token).delete();
+      console.log(`🗑️ Token deleted at ${formatISTDateTime()}`);
+      return res.json({
+        success: true,
+        message: 'Push token deleted successfully',
+        timestamp: formatISTDateTime()
       });
     }
 
-    // Delete token from Firestore
-    await db
-      .collection('users')
-      .doc(userId)
-      .collection('deviceTokens')
-      .doc(deviceId)
-      .delete();
+    if (userId) {
+      const tokensSnapshot = await db
+        .collection('pushTokens')
+        .where('userId', '==', userId)
+        .get();
 
-    console.log(`🗑️ Token deleted for user ${userId}, device ${deviceId} at ${formatISTDateTime()}`);
+      if (tokensSnapshot.empty) {
+        return res.json({
+          success: true,
+          message: 'No tokens found for user',
+          timestamp: formatISTDateTime()
+        });
+      }
 
-    res.json({
-      success: true,
-      message: 'Push token deleted successfully',
-      timestamp: formatISTDateTime()
+      const deletePromises = tokensSnapshot.docs.map(doc => doc.ref.delete());
+      await Promise.all(deletePromises);
+
+      console.log(`🗑️ Deleted ${tokensSnapshot.size} tokens for user ${userId}`);
+      return res.json({
+        success: true,
+        message: `Deleted ${tokensSnapshot.size} tokens for user`,
+        timestamp: formatISTDateTime()
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      error: 'Missing required field: token or userId'
     });
   } catch (error) {
     console.error('❌ Error deleting token:', error);
@@ -425,17 +408,15 @@ app.post('/send-class-reminders', async (req, res) => {
 });
 
 /**
- * Get user's push tokens (for debugging)
- * GET /tokens/:userId
+ * Get user tokens from flat pushTokens collection
  */
 app.get('/tokens/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
 
     const tokensSnapshot = await db
-      .collection('users')
-      .doc(userId)
-      .collection('deviceTokens')
+      .collection('pushTokens')
+      .where('userId', '==', userId)
       .get();
 
     const tokens = tokensSnapshot.docs.map(doc => ({
@@ -461,67 +442,33 @@ app.get('/tokens/:userId', async (req, res) => {
   }
 });
 
-// ============================================
-// SCHEDULED JOBS (CRON)
-// ============================================
-
 /**
- * Schedule daily reminders at 8:00 PM IST (Indian Standard Time)
- * Cron expression: '0 20 * * *' means "At 20:00 (8:00 PM) every day"
- *
- * Users will receive notifications about tomorrow's classes
+ * Get all tokens (admin endpoint)
  */
-cron.schedule('0 20 * * *', async () => {
-  const istTime = formatISTDateTime();
-  console.log(`\n⏰ Daily Reminder Cron Job triggered at ${istTime}`);
-  console.log('🔔 Sending daily reminders to all users...');
-
+app.get('/tokens', async (req, res) => {
   try {
-    const result = await sendDailyReminders();
-    console.log(`✅ Daily reminders completed at ${formatISTDateTime()}`);
-    console.log(`📊 Results: ${result.sent} sent, ${result.failed} failed`);
-  } catch (error) {
-    console.error(`❌ Error in daily reminders job at ${formatISTDateTime()}:`, error);
-  }
-}, {
-  scheduled: true,
-  timezone: 'Asia/Kolkata' // IST timezone
-});
+    const tokensSnapshot = await db.collection('pushTokens').get();
 
-/**
- * Schedule 30-minute class reminders
- * Cron expression: '*/1 * * * *' means "Every 1 minute"
- *
- * Checks every minute if any class is starting in 30 minutes
- * Only sends notification if class starts in 29-31 minutes window
- */
-cron.schedule('*/1 * * * *', async () => {
-  try {
-    await sendClassReminders(30);
-  } catch (error) {
-    console.error(`❌ Error in 30-min reminder job:`, error);
-  }
-}, {
-  scheduled: true,
-  timezone: 'Asia/Kolkata' // IST timezone
-});
+    const tokens = tokensSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
 
-/**
- * Schedule 10-minute class reminders
- * Cron expression: '*/1 * * * *' means "Every 1 minute"
- *
- * Checks every minute if any class is starting in 10 minutes
- * Only sends notification if class starts in 9-11 minutes window
- */
-cron.schedule('*/1 * * * *', async () => {
-  try {
-    await sendClassReminders(10);
+    res.json({
+      success: true,
+      tokens,
+      count: tokens.length,
+      timestamp: formatISTDateTime()
+    });
   } catch (error) {
-    console.error(`❌ Error in 10-min reminder job:`, error);
+    console.error('❌ Error fetching all tokens:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch tokens',
+      details: error.message,
+      timestamp: formatISTDateTime()
+    });
   }
-}, {
-  scheduled: true,
-  timezone: 'Asia/Kolkata' // IST timezone
 });
 
 // ============================================
@@ -563,29 +510,24 @@ app.use((err, req, res, next) => {
 // ============================================
 
 app.listen(PORT, () => {
-  const istTime = formatISTDateTime();
   console.log('\n╔════════════════════════════════════════════════════════════╗');
-  console.log('║                                                            ║');
-  console.log('║        🚀 MR BunkManager Notification Server 🚀           ║');
-  console.log('║                                                            ║');
+  console.log('║      🚀 MR BunkManager Notification Server (Render) 🚀     ║');
   console.log('╚════════════════════════════════════════════════════════════╝\n');
   console.log(`✅ Server running on port ${PORT}`);
-  console.log(`🌐 Base URL: http://localhost:${PORT}`);
-  console.log(`🕐 Server started at: ${istTime}`);
+  console.log(`🕐 Started at: ${formatISTDateTime()}`);
   console.log(`🌏 Timezone: Asia/Kolkata (IST)`);
-  console.log(`\n⏰ Scheduled Notifications:`);
-  console.log(`   📅 Daily reminders: 8:00 PM IST`);
-  console.log(`   ⏱️  30-min class reminders: Every minute (checks)`);
-  console.log(`   ⏱️  10-min class reminders: Every minute (checks)`);
+  console.log(`📦 Pattern: Reshme_Info (flat pushTokens collection)`);
   console.log('\n📋 Available Routes:');
-  console.log('   GET  /health - Health check');
-  console.log('   POST /save-token - Save push token');
-  console.log('   DELETE /delete-token - Delete push token');
-  console.log('   POST /send-notification - Send to one user');
-  console.log('   POST /send-notification-all - Send to all users');
-  console.log('   POST /send-daily-reminders - Trigger daily reminders');
-  console.log('   POST /send-class-reminders - Trigger class reminders (30/10 min)');
-  console.log('   GET  /tokens/:userId - Get user tokens\n');
+  console.log('   GET  /health');
+  console.log('   POST /save-token');
+  console.log('   DELETE /delete-token');
+  console.log('   POST /send-notification');
+  console.log('   POST /send-notification-all');
+  console.log('   POST /send-daily-reminders');
+  console.log('   POST /send-class-reminders');
+  console.log('   GET  /tokens/:userId');
+  console.log('   GET  /tokens');
+  console.log('\n⏰ Note: Deploy cron-service separately for scheduled notifications');
   console.log('════════════════════════════════════════════════════════════\n');
 });
 
