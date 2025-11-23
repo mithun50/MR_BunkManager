@@ -530,4 +530,92 @@ Built with:
 
 ---
 
+---
+
+## Latest Test Results
+
+**Test Date:** 23/11/2025, 10:40 PM IST
+
+### Health Check
+```bash
+$ curl -s -L "https://mr-bunk-manager.vercel.app/health"
+```
+```json
+{
+  "status": "healthy",
+  "message": "MR BunkManager Notification Server (Vercel Serverless)",
+  "timestamp": "23/11/2025, 10:37:50 pm",
+  "timezone": "Asia/Kolkata (IST)",
+  "pattern": "Reshme_Info (flat pushTokens collection)"
+}
+```
+
+### Registered Tokens
+```bash
+$ curl -s -L "https://mr-bunk-manager.vercel.app/tokens"
+```
+```json
+{
+  "success": true,
+  "count": 1,
+  "tokens": [
+    {
+      "token": "cTsp9gDkQnO...XqY",
+      "userId": "XahOaNG7LDdWEG4XBMdYSZxkKDC2",
+      "tokenType": "fcm",
+      "platform": "android",
+      "active": true
+    }
+  ]
+}
+```
+
+### Send Test Notification
+```bash
+$ curl -s -L -X POST "https://mr-bunk-manager.vercel.app/send-notification-all" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Test","body":"Hello"}'
+```
+```json
+{
+  "success": true,
+  "message": "Notifications sent to all users",
+  "result": {
+    "totalTokens": 1,
+    "sent": 1,
+    "failed": 0,
+    "invalidTokensRemoved": 0
+  }
+}
+```
+
+### Daily Reminders Test
+```bash
+$ curl -s -L -X POST "https://mr-bunk-manager.vercel.app/send-daily-reminders" \
+  -H "Content-Type: application/json" -d '{}'
+```
+```json
+{
+  "success": true,
+  "message": "Daily reminders sent",
+  "result": {
+    "sent": 1,
+    "failed": 0,
+    "details": [
+      { "userId": "XahOaNG7LDdWEG4XBMdYSZxkKDC2", "sent": 1, "failed": 0 }
+    ]
+  }
+}
+```
+
+### Test Summary
+| Endpoint | Status | Result |
+|----------|--------|--------|
+| `/health` | ✅ Working | Server healthy |
+| `/tokens` | ✅ Working | 1 FCM token registered |
+| `/send-notification-all` | ✅ Working | 1 notification sent |
+| `/send-daily-reminders` | ✅ Working | 1 reminder sent |
+
+---
+
 **Last Updated:** November 2025
