@@ -1,20 +1,26 @@
 # 🚀 MR BunkManager - Push Notification Backend
 
-Complete Node.js + Express backend for sending context-aware push notifications to your Expo app.
+Complete Node.js + Express backend for sending context-aware push notifications using Firebase Cloud Messaging (FCM).
 
 ## 📋 Features
 
-- ✅ **Firebase Admin SDK** - Direct Firestore access
-- ✅ **Expo Server SDK** - Native push notification support
+- ✅ **Firebase Cloud Messaging (FCM)** - Production-ready push notifications
+- ✅ **Flat Token Storage** - Reshme_Info pattern with auto-cleanup
 - ✅ **Smart Notifications** - Auto-generates messages based on:
   - Tomorrow's class schedule
   - Lab sessions
   - Overall attendance percentage
   - Low attendance warnings
 - ✅ **Scheduled Notifications** - Daily reminders at 8:00 PM IST
+- ✅ **Class Reminders** - 30-min and 10-min before class alerts
 - ✅ **Indian Standard Time (IST)** - All times in Asia/Kolkata timezone
 - ✅ **RESTful API** - Clean, documented endpoints
-- ✅ **Production Ready** - Security, CORS, logging included
+- ✅ **Vercel Deployment** - Serverless ready
+- ✅ **Auto Token Cleanup** - Invalid tokens removed automatically
+
+## 🌐 Production URL
+
+**Vercel:** `https://mr-bunk-manager.vercel.app`
 
 ---
 
@@ -26,8 +32,12 @@ backend/
 │   ├── firebase.js              # Firebase Admin setup
 │   └── serviceAccountKey.json   # Your Firebase credentials (create this)
 ├── src/
-│   ├── index.js                 # Express server
+│   ├── index.js                 # Express server (Vercel)
 │   └── sendNotification.js      # Notification logic
+├── cron-service/                # Standalone cron service (Render)
+│   ├── index.js                 # Cron jobs + health check server
+│   ├── package.json             # Cron service dependencies
+│   └── .env.example             # Cron service config
 ├── .env.example                 # Environment template
 ├── .gitignore                   # Git ignore rules
 ├── package.json                 # Dependencies
@@ -144,17 +154,18 @@ Content-Type: application/json
 }
 ```
 
-**Firestore Structure:**
+**Firestore Structure (Flat pushTokens Collection):**
 ```
-users/
-  └── user123/
-      └── deviceTokens/
-          └── device-001/
-              ├── token: "ExponentPushToken[...]"
-              ├── deviceId: "device-001"
-              ├── createdAt: Timestamp
-              ├── updatedAt: Timestamp
-              └── active: true
+pushTokens/
+  └── {token}/                    # Token as document ID
+      ├── token: "FCM_TOKEN"
+      ├── userId: "user123"
+      ├── tokenType: "fcm" | "expo"
+      ├── platform: "android" | "ios"
+      ├── createdAt: Timestamp
+      ├── updatedAt: Timestamp
+      ├── active: true
+      └── deviceInfo: {...}
 ```
 
 ---
@@ -346,82 +357,119 @@ GET /tokens/user123
 
 ## ⏰ Scheduled Notifications
 
-The server automatically sends daily reminders at **8:00 PM IST** using cron jobs.
+Scheduled notifications are handled by a **separate cron service** that calls the main backend API.
 
-**What Happens:**
-1. At 8:00 PM IST every day, the cron job runs
-2. For each user with push tokens:
-   - Fetches tomorrow's timetable
-   - Calculates overall attendance percentage
-   - Generates a personalized message
-   - Sends push notification
+**Cron Service Schedules:**
 
-**Cron Schedule:**
+| Schedule | Endpoint | Description |
+|----------|----------|-------------|
+| 8:00 PM IST daily | `/send-daily-reminders` | Tomorrow's class reminders |
+| Every minute | `/send-class-reminders` (30 min) | 30-min before class alert |
+| Every minute | `/send-class-reminders` (10 min) | 10-min before class alert |
+
+**How It Works:**
+1. Cron service runs on Render with scheduled jobs
+2. At trigger time, it calls the backend API via HTTP POST
+3. Backend processes the request and sends FCM notifications
+4. Invalid tokens are automatically cleaned up
+
+**Cron Service Code:**
 ```javascript
+// Daily reminders at 8:00 PM IST
 cron.schedule('0 20 * * *', async () => {
-  await sendDailyReminders();
-}, {
-  timezone: 'Asia/Kolkata' // IST
-});
+  await triggerEndpoint('/send-daily-reminders');
+}, { timezone: 'Asia/Kolkata' });
+
+// Class reminders every minute
+cron.schedule('* * * * *', async () => {
+  await triggerEndpoint('/send-class-reminders', { minutesBefore: 30 });
+}, { timezone: 'Asia/Kolkata' });
+
+cron.schedule('* * * * *', async () => {
+  await triggerEndpoint('/send-class-reminders', { minutesBefore: 10 });
+}, { timezone: 'Asia/Kolkata' });
 ```
 
-**Logs:**
+**Logs (Cron Service):**
 ```
-⏰ Cron job triggered at 18/11/2025, 08:00:00 PM
-🔔 Sending daily reminders to all users...
-📤 Sent to user abc123: 1 successful, 0 failed
-📤 Sent to user def456: 1 successful, 0 failed
-✅ Daily reminders completed at 18/11/2025, 08:01:30 PM
-📊 Results: 150 sent, 2 failed
+📡 Calling https://mr-bunk-manager.vercel.app/send-daily-reminders at 18/11/2025, 08:00:00 PM
+✅ Success: Daily reminders sent
+   Sent: 150, Failed: 2
 ```
 
 ---
 
-## 🧪 Testing the Server
+## 🧪 Testing Notifications
 
-### Test with cURL
+### Production (Vercel)
+
+**Send to all users:**
+```bash
+curl -s --location 'https://mr-bunk-manager.vercel.app/send-notification-all' \
+  --header 'Content-Type: application/json' \
+  --data '{"title":"Test Notification","body":"Hello from MR BunkManager!"}'
+```
+
+**Send daily reminders:**
+```bash
+curl -s --location 'https://mr-bunk-manager.vercel.app/send-daily-reminders' \
+  --header 'Content-Type: application/json' \
+  --data '{}'
+```
+
+**Send class reminders (30 min):**
+```bash
+curl -s --location 'https://mr-bunk-manager.vercel.app/send-class-reminders' \
+  --header 'Content-Type: application/json' \
+  --data '{"minutesBefore":30}'
+```
+
+**Send class reminders (10 min):**
+```bash
+curl -s --location 'https://mr-bunk-manager.vercel.app/send-class-reminders' \
+  --header 'Content-Type: application/json' \
+  --data '{"minutesBefore":10}'
+```
+
+**Check registered tokens:**
+```bash
+curl -s 'https://mr-bunk-manager.vercel.app/tokens'
+```
+
+### Local Development
 
 **1. Save a token:**
 ```bash
 curl -X POST http://localhost:3000/save-token \
   -H "Content-Type: application/json" \
-  -d '{
-    "userId": "test-user-123",
-    "token": "ExponentPushToken[your-test-token]"
-  }'
+  -d '{"userId":"test-user","token":"FCM_TOKEN_HERE"}'
 ```
 
 **2. Send a test notification:**
 ```bash
-curl -X POST http://localhost:3000/send-notification \
+curl -X POST http://localhost:3000/send-notification-all \
   -H "Content-Type: application/json" \
-  -d '{
-    "userId": "test-user-123",
-    "title": "Test Notification",
-    "body": "This is a test!"
-  }'
+  -d '{"title":"Test","body":"Hello!"}'
 ```
-
-### Test with Postman
-
-1. Import the following collection URL (if you create one)
-2. Or manually create requests using the endpoints above
 
 ---
 
 ## 🔒 Firestore Data Structure
 
 ```
+pushTokens/                          # Flat token storage (Reshme_Info pattern)
+  └── {token}/                       # Token as document ID
+      ├── token: string
+      ├── userId: string
+      ├── tokenType: "fcm" | "expo"
+      ├── platform: "android" | "ios"
+      ├── createdAt: Timestamp
+      ├── updatedAt: Timestamp
+      ├── active: boolean
+      └── deviceInfo: object
+
 users/
   └── {userId}/
-      ├── deviceTokens/              # Push tokens collection
-      │   └── {deviceId}/
-      │       ├── token: string
-      │       ├── deviceId: string
-      │       ├── createdAt: Timestamp
-      │       ├── updatedAt: Timestamp
-      │       └── active: boolean
-      │
       ├── timetable/                 # User's timetable (read by backend)
       │   └── {entryId}/
       │       ├── day: string        # "Monday", "Tuesday", etc.
@@ -531,6 +579,54 @@ async function savePushToken() {
 ---
 
 ## 🚀 Deployment
+
+### Architecture Overview
+
+The MR BunkManager notification system uses a **two-service architecture**:
+
+1. **Main Backend (Vercel)**: Express API server handling notification endpoints
+2. **Cron Service (Render)**: Standalone service that triggers backend endpoints on schedule
+
+```
+┌─────────────────┐         ┌──────────────────────┐
+│  Cron Service   │  HTTP   │    Main Backend      │
+│    (Render)     │ ──────► │     (Vercel)         │
+│                 │  POST   │                      │
+│ - Daily 8PM IST │         │ - /send-daily-reminders
+│ - Every minute  │         │ - /send-class-reminders
+│   (30min/10min) │         │ - FCM notifications  │
+└─────────────────┘         └──────────────────────┘
+```
+
+---
+
+### Deploy Main Backend to Vercel
+
+1. Push code to GitHub
+2. Import project in Vercel
+3. Set environment variables:
+   - `FIREBASE_PROJECT_ID`
+   - `FIREBASE_CLIENT_EMAIL`
+   - `FIREBASE_PRIVATE_KEY`
+4. Deploy automatically
+
+---
+
+### Deploy Cron Service to Render
+
+1. Create new **Web Service** in Render (NOT background worker)
+2. Connect to your repo and set root directory: `backend/cron-service`
+3. Set environment variables:
+   ```
+   BACKEND_URL=https://mr-bunk-manager.vercel.app
+   PORT=5000
+   ```
+4. Build command: `npm install`
+5. Start command: `npm start`
+
+The cron service runs an HTTP server on port 5000 for Render health checks.
+
+---
 
 ### Deploy to Railway
 
