@@ -184,7 +184,11 @@ Never miss what matters:
 MR_BunkManager/
 │
 ├── 📱 app/                        # Screens (Expo Router)
-│   ├── (auth)/                   # 🔐 Login, Signup, Verification
+│   ├── (auth)/                   # 🔐 Authentication Screens
+│   │   ├── login.tsx             #    └─ Login Page
+│   │   ├── signup.tsx            #    └─ Registration Page
+│   │   ├── email-verification.tsx#    └─ Email Verification
+│   │   └── forgot-password.tsx   #    └─ Password Reset
 │   ├── (onboarding)/             # 👋 First-time user setup
 │   ├── (tabs)/                   # 🏠 Main app screens
 │   │   ├── index.tsx             #    └─ Dashboard
@@ -194,31 +198,80 @@ MR_BunkManager/
 │   │   └── profile.tsx           #    └─ User Profile
 │   ├── create-note.tsx           # ✍️ Note Editor
 │   ├── note/[id].tsx             # 📄 Note Detail View
-│   └── user/[id].tsx             # 👤 User Profile View
+│   ├── user/[id].tsx             # 👤 User Profile View
+│   ├── user/followers.tsx        # 👥 Followers/Following List
+│   ├── search-users.tsx          # 🔍 User Search
+│   └── modal.tsx                 # 🪟 Modal Container
 │
 ├── 🧩 src/
 │   ├── components/               # Reusable UI Components
 │   │   ├── ChatBot.tsx           #    └─ AI Chat Interface
 │   │   ├── VoiceBot.tsx          #    └─ Voice Conversation
 │   │   ├── DonutChart.tsx        #    └─ Attendance Visualization
+│   │   ├── MarkdownRenderer.tsx  #    └─ Markdown Display
+│   │   ├── NetworkMonitor.tsx    #    └─ Connectivity Status
+│   │   ├── OnlineButton.tsx      #    └─ Offline-aware Buttons
+│   │   ├── ThemeSwitcher.tsx     #    └─ Dark/Light Mode Toggle
+│   │   ├── VideoLoadingScreen.tsx#    └─ App Loading Animation
 │   │   └── notes/                #    └─ Note Components
+│   │       ├── NoteCard.tsx      #        └─ Note Preview Card
+│   │       ├── NoteEditor.tsx    #        └─ Rich Text Editor
+│   │       ├── CommentSection.tsx#        └─ Comments Display
+│   │       └── UserCard.tsx      #        └─ User Info Card
 │   │
 │   ├── services/                 # Business Logic
 │   │   ├── authService.ts        #    └─ Authentication
 │   │   ├── firestoreService.ts   #    └─ Database CRUD
-│   │   ├── chatService.ts        #    └─ AI Integration
+│   │   ├── chatService.ts        #    └─ AI Chat (Groq)
+│   │   ├── geminiService.ts      #    └─ AI Timetable Extraction
 │   │   ├── notesService.ts       #    └─ Notes Management
 │   │   ├── socialService.ts      #    └─ Likes, Comments
-│   │   └── followService.ts      #    └─ Follow System
+│   │   ├── followService.ts      #    └─ Follow System
+│   │   ├── notificationService.ts#    └─ Push Notifications
+│   │   ├── imageUploadService.ts #    └─ Image Upload (Catbox)
+│   │   ├── cacheService.ts       #    └─ Offline Data Cache
+│   │   ├── chatStorageService.ts #    └─ Chat History Storage
+│   │   ├── offlineQueueService.ts#    └─ Offline Action Queue
+│   │   └── googleDriveService.ts #    └─ Drive Integration
 │   │
 │   ├── store/                    # Zustand State Stores
+│   │   ├── authStore.ts          #    └─ Auth State
+│   │   ├── notesStore.ts         #    └─ Notes Interaction State
+│   │   ├── networkStore.ts       #    └─ Network Status State
+│   │   └── themeStore.ts         #    └─ Theme Preferences
+│   │
+│   ├── screens/                  # Screen Components
+│   │   ├── auth/                 #    └─ Auth Screens
+│   │   │   ├── LoginScreen.tsx
+│   │   │   ├── SignupScreen.tsx
+│   │   │   ├── EmailVerificationScreen.tsx
+│   │   │   └── ForgotPasswordScreen.tsx
+│   │   ├── attendance/           #    └─ Attendance Screens
+│   │   │   └── AttendanceScreen.tsx
+│   │   ├── onboarding/           #    └─ Onboarding Screens
+│   │   │   ├── OnboardingContainer.tsx
+│   │   │   ├── ProfileSetupScreen.tsx
+│   │   │   ├── TimetableUploadScreen.tsx
+│   │   │   └── AttendanceSettingsScreen.tsx
+│   │   └── community/            #    └─ Community Screens
+│   │       ├── FeedScreen.tsx
+│   │       ├── ExploreScreen.tsx
+│   │       └── MyNotesScreen.tsx
+│   │
 │   ├── types/                    # TypeScript Definitions
-│   └── config/                   # Firebase Config
+│   │   ├── user.ts               #    └─ User Types
+│   │   └── notes.ts              #    └─ Notes Types
+│   │
+│   └── config/                   # Configuration
+│       ├── firebase.ts           #    └─ Firebase Config
+│       └── theme.ts              #    └─ Theme Configuration
 │
 ├── 🖥️ backend/                    # Express.js Server
 │   └── src/
 │       ├── index.js              #    └─ API Endpoints
-│       └── sendNotification.js   #    └─ FCM Logic
+│       ├── sendNotification.js   #    └─ FCM Logic
+│       ├── driveUpload.js        #    └─ Drive Upload API
+│       └── test-notification.js  #    └─ Notification Testing
 │
 └── 📦 assets/                     # Images, Fonts, Icons
 ```

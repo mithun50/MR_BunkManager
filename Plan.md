@@ -306,60 +306,60 @@ To empower students with intelligent tools that help them balance academic requi
 
 ## 🗓️ Development Roadmap
 
-### **Phase 1: Foundation (Weeks 1-3)**
+### **Phase 1: Foundation (Weeks 1-3)** ✅ COMPLETE
 - ✅ Project setup with Expo and TypeScript
-- ✅ Authentication system (Supabase Auth)
-- ✅ Database schema design
-- ✅ Basic navigation structure
+- ✅ Authentication system (Firebase Auth)
+- ✅ Database schema design (Firestore)
+- ✅ Basic navigation structure (Expo Router)
 - ✅ UI component library setup (React Native Paper)
 
-### **Phase 2: Core Features (Weeks 4-7)**
-- ⏳ Timetable management screen
-- ⏳ AI timetable extraction integration
-- ⏳ Manual timetable entry/editing
-- ⏳ Attendance tracking implementation
-- ⏳ Attendance calculation algorithms
-- ⏳ Dashboard with today's classes
+### **Phase 2: Core Features (Weeks 4-7)** ✅ COMPLETE
+- ✅ Timetable management screen
+- ✅ AI timetable extraction integration (Gemini 2.0)
+- ✅ Manual timetable entry/editing
+- ✅ Attendance tracking implementation
+- ✅ Attendance calculation algorithms
+- ✅ Dashboard with today's classes
 
-### **Phase 3: Smart Features (Weeks 8-10)**
-- ⏳ Bunk calculator algorithms
-- ⏳ Smart attendance recommendations
-- ⏳ Attendance analytics and charts
-- ⏳ Notification system setup
-- ⏳ Reminder scheduling
+### **Phase 3: Smart Features (Weeks 8-10)** ✅ COMPLETE
+- ✅ Bunk calculator algorithms
+- ✅ Smart attendance recommendations
+- ✅ Attendance analytics and charts (DonutChart)
+- ✅ Notification system setup (FCM)
+- ✅ Reminder scheduling (Backend cron)
 
-### **Phase 4: AI Assistant (Weeks 11-13)**
-- ⏳ Voice recording integration
-- ⏳ OpenAI Whisper API integration
-- ⏳ GPT-4 context-aware responses
-- ⏳ Text-to-speech implementation
-- ⏳ Voice assistant UI/UX
+### **Phase 4: AI Assistant (Weeks 11-13)** ✅ COMPLETE
+- ✅ Voice recording integration (Expo Speech)
+- ✅ Groq Llama 4 API integration
+- ✅ Context-aware responses (attendance data)
+- ✅ Text-to-speech implementation
+- ✅ Voice assistant UI/UX (BunkBot)
 
-### **Phase 5: Collaboration (Weeks 14-16)**
-- ⏳ Class groups creation
-- ⏳ Group posts and notices
-- ⏳ File upload/download system
-- ⏳ Real-time updates
-- ⏳ Admin controls
+### **Phase 5: Community & Notes (Weeks 14-16)** ✅ COMPLETE
+- ✅ Notes sharing platform (Feed, Explore, My Notes)
+- ✅ Follow/unfollow users
+- ✅ Like, save, comment on notes
+- ✅ File upload support (images, PDFs)
+- ✅ Real-time updates
 
-### **Phase 6: Calendar & Events (Weeks 17-18)**
-- ⏳ Calendar UI implementation
-- ⏳ Event extraction from images/PDFs
-- ⏳ Event notifications
-- ⏳ Calendar sync
+### **Phase 6: Polish & Testing (Weeks 17-18)** ✅ COMPLETE
+- ✅ UI/UX refinement
+- ✅ Performance optimization
+- ✅ Offline support
+- ✅ Dark/Light theme
+- ✅ Web deployment
 
-### **Phase 7: Polish & Testing (Weeks 19-21)**
-- ⏳ UI/UX refinement
-- ⏳ Performance optimization
-- ⏳ Bug fixes and testing
-- ⏳ User feedback implementation
-- ⏳ Beta testing
+### **Phase 7: Production Ready** ✅ COMPLETE
+- ✅ Web App deployed (Vercel)
+- ✅ Backend API deployed (Vercel)
+- ✅ Android build ready
+- ✅ Documentation complete
 
-### **Phase 8: Launch (Week 22)**
-- ⏳ App Store submission (iOS)
-- ⏳ Google Play submission (Android)
-- ⏳ Documentation and user guides
-- ⏳ Marketing materials
+### **Future Enhancements** 🔜
+- 🔜 Study groups and group chat
+- 🔜 Multi-semester support
+- 🔜 Export reports (PDF/CSV)
+- 🔜 iOS support
 
 ---
 
@@ -741,26 +741,28 @@ MIT License (or your preferred license)
 
 ## 👥 Contributors
 
-- **Project Lead:** [Your Name]
-- **AI Integration:** [Team Member]
-- **UI/UX Design:** [Team Member]
-- **Backend:** [Team Member]
+- **Team Leader:** Nevil Dsouza
+- **Core Developer:** Mithun Gowda B
+- **Developer:** Lavanya (Documentation, Presentation)
+- **Developer:** Manas Habbu (Documentation, Presentation, Designer)
+- **Developer:** Manasvi R (Documentation, Presentation Designer)
+- **Developer:** Naren V (UI Designer)
 
 ---
 
 ## 🙏 Acknowledgments
 
-- Google for Gemini 2.0 Flash and Cloud APIs
-- xAI for Grok conversational AI
-- Supabase for backend infrastructure
+- Google for Gemini 2.0 Flash API
+- Groq for Llama 4 Maverick AI
+- Firebase for backend infrastructure
 - Expo team for React Native framework
 - Open source community
 
 ---
 
-**Last Updated:** 2025-11-13
+**Last Updated:** 2025-11-24
 **Version:** 1.0.0
-**Status:** 🔄 In Development
+**Status:** ✅ Production Ready
 
 ---
 
