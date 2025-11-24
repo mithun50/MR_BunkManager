@@ -346,10 +346,14 @@ For developers joining the project:
 4. **Expo Router**: https://docs.expo.dev/router/introduction/
 5. **TypeScript**: https://www.typescriptlang.org/docs/
 
-## 👥 Team (Current)
+## 👥 Team
 
-- **Developer**: You (Primary)
-- **AI Assistant**: Claude (Architecture & Implementation)
+- **Team Leader**: Nevil Dsouza
+- **Core Developer**: Mithun Gowda B
+- **Developer**: Lavanya (Documentation, Presentation)
+- **Developer**: Manas Habbu (Documentation, Presentation, Designer)
+- **Developer**: Manasvi R (Documentation, Presentation Designer)
+- **Developer**: Naren V (UI Designer)
 
 ## 📅 Timeline
 
