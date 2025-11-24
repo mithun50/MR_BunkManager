@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="assets/images/logo.png" alt="MR BunkManager Logo" width="120" height="120" style="border-radius: 20px;">
-</p>
-
 <h1 align="center">MR BunkManager</h1>
 
 <p align="center">
@@ -20,9 +16,18 @@
   <a href="#-quick-start">Quick Start</a> •
   <a href="#-features">Features</a> •
   <a href="#-tech-stack">Tech Stack</a> •
-  <a href="#-screenshots">Screenshots</a> •
+  <a href="#-live-demo">Live Demo</a> •
   <a href="#-team">Team</a>
 </p>
+
+---
+
+## 🌐 Live Demo
+
+| Platform | URL |
+|----------|-----|
+| 🌐 **Web App** | [https://mr-bunk-manager-idtl.vercel.app/login](https://mr-bunk-manager-idtl.vercel.app/login) |
+| 🖥️ **Backend API** | [https://mr-bunk-manager.vercel.app/](https://mr-bunk-manager.vercel.app/) |
 
 ---
 
@@ -30,7 +35,7 @@
 
 Ever wondered **"How many classes can I skip and still maintain 75% attendance?"** 🤔
 
-**MR BunkManager** answers that question and does SO much more! It's a feature-packed mobile app built by students, for students. We combined attendance tracking, AI-powered timetable management, a social notes platform, and an intelligent chatbot - all in one beautiful app.
+**MR BunkManager** answers that question and does SO much more! It's a feature-packed app built by students, for students. We combined attendance tracking, AI-powered timetable management, a social notes platform, and an intelligent chatbot - all in one beautiful app.
 
 ```
 📊 Track Attendance  →  🤖 Ask AI  →  📚 Share Notes  →  🎓 Ace College
@@ -63,26 +68,12 @@ Ever wondered **"How many classes can I skip and still maintain 75% attendance?"
 
 ### 👥 Community & Notes
 
-<table>
-<tr>
-<td width="33%" align="center">
-<h4>📰 Feed</h4>
-<p>Notes from people you follow</p>
-</td>
-<td width="33%" align="center">
-<h4>🔍 Explore</h4>
-<p>Discover notes from your college</p>
-</td>
-<td width="33%" align="center">
-<h4>📝 My Notes</h4>
-<p>Create & manage your notes</p>
-</td>
-</tr>
-</table>
+| 📰 Feed | 🔍 Explore | 📝 My Notes |
+|---------|-----------|-------------|
+| Notes from people you follow | Discover notes from your college | Create & manage your notes |
 
 **Share Knowledge:**
 - 📄 Text notes with rich formatting
-- 🖼️ Images and diagrams
 - 📑 PDF documents
 - 🔗 External links
 
@@ -107,10 +98,10 @@ BunkBot: "Looking at your attendance... You're at 78% in Mathematics
 **Capabilities:**
 - 🎯 **Context-Aware**: Knows your attendance data in real-time
 - 🖼️ **Vision**: Can analyze images you upload
-- 🎤 **Voice Chat**: Full voice conversation support
+- 🎤 **Voice Chat**: Full voice conversation support (Android & Web)
 - 💡 **Smart Suggestions**: Quick prompts for common questions
 
-### 🔔 Push Notifications
+### 🔔 Push Notifications (Android Only)
 
 Never miss what matters:
 - ⏰ Daily reminders for tomorrow's classes
@@ -163,6 +154,7 @@ Never miss what matters:
 │ • FCM           │ • Scheduling    │ • 128 Expert MoE        │
 ├─────────────────┴─────────────────┴─────────────────────────┤
 │  File Storage: Catbox.moe (Free, No API Key Required)       │
+│  Hosting: Vercel (Backend & Web App)                        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -261,7 +253,6 @@ npm start
 
 # 5. Scan QR with Expo Go app or run:
 npm run android   # Android
-npm run ios       # iOS
 npm run web       # Browser
 ```
 
@@ -274,7 +265,7 @@ Create a `.env` file with:
 EXPO_PUBLIC_GROQ_API_KEY=your_groq_api_key
 
 # Backend (Required for notifications)
-EXPO_PUBLIC_BACKEND_URL=https://your-backend.onrender.com
+EXPO_PUBLIC_BACKEND_URL=https://mr-bunk-manager.vercel.app
 ```
 
 ### Firebase Setup
@@ -324,45 +315,22 @@ EXPO_PUBLIC_BACKEND_URL=https://your-backend.onrender.com
 | Platform | Status | Notes |
 |----------|--------|-------|
 | 🤖 Android | ✅ Full Support | APK & Play Store ready |
-| 🍎 iOS | ✅ Full Support | TestFlight ready |
-| 🌐 Web | ✅ Full Support | PWA capable |
+| 🌐 Web | ✅ Full Support | PWA capable, hosted on Vercel |
 
----
-
-## 🎨 Screenshots
-
-<p align="center">
-  <i>Screenshots coming soon...</i>
-</p>
+> **Note:** iOS is not currently supported.
 
 ---
 
 ## 👥 Team
 
-<table>
-<tr>
-<td align="center">
-<b>Nevil Dsouza</b><br>
-<sub>Developer</sub>
-</td>
-<td align="center">
-<b>Naren V</b><br>
-<sub>Developer</sub>
-</td>
-<td align="center">
-<b>Manas Habbu</b><br>
-<sub>Developer</sub>
-</td>
-<td align="center">
-<b>Manasvi R</b><br>
-<sub>Developer</sub>
-</td>
-<td align="center">
-<b>Mithun Gowda B</b><br>
-<sub>Developer</sub>
-</td>
-</tr>
-</table>
+| Name | Role | Contributions |
+|------|------|---------------|
+| **Nevil Dsouza** | Team Leader | Core Dev, Tester |
+| **Lavanya** | Developer | Documentation, Presentation |
+| **Manas Habbu** | Developer | Documentation, Presentation, Designer |
+| **Manasvi R** | Developer | Documentation, Presentation Designer |
+| **Mithun Gowda B** | Core Developer | Main Dev |
+| **Naren V** | Developer | UI Designer |
 
 ---
 
@@ -401,6 +369,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 | [Groq](https://groq.com) | AI/LLM API |
 | [React Native Paper](https://callstack.github.io/react-native-paper) | UI Components |
 | [Catbox.moe](https://catbox.moe) | Free file hosting |
+| [Vercel](https://vercel.com) | Backend & Web hosting |
 
 ---
 
