@@ -712,6 +712,47 @@ export default function ProfileScreen() {
   };
 
   const handlePickAvatar = async () => {
+    // Web: Use file input
+    if (Platform.OS === 'web') {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async (e: any) => {
+        const file = e.target.files?.[0];
+        if (file) {
+          try {
+            // Upload directly to Catbox via backend proxy
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:3000';
+            const response = await fetch(`${BACKEND_URL}/upload-catbox`, {
+              method: 'POST',
+              body: formData,
+            });
+
+            if (!response.ok) {
+              throw new Error('Upload failed');
+            }
+
+            const result = await response.json();
+            if (result.success && result.url) {
+              setEditPhotoURL(result.url);
+              window.alert('Image uploaded successfully!');
+            } else {
+              throw new Error(result.error || 'Upload failed');
+            }
+          } catch (error: any) {
+            console.error('Web avatar upload error:', error);
+            window.alert('Failed to upload image: ' + (error.message || 'Unknown error'));
+          }
+        }
+      };
+      input.click();
+      return;
+    }
+
+    // Native: Use ImagePicker
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
@@ -735,6 +776,12 @@ export default function ProfileScreen() {
   };
 
   const handleTakePhoto = async () => {
+    // Camera not supported on web
+    if (Platform.OS === 'web') {
+      window.alert('Camera is not supported on web. Please use "Pick from Gallery" instead.');
+      return;
+    }
+
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
@@ -759,29 +806,37 @@ export default function ProfileScreen() {
   const handleSaveProfile = async () => {
     if (!user || !profile) return;
 
+    const showError = (message: string) => {
+      if (Platform.OS === 'web') {
+        window.alert(message);
+      } else {
+        Alert.alert('Error', message);
+      }
+    };
+
     // Validation
     if (!editDisplayName.trim()) {
-      Alert.alert('Error', 'Please enter your name');
+      showError('Please enter your name');
       return;
     }
     if (!editCollege.trim()) {
-      Alert.alert('Error', 'Please enter your college');
+      showError('Please enter your college');
       return;
     }
     if (!editCourse.trim()) {
-      Alert.alert('Error', 'Please enter your course');
+      showError('Please enter your course');
       return;
     }
     if (!editDepartment.trim()) {
-      Alert.alert('Error', 'Please enter your department');
+      showError('Please enter your department');
       return;
     }
     if (!editSemester.trim()) {
-      Alert.alert('Error', 'Please enter your semester');
+      showError('Please enter your semester');
       return;
     }
     if (!editRollNumber.trim()) {
-      Alert.alert('Error', 'Please enter your roll number');
+      showError('Please enter your roll number');
       return;
     }
 
@@ -829,10 +884,18 @@ export default function ProfileScreen() {
       setShowEditProfile(false);
       setSavingProfile(false);
 
-      Alert.alert('Success', 'Profile updated successfully');
+      if (Platform.OS === 'web') {
+        window.alert('Profile updated successfully');
+      } else {
+        Alert.alert('Success', 'Profile updated successfully');
+      }
     } catch (error) {
       console.error('Error updating profile:', error);
-      Alert.alert('Error', 'Failed to update profile. Please try again.');
+      if (Platform.OS === 'web') {
+        window.alert('Failed to update profile. Please try again.');
+      } else {
+        Alert.alert('Error', 'Failed to update profile. Please try again.');
+      }
       setSavingProfile(false);
     }
   };
