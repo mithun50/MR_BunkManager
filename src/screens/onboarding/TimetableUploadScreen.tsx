@@ -1,107 +1,17 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Image, Alert } from 'react-native';
-import { Text, Button, useTheme, Card, IconButton } from 'react-native-paper';
+import React from 'react';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { Text, Button, useTheme, Card } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as ImagePicker from 'expo-image-picker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import geminiService from '../../services/geminiService';
-import { TimetableEntry } from '../../types/user';
-import VideoLoadingScreen from '../../components/VideoLoadingScreen';
 
 interface TimetableUploadScreenProps {
-  onNext: (timetable: TimetableEntry[]) => void;
+  onManual: () => void;
   onSkip: () => void;
 }
 
-export default function TimetableUploadScreen({ onNext, onSkip }: TimetableUploadScreenProps) {
+export default function TimetableUploadScreen({ onManual, onSkip }: TimetableUploadScreenProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
-  const [extracting, setExtracting] = useState(false);
-  const [extracted, setExtracted] = useState(false);
-
-  const pickImage = async () => {
-    try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-      if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Please grant gallery permission to upload timetable');
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: false,
-        quality: 1,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        setSelectedFile(result.assets[0].uri);
-        setExtracted(false);
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to pick image');
-    }
-  };
-
-  const takePhoto = async () => {
-    try {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-
-      if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Please grant camera permission');
-        return;
-      }
-
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: false,
-        quality: 1,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        setSelectedFile(result.assets[0].uri);
-        setExtracted(false);
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to take photo');
-    }
-  };
-
-
-  const extractTimetable = async () => {
-    if (!selectedFile) return;
-
-    setExtracting(true);
-    try {
-      const timetableData = await geminiService.extractTimetableFromImage(selectedFile);
-
-      if (timetableData.length === 0) {
-        Alert.alert('No Data Found', 'Could not extract timetable data. Please try another image or add manually.');
-        return;
-      }
-
-      setExtracted(true);
-      Alert.alert(
-        'Success!',
-        `Extracted ${timetableData.length} classes from your timetable. You can review and edit them in the next step.`,
-        [
-          {
-            text: 'Continue',
-            onPress: () => onNext(timetableData),
-          },
-        ]
-      );
-    } catch (error: any) {
-      Alert.alert('Extraction Failed', error.message || 'Failed to extract timetable. Please try again.');
-    } finally {
-      setExtracting(false);
-    }
-  };
-
-  const removeFile = () => {
-    setSelectedFile(null);
-    setExtracted(false);
-  };
 
   return (
     <ScrollView
@@ -113,76 +23,79 @@ export default function TimetableUploadScreen({ onNext, onSkip }: TimetableUploa
       <View style={styles.header}>
         <MaterialCommunityIcons name="timetable" size={64} color={theme.colors.primary} />
         <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.primary }]}>
-          Upload Your Timetable
+          Add Your Timetable
         </Text>
         <Text variant="bodyMedium" style={styles.subtitle}>
-          We'll use AI to extract your class schedule
+          Add your class schedule manually for best accuracy
         </Text>
       </View>
 
-      {/* Upload Options */}
-      {!selectedFile && (
-        <View style={styles.uploadOptions}>
-          <Card style={styles.optionCard} onPress={takePhoto}>
-            <Card.Content style={styles.optionContent}>
-              <MaterialCommunityIcons name="camera" size={48} color={theme.colors.primary} />
-              <Text variant="titleMedium" style={styles.optionTitle}>
-                Take Photo
+      {/* Manual Entry Card */}
+      <Card style={styles.mainCard}>
+        <Card.Content style={styles.cardContent}>
+          <MaterialCommunityIcons name="pencil" size={64} color={theme.colors.primary} />
+          <Text variant="titleLarge" style={[styles.cardTitle, { color: theme.colors.primary }]}>
+            Manual Entry
+          </Text>
+          <Text variant="bodyMedium" style={styles.cardDescription}>
+            Add your classes one by one with complete control over all details
+          </Text>
+
+          <View style={styles.benefitsList}>
+            <View style={styles.benefitItem}>
+              <MaterialCommunityIcons name="check-circle" size={20} color={theme.colors.primary} />
+              <Text variant="bodyMedium" style={styles.benefitText}>
+                100% accurate schedule
               </Text>
-              <Text variant="bodySmall" style={styles.optionDescription}>
-                Capture your timetable
+            </View>
+            <View style={styles.benefitItem}>
+              <MaterialCommunityIcons name="check-circle" size={20} color={theme.colors.primary} />
+              <Text variant="bodyMedium" style={styles.benefitText}>
+                Add faculty names and room numbers
               </Text>
-            </Card.Content>
-          </Card>
-
-          <Card style={styles.optionCard} onPress={pickImage}>
-            <Card.Content style={styles.optionContent}>
-              <MaterialCommunityIcons name="image" size={48} color={theme.colors.secondary} />
-              <Text variant="titleMedium" style={styles.optionTitle}>
-                Choose Image
+            </View>
+            <View style={styles.benefitItem}>
+              <MaterialCommunityIcons name="check-circle" size={20} color={theme.colors.primary} />
+              <Text variant="bodyMedium" style={styles.benefitText}>
+                Edit anytime from Profile settings
               </Text>
-              <Text variant="bodySmall" style={styles.optionDescription}>
-                From your gallery
+            </View>
+            <View style={styles.benefitItem}>
+              <MaterialCommunityIcons name="check-circle" size={20} color={theme.colors.primary} />
+              <Text variant="bodyMedium" style={styles.benefitText}>
+                No errors from image quality
               </Text>
-            </Card.Content>
-          </Card>
-        </View>
-      )}
+            </View>
+          </View>
+        </Card.Content>
+      </Card>
 
-      {/* Selected File Preview */}
-      {selectedFile && (
-        <View style={styles.preview}>
-          <Card style={styles.previewCard}>
-            <Card.Content>
-              <View style={styles.previewHeader}>
-                <Text variant="titleMedium">Selected Image</Text>
-                <IconButton icon="close" size={20} onPress={removeFile} />
-              </View>
-
-              <Image source={{ uri: selectedFile }} style={styles.previewImage} resizeMode="contain" />
-            </Card.Content>
-          </Card>
-
-          {extracting ? (
-            <VideoLoadingScreen onFinish={() => setExtracting(false)} />
-          ) : (
-            <Button
-              mode="contained"
-              onPress={extractTimetable}
-              style={styles.extractButton}
-              contentStyle={styles.buttonContent}
-              icon="robot"
-            >
-              Extract with AI
-            </Button>
-          )}
-        </View>
-      )}
-
-      {/* Skip Button */}
-      <Button mode="text" onPress={onSkip} style={styles.skipButton}>
-        Skip for now (Add manually later)
+      {/* Action Buttons */}
+      <Button
+        mode="contained"
+        onPress={onManual}
+        style={styles.manualButton}
+        contentStyle={styles.buttonContent}
+        icon="calendar-plus"
+      >
+        Add Classes Manually
       </Button>
+
+      <Button mode="outlined" onPress={onSkip} style={styles.skipButton}>
+        Skip for now (Add later from Profile)
+      </Button>
+
+      {/* Info Card */}
+      <Card style={styles.infoCard} mode="outlined">
+        <Card.Content>
+          <View style={styles.infoRow}>
+            <MaterialCommunityIcons name="information" size={20} color={theme.colors.primary} />
+            <Text variant="bodySmall" style={styles.infoText}>
+              You can always add or edit your timetable later from Profile → Manage Timetable
+            </Text>
+          </View>
+        </Card.Content>
+      </Card>
     </ScrollView>
   );
 }
@@ -212,62 +125,56 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     textAlign: 'center',
   },
-  uploadOptions: {
-    gap: 16,
+  mainCard: {
+    elevation: 3,
     marginBottom: 24,
   },
-  optionCard: {
-    elevation: 2,
-  },
-  optionContent: {
-    alignItems: 'center',
-    paddingVertical: 24,
-  },
-  optionTitle: {
-    marginTop: 12,
-    fontWeight: 'bold',
-  },
-  optionDescription: {
-    marginTop: 4,
-    opacity: 0.7,
-  },
-  preview: {
-    marginBottom: 24,
-  },
-  previewCard: {
-    elevation: 2,
-    marginBottom: 16,
-  },
-  previewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  previewImage: {
-    width: '100%',
-    height: 300,
-    borderRadius: 8,
-  },
-  extractingContainer: {
+  cardContent: {
     alignItems: 'center',
     paddingVertical: 32,
   },
-  extractingText: {
+  cardTitle: {
     marginTop: 16,
+    marginBottom: 8,
     fontWeight: 'bold',
   },
-  extractingSubtext: {
-    marginTop: 8,
-    opacity: 0.7,
+  cardDescription: {
+    textAlign: 'center',
+    opacity: 0.8,
+    marginBottom: 24,
   },
-  extractButton: {
-    marginTop: 8,
+  benefitsList: {
+    width: '100%',
+    gap: 12,
+  },
+  benefitItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  benefitText: {
+    flex: 1,
+    opacity: 0.8,
+  },
+  manualButton: {
+    marginBottom: 12,
   },
   buttonContent: {
     paddingVertical: 8,
   },
   skipButton: {
-    marginTop: 16,
+    marginBottom: 24,
+  },
+  infoCard: {
+    borderStyle: 'dashed',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  infoText: {
+    flex: 1,
+    opacity: 0.7,
   },
 });

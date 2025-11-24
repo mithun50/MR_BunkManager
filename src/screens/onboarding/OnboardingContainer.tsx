@@ -8,6 +8,7 @@ import firestoreService from '../../services/firestoreService';
 import imageUploadService from '../../services/imageUploadService';
 import ProfileSetupScreen, { ProfileData } from './ProfileSetupScreen';
 import TimetableUploadScreen from './TimetableUploadScreen';
+import TimetableManualEntryScreen from './TimetableManualEntryScreen';
 import AttendanceSettingsScreen from './AttendanceSettingsScreen';
 import { TimetableEntry } from '../../types/user';
 
@@ -18,7 +19,7 @@ export default function OnboardingContainer() {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [timetableData, setTimetableData] = useState<TimetableEntry[]>([]);
 
-  const totalSteps = 3;
+  const totalSteps = 4; // Updated to 4 steps
   const progress = (currentStep + 1) / totalSteps;
 
   const handleProfileNext = (data: ProfileData) => {
@@ -26,14 +27,24 @@ export default function OnboardingContainer() {
     setCurrentStep(1);
   };
 
-  const handleTimetableNext = (timetable: TimetableEntry[]) => {
-    setTimetableData(timetable);
+  const handleTimetableManual = () => {
+    // Go to manual entry screen
     setCurrentStep(2);
+  };
+
+  const handleManualEntryComplete = (timetable: TimetableEntry[]) => {
+    setTimetableData(timetable);
+    setCurrentStep(3);
+  };
+
+  const handleManualEntrySkip = () => {
+    setTimetableData([]);
+    setCurrentStep(3);
   };
 
   const handleTimetableSkip = () => {
     setTimetableData([]);
-    setCurrentStep(2);
+    setCurrentStep(3);
   };
 
   const handleComplete = async (minimumAttendance: number) => {
@@ -160,10 +171,18 @@ export default function OnboardingContainer() {
         )}
 
         {currentStep === 1 && (
-          <TimetableUploadScreen onNext={handleTimetableNext} onSkip={handleTimetableSkip} />
+          <TimetableUploadScreen onManual={handleTimetableManual} onSkip={handleTimetableSkip} />
         )}
 
         {currentStep === 2 && (
+          <TimetableManualEntryScreen
+            onNext={handleManualEntryComplete}
+            onSkip={handleManualEntrySkip}
+            initialTimetable={timetableData}
+          />
+        )}
+
+        {currentStep === 3 && (
           <AttendanceSettingsScreen onComplete={handleComplete} />
         )}
       </View>

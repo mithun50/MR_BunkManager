@@ -12,8 +12,6 @@ import { UserProfile, Subject, AttendanceRecord, TimetableEntry } from '@/src/ty
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import * as DocumentPicker from 'expo-document-picker';
-import groqService from '@/src/services/geminiService';
 import { ThemeSwitcher } from '@/src/components/ThemeSwitcher';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import VideoLoadingScreen from '@/src/components/VideoLoadingScreen';
@@ -53,7 +51,6 @@ export default function ProfileScreen() {
     return { valid: true, message: '' };
   };
   const [loading, setLoading] = useState(true);
-  const [showTimetableOptions, setShowTimetableOptions] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
   const [extracting, setExtracting] = useState(false);
@@ -264,225 +261,12 @@ export default function ProfileScreen() {
       console.log('Data reloaded');
 
       setShowDiscardDialog(false);
-      setShowTimetableOptions(false);
       Alert.alert('Success', 'Timetable and subjects discarded successfully. All data has been removed.');
     } catch (error: any) {
       console.error('Error discarding timetable:', error);
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
       Alert.alert('Error', `Failed to discard data: ${error.message || 'Unknown error'}`);
-    }
-  };
-
-  const handleExtractFromImage = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: false,
-        quality: 1,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        setExtracting(true);
-        setShowTimetableOptions(false);
-
-        try {
-          const extractedData = await groqService.extractTimetableFromImage(result.assets[0].uri);
-
-          if (extractedData.length === 0) {
-            Alert.alert('No Data', 'Could not extract timetable data from the image');
-            setExtracting(false);
-            return;
-          }
-
-          if (!user) return;
-
-          // Filter out entries that conflict with existing time slots
-          const validNewEntries = extractedData.filter(entry => {
-            const validation = validateTimeSlot(timetable, entry);
-            if (!validation.valid) {
-              console.log(`Skipping duplicate: ${validation.message}`);
-              return false;
-            }
-            return true;
-          });
-
-          if (validNewEntries.length === 0) {
-            Alert.alert('No New Data', 'All extracted entries already exist in your timetable');
-            setExtracting(false);
-            return;
-          }
-
-          // Merge with existing timetable and sort
-          const updatedTimetable = sortTimetable([...timetable, ...validNewEntries]);
-
-          // Update UI immediately
-          setTimetable(updatedTimetable);
-          setExtracting(false);
-
-          // Save to Firestore in background
-          await firestoreService.saveTimetable(user.uid, updatedTimetable);
-
-          // Create subjects from new entries (avoid duplicates)
-          const uniqueSubjects = new Map<string, TimetableEntry>();
-          validNewEntries.forEach(entry => {
-            const uniqueKey = `${entry.subject}-${entry.subjectCode || 'no-code'}`.toLowerCase();
-            if (!uniqueSubjects.has(uniqueKey)) {
-              uniqueSubjects.set(uniqueKey, entry);
-            }
-          });
-
-          const existingSubjects = await firestoreService.getSubjects(user.uid);
-          const existingSubjectKeys = new Set(
-            existingSubjects.map(s => `${s.name}-${s.code || 'no-code'}`.toLowerCase())
-          );
-
-          const subjectPromises = Array.from(uniqueSubjects.values())
-            .filter(entry => {
-              const key = `${entry.subject}-${entry.subjectCode || 'no-code'}`.toLowerCase();
-              return !existingSubjectKeys.has(key);
-            })
-            .map(entry => {
-              const subject: any = {
-                id: generateSubjectId(),
-                name: entry.subject,
-                code: entry.subjectCode || '',
-                type: entry.type || 'lecture',
-                totalClasses: 0,
-                attendedClasses: 0,
-                attendancePercentage: 0,
-                lastUpdated: new Date(),
-              };
-
-              if (entry.faculty) subject.faculty = entry.faculty;
-              if (entry.room) subject.room = entry.room;
-
-              return firestoreService.addSubject(user.uid, subject);
-            });
-
-          await Promise.all(subjectPromises);
-
-          const skipped = extractedData.length - validNewEntries.length;
-          const message = skipped > 0
-            ? `Added ${validNewEntries.length} classes (${skipped} duplicates skipped)`
-            : `Added ${validNewEntries.length} classes`;
-
-          Alert.alert('Success', message);
-        } catch (error: any) {
-          console.error('Extraction error:', error);
-          Alert.alert('Extraction Failed', error.message || 'Failed to extract timetable');
-          setExtracting(false);
-        }
-      }
-    } catch (error) {
-      console.error('Image picker error:', error);
-      Alert.alert('Error', 'Failed to pick image');
-      setExtracting(false);
-    }
-  };
-
-  const handleExtractFromPDF = async () => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: 'application/pdf',
-      });
-
-      if (result.canceled === false && result.assets[0]) {
-        setExtracting(true);
-        setShowTimetableOptions(false);
-
-        try {
-          const extractedData = await groqService.extractTimetableFromPDF(result.assets[0].uri);
-
-          if (extractedData.length === 0) {
-            Alert.alert('No Data', 'Could not extract timetable data from the PDF');
-            setExtracting(false);
-            return;
-          }
-
-          if (!user) return;
-
-          // Filter out entries that conflict with existing time slots
-          const validNewEntries = extractedData.filter(entry => {
-            const validation = validateTimeSlot(timetable, entry);
-            if (!validation.valid) {
-              console.log(`Skipping duplicate: ${validation.message}`);
-              return false;
-            }
-            return true;
-          });
-
-          if (validNewEntries.length === 0) {
-            Alert.alert('No New Data', 'All extracted entries already exist in your timetable');
-            setExtracting(false);
-            return;
-          }
-
-          // Merge with existing timetable and sort
-          const updatedTimetable = sortTimetable([...timetable, ...validNewEntries]);
-
-          // Update UI immediately
-          setTimetable(updatedTimetable);
-          setExtracting(false);
-
-          // Save to Firestore in background
-          await firestoreService.saveTimetable(user.uid, updatedTimetable);
-
-          // Create subjects from new entries (avoid duplicates)
-          const uniqueSubjects = new Map<string, TimetableEntry>();
-          validNewEntries.forEach(entry => {
-            const uniqueKey = `${entry.subject}-${entry.subjectCode || 'no-code'}`.toLowerCase();
-            if (!uniqueSubjects.has(uniqueKey)) {
-              uniqueSubjects.set(uniqueKey, entry);
-            }
-          });
-
-          const existingSubjects = await firestoreService.getSubjects(user.uid);
-          const existingSubjectKeys = new Set(
-            existingSubjects.map(s => `${s.name}-${s.code || 'no-code'}`.toLowerCase())
-          );
-
-          const subjectPromises = Array.from(uniqueSubjects.values())
-            .filter(entry => {
-              const key = `${entry.subject}-${entry.subjectCode || 'no-code'}`.toLowerCase();
-              return !existingSubjectKeys.has(key);
-            })
-            .map(entry => {
-              const subject: any = {
-                id: generateSubjectId(),
-                name: entry.subject,
-                code: entry.subjectCode || '',
-                type: entry.type || 'lecture',
-                totalClasses: 0,
-                attendedClasses: 0,
-                attendancePercentage: 0,
-                lastUpdated: new Date(),
-              };
-
-              if (entry.faculty) subject.faculty = entry.faculty;
-              if (entry.room) subject.room = entry.room;
-
-              return firestoreService.addSubject(user.uid, subject);
-            });
-
-          await Promise.all(subjectPromises);
-
-          const skipped = extractedData.length - validNewEntries.length;
-          const message = skipped > 0
-            ? `Added ${validNewEntries.length} classes (${skipped} duplicates skipped)`
-            : `Added ${validNewEntries.length} classes`;
-
-          Alert.alert('Success', message);
-        } catch (error: any) {
-          console.error('Extraction error:', error);
-          Alert.alert('Extraction Failed', error.message || 'Failed to extract timetable');
-          setExtracting(false);
-        }
-      }
-    } catch (error) {
-      console.error('Document picker error:', error);
-      Alert.alert('Error', 'Failed to pick PDF');
-      setExtracting(false);
     }
   };
 
@@ -1045,20 +829,11 @@ export default function ProfileScreen() {
 
                 <Button
                   mode="contained"
-                  icon="upload"
-                  onPress={() => setShowTimetableOptions(true)}
-                  style={styles.timetableButton}
-                >
-                  Extract from AI
-                </Button>
-
-                <Button
-                  mode="contained"
                   icon="pencil-plus"
                   onPress={() => setShowManualEntry(true)}
                   style={styles.timetableButton}
                 >
-                  Add Manually
+                  Add Class Manually
                 </Button>
               </View>
             )}
@@ -1312,52 +1087,6 @@ export default function ProfileScreen() {
         </Button>
       </Surface>
       </ScrollView>
-
-      {/* Timetable Options Modal */}
-      <Portal>
-        <Modal
-          visible={showTimetableOptions}
-          onDismiss={() => setShowTimetableOptions(false)}
-          contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
-        >
-          <Text variant="headlineSmall" style={styles.modalTitle}>
-            Extract Timetable
-          </Text>
-          <Text variant="bodyMedium" style={styles.modalDescription}>
-            Choose a method to extract your timetable
-          </Text>
-
-          <OnlineButton
-            mode="contained"
-            icon="image"
-            onPress={handleExtractFromImage}
-            style={styles.optionButton}
-            requiresOnline={true}
-            offlineMessage="Need internet to extract timetable from image"
-          >
-            From Image
-          </OnlineButton>
-
-          <OnlineButton
-            mode="contained"
-            icon="file-pdf-box"
-            onPress={handleExtractFromPDF}
-            style={styles.optionButton}
-            requiresOnline={true}
-            offlineMessage="Need internet to extract timetable from PDF"
-          >
-            From PDF
-          </OnlineButton>
-
-          <Button
-            mode="outlined"
-            onPress={() => setShowTimetableOptions(false)}
-            style={styles.optionButton}
-          >
-            Cancel
-          </Button>
-        </Modal>
-      </Portal>
 
       {/* Manual Entry Modal */}
       <Portal>
