@@ -10,12 +10,14 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import multer from 'multer';
 import { initializeFirebase, getFirestore } from '../config/firebase.js';
 import {
   sendNotificationToUser,
   sendNotificationToAllUsers,
   sendDailyReminders,
   sendClassReminders,
+  sendNotificationToFollowers,
   isValidExpoPushToken
 } from '../src/sendNotification.js';
 
@@ -33,6 +35,23 @@ const corsOptions = {
   credentials: true,
   optionsSuccessStatus: 200
 };
+
+// Multer configuration for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB max file size
+  },
+  fileFilter: (req, file, cb) => {
+    // Allow images and PDFs
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only images and PDFs are allowed.'));
+    }
+  },
+});
 
 // Middleware
 app.use(helmet());
@@ -83,10 +102,13 @@ app.get('/', (req, res) => {
       'POST /save-token',
       'DELETE /delete-token',
       'POST /send-notification',
+      'POST /notify-followers',
       'POST /send-notification-all',
       'POST /send-daily-reminders',
       'POST /send-class-reminders',
-      'GET /tokens/:userId'
+      'GET /tokens/:userId',
+      'POST /upload-catbox',
+      'GET /note/:noteId'
     ]
   });
 });
@@ -241,6 +263,56 @@ app.post('/send-notification', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to send notification',
+      details: error.message,
+      timestamp: formatISTDateTime()
+    });
+  }
+});
+
+/**
+ * Notify followers when a user uploads a new note
+ * POST /notify-followers
+ *
+ * Body:
+ * {
+ *   "authorId": "user123",
+ *   "authorName": "John Doe",
+ *   "noteId": "note123",
+ *   "title": "Note title",
+ *   "subject": "Math" (optional)
+ * }
+ */
+app.post('/notify-followers', async (req, res) => {
+  try {
+    const { authorId, authorName, noteId, title, subject } = req.body;
+
+    if (!authorId || !authorName || !noteId || !title) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: authorId, authorName, noteId, title'
+      });
+    }
+
+    console.log(`📤 Notifying followers of ${authorName} about new note`);
+
+    const result = await sendNotificationToFollowers(authorId, {
+      authorName,
+      noteId,
+      title,
+      subject
+    });
+
+    res.json({
+      success: true,
+      message: 'Followers notified successfully',
+      result,
+      timestamp: formatISTDateTime()
+    });
+  } catch (error) {
+    console.error('Error notifying followers:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to notify followers',
       details: error.message,
       timestamp: formatISTDateTime()
     });
@@ -584,6 +656,80 @@ app.get('/note/:noteId', async (req, res) => {
 
   res.setHeader('Content-Type', 'text/html');
   res.send(html);
+});
+
+// ============================================
+// FILE UPLOAD ROUTES
+// ============================================
+
+/**
+ * Proxy upload to Catbox.moe (CORS-free for web clients)
+ * POST /upload-catbox
+ *
+ * Multipart form with:
+ * - file: The file to upload
+ *
+ * Returns: { success, url, fileId, fileName, mimeType }
+ */
+app.post('/upload-catbox', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No file provided',
+        timestamp: formatISTDateTime()
+      });
+    }
+
+    console.log(`📤 Proxying file to Catbox: ${req.file.originalname} (${req.file.mimetype})`);
+
+    // Create form data for Catbox
+    const FormData = (await import('form-data')).default;
+    const formData = new FormData();
+    formData.append('reqtype', 'fileupload');
+    formData.append('fileToUpload', req.file.buffer, {
+      filename: req.file.originalname,
+      contentType: req.file.mimetype,
+    });
+
+    // Upload to Catbox
+    const fetch = (await import('node-fetch')).default;
+    const response = await fetch('https://catbox.moe/user/api.php', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const url = await response.text();
+
+    if (!url.startsWith('https://')) {
+      throw new Error(url || 'Upload to Catbox failed');
+    }
+
+    const fileId = url.split('/').pop() || '';
+
+    console.log(`✅ File uploaded to Catbox: ${url}`);
+
+    res.json({
+      success: true,
+      message: 'File uploaded successfully',
+      url: url,
+      fileId: fileId,
+      fileName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+      webViewLink: url,
+      webContentLink: url,
+      thumbnailLink: req.file.mimetype.startsWith('image/') ? url : undefined,
+      timestamp: formatISTDateTime()
+    });
+  } catch (error) {
+    console.error('❌ Error uploading to Catbox:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to upload file',
+      timestamp: formatISTDateTime()
+    });
+  }
 });
 
 // 404 handler
