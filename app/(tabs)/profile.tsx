@@ -1,9 +1,11 @@
-import { View, StyleSheet, ScrollView, Alert, Platform, Image, KeyboardAvoidingView } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, Platform, Image, KeyboardAvoidingView, Pressable } from 'react-native';
 import { Text, Surface, Button, Avatar, useTheme, Divider, Appbar, Card, IconButton, Portal, Modal, SegmentedButtons, TextInput as PaperInput, Dialog, Chip } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/src/store/authStore';
 import authService from '@/src/services/authService';
 import firestoreService from '@/src/services/firestoreService';
+import followService from '@/src/services/followService';
+import notesService from '@/src/services/notesService';
 import { router } from 'expo-router';
 import { useEffect, useState, useCallback } from 'react';
 import { UserProfile, Subject, AttendanceRecord, TimetableEntry } from '@/src/types/user';
@@ -25,6 +27,9 @@ export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [notesCount, setNotesCount] = useState(0);
 
   // Utility functions for consistent ID generation
   const generateTimetableId = () => `timetable_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -164,11 +169,18 @@ export default function ProfileScreen() {
     if (user) {
       try {
         setLoading(true);
-        const [userProfile, subjectsList, timetableData] = await Promise.all([
+        const [userProfile, subjectsList, timetableData, socialStats, userNotes] = await Promise.all([
           firestoreService.getUserProfile(user.uid),
           firestoreService.getSubjects(user.uid),
           firestoreService.getTimetable(user.uid),
+          followService.getFollowStats(user.uid),
+          notesService.getUserNotes(user.uid),
         ]);
+
+        // Set social stats (default to 0 if undefined)
+        setFollowersCount(socialStats.followersCount || 0);
+        setFollowingCount(socialStats.followingCount || 0);
+        setNotesCount(userNotes.items?.length || 0);
 
         // Filter out invalid subjects
         const validSubjects = subjectsList.filter(subject => {
@@ -875,6 +887,62 @@ export default function ProfileScreen() {
             >
               Edit Profile
             </Button>
+          </Surface>
+
+          {/* Social Stats Section */}
+          <Surface style={styles.socialStatsCard}>
+            <Pressable
+              style={styles.statItem}
+              onPress={() => router.push('/create-note' as any)}
+            >
+              <MaterialCommunityIcons name="note-text" size={24} color={theme.colors.primary} />
+              <Text variant="headlineSmall" style={styles.statNumber}>
+                {notesCount}
+              </Text>
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                Notes
+              </Text>
+            </Pressable>
+
+            <View style={[styles.statDivider, { backgroundColor: theme.colors.outline }]} />
+
+            <Pressable
+              style={styles.statItem}
+              onPress={() =>
+                router.push({
+                  pathname: '/user/followers',
+                  params: { userId: user?.uid, tab: 'followers', userName: profile?.displayName },
+                } as any)
+              }
+            >
+              <MaterialCommunityIcons name="account-group" size={24} color={theme.colors.primary} />
+              <Text variant="headlineSmall" style={styles.statNumber}>
+                {followersCount}
+              </Text>
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                Followers
+              </Text>
+            </Pressable>
+
+            <View style={[styles.statDivider, { backgroundColor: theme.colors.outline }]} />
+
+            <Pressable
+              style={styles.statItem}
+              onPress={() =>
+                router.push({
+                  pathname: '/user/followers',
+                  params: { userId: user?.uid, tab: 'following', userName: profile?.displayName },
+                } as any)
+              }
+            >
+              <MaterialCommunityIcons name="account-multiple" size={24} color={theme.colors.primary} />
+              <Text variant="headlineSmall" style={styles.statNumber}>
+                {followingCount}
+              </Text>
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                Following
+              </Text>
+            </Pressable>
           </Surface>
 
           {/* Manage Timetable */}
@@ -1837,6 +1905,28 @@ const styles = StyleSheet.create({
     elevation: 2,
     alignItems: 'center',
     marginBottom: 16,
+  },
+  socialStatsCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    elevation: 2,
+    marginBottom: 16,
+  },
+  statItem: {
+    alignItems: 'center',
+    flex: 1,
+    paddingVertical: 8,
+  },
+  statNumber: {
+    fontWeight: 'bold',
+    marginTop: 4,
+  },
+  statDivider: {
+    width: 1,
+    height: 50,
   },
   name: {
     marginTop: 16,

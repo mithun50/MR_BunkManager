@@ -35,6 +35,11 @@ module.exports = ({ config }) => {
         androidMode: "default",
         androidCollapsedTitle: "MR BunkManager Updates"
       },
+    web: {
+      bundler: "metro",
+      output: "single",
+      favicon: "./assets/images/logo.png"
+    },
     android: {
       package: "com.idtl.mrbunkmanager",
       versionCode: 4,

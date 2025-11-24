@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, useWindowDimensions, Platform } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import Svg, { Circle, G, Text as SvgText, Defs, LinearGradient, Stop, Path } from 'react-native-svg';
 import Animated, {
@@ -30,6 +30,10 @@ export default function DonutChart({
   showLegend = true,
 }: DonutChartProps) {
   const theme = useTheme();
+  const { width: screenWidth } = useWindowDimensions();
+  const isWeb = Platform.OS === 'web';
+  const isWideScreen = screenWidth > 768;
+
   const total = attended + absent;
   const progress = useSharedValue(0);
 
@@ -47,6 +51,9 @@ export default function DonutChart({
   const circumference = 2 * Math.PI * radius;
   const attendedPercentage = (attended / total) * 100;
 
+  // Dynamic font size based on chart size
+  const fontSize = Math.max(size * 0.18, 20);
+
   const getPercentageColor = (pct: number) => {
     if (pct >= 85) return '#4CAF50';
     if (pct >= 75) return '#FF9800';
@@ -63,7 +70,10 @@ export default function DonutChart({
   });
 
   return (
-    <View style={styles.container}>
+    <View style={[
+      styles.container,
+      isWeb && isWideScreen && styles.containerWeb
+    ]}>
       <View style={styles.chartContainer}>
         <Svg width={size} height={size}>
           <G rotation="-90" origin={`${size / 2}, ${size / 2}`}>
@@ -99,7 +109,7 @@ export default function DonutChart({
               y={size / 2}
               textAnchor="middle"
               dy="0.35em"
-              fontSize="38"
+              fontSize={fontSize}
               fontWeight="bold"
               fill={percentageColor}
             >
@@ -110,7 +120,10 @@ export default function DonutChart({
       </View>
 
       {showLegend && (
-        <View style={styles.legendContainer}>
+        <View style={[
+          styles.legendContainer,
+          isWeb && isWideScreen && styles.legendContainerWeb
+        ]}>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: '#4CAF50' }]} />
             <Text variant="bodyMedium">Present: </Text>
@@ -136,9 +149,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
   },
+  containerWeb: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+    flexWrap: 'nowrap',
+    paddingVertical: 0,
+    marginTop: -16,
+  },
   chartContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   legendContainer: {
     flexDirection: 'row',
@@ -148,15 +171,31 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: 'rgba(0,0,0,0.08)',
+    width: '100%',
+  },
+  legendContainerWeb: {
+    flexDirection: 'column',
+    marginTop: 0,
+    paddingTop: 0,
+    borderTopWidth: 0,
+    borderLeftWidth: 1,
+    borderLeftColor: 'rgba(0,0,0,0.08)',
+    paddingLeft: 20,
+    gap: 8,
+    width: 'auto',
+    minWidth: 120,
+    flexShrink: 0,
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'nowrap',
   },
   legendDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
     marginRight: 6,
+    flexShrink: 0,
   },
 });

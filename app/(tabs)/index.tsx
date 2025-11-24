@@ -1,4 +1,4 @@
-import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl, useWindowDimensions, Platform } from 'react-native';
 import { Text, Surface, Card, useTheme, ProgressBar, Appbar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,6 +15,11 @@ export default function DashboardScreen() {
   const theme = useTheme();
   const { user } = useAuthStore();
   const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
+  const isWeb = Platform.OS === 'web';
+  const isWideScreen = screenWidth > 768;
+  const isVeryWideScreen = screenWidth > 1200;
+
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -120,7 +125,12 @@ export default function DashboardScreen() {
 
       <ScrollView
         style={styles.scrollContainer}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 16 }]}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: insets.bottom + 16 },
+          isWeb && isWideScreen && styles.contentWeb,
+          isWeb && isVeryWideScreen && styles.contentVeryWide,
+        ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -155,35 +165,51 @@ export default function DashboardScreen() {
                 Overall Attendance
               </Text>
             </View>
-            <View style={styles.percentageContainer}>
-              <Text variant="displayMedium" style={{ color: getAttendanceColor(overallPercentage) }}>
-                {overallPercentage.toFixed(1)}%
-              </Text>
-            </View>
-            <ProgressBar
-              progress={overallPercentage / 100}
-              color={getAttendanceColor(overallPercentage)}
-              style={styles.progressBar}
-            />
-            <Text variant="bodySmall" style={styles.attendanceText}>
-              {attendedClasses} classes attended out of {totalClasses}
-            </Text>
 
-            {/* Professional Donut Chart */}
-            {totalClasses > 0 && (
-              <View style={styles.chartContainer}>
-                <Text variant="titleSmall" style={styles.chartTitle}>
-                  Attendance Breakdown
-                </Text>
-                <DonutChart
-                  attended={attendedClasses}
-                  absent={totalClasses - attendedClasses}
-                  percentage={overallPercentage}
-                  size={200}
-                  strokeWidth={35}
+            {/* Web: Side by side | Mobile: Stacked */}
+            <View style={[
+              styles.overallContent,
+              isWeb && isWideScreen && styles.overallContentWeb
+            ]}>
+              {/* Left - Stats */}
+              <View style={[
+                styles.overallStats,
+                isWeb && isWideScreen && styles.overallStatsWeb
+              ]}>
+                <View style={styles.percentageContainer}>
+                  <Text variant="displayMedium" style={{ color: getAttendanceColor(overallPercentage) }}>
+                    {overallPercentage.toFixed(1)}%
+                  </Text>
+                </View>
+                <ProgressBar
+                  progress={overallPercentage / 100}
+                  color={getAttendanceColor(overallPercentage)}
+                  style={styles.progressBar}
                 />
+                <Text variant="bodySmall" style={styles.attendanceText}>
+                  {attendedClasses} classes attended out of {totalClasses}
+                </Text>
               </View>
-            )}
+
+              {/* Right - Donut Chart */}
+              {totalClasses > 0 && (
+                <View style={[
+                  styles.chartSection,
+                  isWeb && isWideScreen && styles.chartSectionWeb
+                ]}>
+                  <Text variant="titleSmall" style={styles.chartTitle}>
+                    Attendance Breakdown
+                  </Text>
+                  <DonutChart
+                    attended={attendedClasses}
+                    absent={totalClasses - attendedClasses}
+                    percentage={overallPercentage}
+                    size={isWeb && isWideScreen ? 160 : 200}
+                    strokeWidth={isWeb && isWideScreen ? 25 : 35}
+                  />
+                </View>
+              )}
+            </View>
           </Card.Content>
         </Card>
       ) : (
@@ -204,7 +230,7 @@ export default function DashboardScreen() {
 
       {/* Quick Stats */}
       {subjects.length > 0 && (
-        <View style={styles.statsContainer}>
+        <View style={[styles.statsContainer, isWeb && isWideScreen && styles.statsContainerWeb]}>
           <Surface style={[styles.statCard, { backgroundColor: theme.colors.secondaryContainer }]}>
             <MaterialCommunityIcons
               name={canBunk >= 0 ? "check-circle" : "alert-circle"}
@@ -237,38 +263,47 @@ export default function DashboardScreen() {
           <Text variant="titleLarge" style={styles.sectionTitle}>
             Subject-wise Attendance
           </Text>
-          {subjects.map((subject) => (
-            <Card key={subject.id} style={styles.card}>
-              <Card.Content>
-                <View style={styles.subjectHeader}>
-                  <View style={styles.subjectInfo}>
-                    <Text variant="titleMedium" style={styles.subjectName}>
-                      {subject.name}
-                    </Text>
-                    {subject.code && (
-                      <Text variant="bodySmall" style={styles.subjectCode}>
-                        {subject.code}
+          <View style={[
+            styles.subjectsGrid,
+            isWeb && isWideScreen && styles.subjectsGridWeb,
+            isWeb && isVeryWideScreen && styles.subjectsGridVeryWide,
+          ]}>
+            {subjects.map((subject) => (
+              <Card key={subject.id} style={[
+                styles.card,
+                isWeb && isWideScreen && styles.cardWeb,
+              ]}>
+                <Card.Content>
+                  <View style={styles.subjectHeader}>
+                    <View style={styles.subjectInfo}>
+                      <Text variant="titleMedium" style={styles.subjectName}>
+                        {subject.name}
                       </Text>
-                    )}
+                      {subject.code && (
+                        <Text variant="bodySmall" style={styles.subjectCode}>
+                          {subject.code}
+                        </Text>
+                      )}
+                    </View>
+                    <MaterialCommunityIcons
+                      name={subject.attendancePercentage >= 85 ? 'check-circle' : subject.attendancePercentage >= 75 ? 'alert-circle' : 'close-circle'}
+                      size={28}
+                      color={getAttendanceColor(subject.attendancePercentage)}
+                    />
                   </View>
-                  <MaterialCommunityIcons
-                    name={subject.attendancePercentage >= 85 ? 'check-circle' : subject.attendancePercentage >= 75 ? 'alert-circle' : 'close-circle'}
-                    size={28}
-                    color={getAttendanceColor(subject.attendancePercentage)}
-                  />
-                </View>
 
-                {/* Subject Chart */}
-                <DonutChart
-                  attended={subject.attendedClasses}
-                  absent={subject.totalClasses - subject.attendedClasses}
-                  percentage={subject.attendancePercentage}
-                  size={170}
-                  strokeWidth={28}
-                />
-              </Card.Content>
-            </Card>
-          ))}
+                  {/* Subject Chart */}
+                  <DonutChart
+                    attended={subject.attendedClasses}
+                    absent={subject.totalClasses - subject.attendedClasses}
+                    percentage={subject.attendancePercentage}
+                    size={170}
+                    strokeWidth={28}
+                  />
+                </Card.Content>
+              </Card>
+            ))}
+          </View>
         </>
       )}
       </ScrollView>
@@ -285,6 +320,16 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
+  },
+  contentWeb: {
+    maxWidth: 900,
+    alignSelf: 'center',
+    width: '100%',
+    paddingHorizontal: 24,
+  },
+  contentVeryWide: {
+    maxWidth: 1200,
+    paddingHorizontal: 32,
   },
   header: {
     marginBottom: 24,
@@ -309,6 +354,21 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     fontWeight: 'bold',
   },
+  overallContent: {
+    flexDirection: 'column',
+  },
+  overallContentWeb: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-around',
+    marginTop: -10,
+  },
+  overallStats: {
+    width: '100%',
+  },
+  overallStatsWeb: {
+    width: '45%',
+  },
   percentageContainer: {
     alignItems: 'center',
     marginVertical: 16,
@@ -322,8 +382,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     opacity: 0.7,
   },
-  chartContainer: {
-    marginTop: 8,
+  chartSection: {
+    marginTop: 16,
+    alignItems: 'center',
+    width: '100%',
+  },
+  chartSectionWeb: {
+    marginTop: -16,
+    width: '45%',
   },
   chartTitle: {
     fontWeight: 'bold',
@@ -335,6 +401,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 16,
+  },
+  statsContainerWeb: {
+    maxWidth: 500,
+    alignSelf: 'center',
+    width: '100%',
   },
   statCard: {
     flex: 1,
@@ -356,6 +427,23 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 16,
     marginTop: 8,
+  },
+  subjectsGrid: {
+    flexDirection: 'column',
+  },
+  subjectsGridWeb: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    justifyContent: 'flex-start',
+  },
+  subjectsGridVeryWide: {
+    gap: 20,
+  },
+  cardWeb: {
+    width: '48%',
+    marginBottom: 16,
+    minWidth: 350,
   },
   subjectHeader: {
     flexDirection: 'row',

@@ -12,6 +12,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { initializeFirebase, getFirestore } from '../config/firebase.js';
 import {
   sendNotificationToUser,
@@ -20,6 +22,15 @@ import {
   sendClassReminders,
   isValidExpoPushToken
 } from './sendNotification.js';
+import {
+  uploadFileToDrive,
+  deleteFileFromDrive,
+} from './driveUpload.js';
+import multer from 'multer';
+
+// ES Module directory resolution
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables
 dotenv.config();
@@ -40,11 +51,31 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
+// Multer configuration for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB max file size
+  },
+  fileFilter: (req, file, cb) => {
+    // Allow images and PDFs
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only images and PDFs are allowed.'));
+    }
+  },
+});
+
 // Middleware
-app.use(helmet()); // Security headers
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow images to be loaded
+})); // Security headers
 app.use(cors(corsOptions)); // Enable CORS with configuration
 app.use(express.json({ limit: '10mb' })); // Parse JSON bodies with size limit
 app.use(morgan(IS_PRODUCTION ? 'combined' : 'dev')); // HTTP request logging
+app.use('/public', express.static(path.join(__dirname, '../public'))); // Serve static files
 
 // Rate limiting (simple implementation)
 const requestCounts = new Map();
@@ -472,6 +503,261 @@ app.get('/tokens', async (req, res) => {
 });
 
 // ============================================
+// FILE UPLOAD ROUTES
+// ============================================
+
+/**
+ * Upload a file to Google Drive
+ * POST /upload
+ *
+ * Multipart form with:
+ * - file: The file to upload
+ *
+ * Returns: { success, fileId, webViewLink, webContentLink, thumbnailLink, ... }
+ */
+app.post('/upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No file provided',
+        timestamp: formatISTDateTime()
+      });
+    }
+
+    console.log(`📤 Uploading file: ${req.file.originalname} (${req.file.mimetype})`);
+
+    const result = await uploadFileToDrive(
+      req.file.buffer,
+      req.file.originalname,
+      req.file.mimetype
+    );
+
+    console.log(`✅ File uploaded successfully: ${result.fileId}`);
+
+    res.json({
+      success: true,
+      message: 'File uploaded successfully',
+      ...result,
+      timestamp: formatISTDateTime()
+    });
+  } catch (error) {
+    console.error('❌ Error uploading file:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to upload file',
+      timestamp: formatISTDateTime()
+    });
+  }
+});
+
+/**
+ * Delete a file from Google Drive
+ * DELETE /upload/:fileId
+ */
+app.delete('/upload/:fileId', async (req, res) => {
+  try {
+    const { fileId } = req.params;
+
+    if (!fileId) {
+      return res.status(400).json({
+        success: false,
+        error: 'File ID is required',
+        timestamp: formatISTDateTime()
+      });
+    }
+
+    await deleteFileFromDrive(fileId);
+
+    res.json({
+      success: true,
+      message: 'File deleted successfully',
+      timestamp: formatISTDateTime()
+    });
+  } catch (error) {
+    console.error('❌ Error deleting file:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to delete file',
+      timestamp: formatISTDateTime()
+    });
+  }
+});
+
+// ============================================
+// DEEP LINK ROUTES
+// ============================================
+
+/**
+ * Deep link handler for notes
+ * GET /note/:noteId
+ *
+ * Serves an HTML page that:
+ * 1. Tries to open the app via custom scheme
+ * 2. Shows note preview if app not installed
+ */
+app.get('/note/:noteId', async (req, res) => {
+  const { noteId } = req.params;
+
+  let noteData = null;
+
+  // Try to fetch note data from Firestore
+  try {
+    const noteDoc = await db.collection('notes').doc(noteId).get();
+    if (noteDoc.exists) {
+      noteData = noteDoc.data();
+    }
+  } catch (error) {
+    console.error('Error fetching note for deep link:', error);
+  }
+
+  const appScheme = `mrbunkmanager://note/${noteId}`;
+
+  const title = noteData?.title || 'Shared Note';
+  const description = noteData?.description || 'Open this note in BunkManager app';
+  const authorName = noteData?.authorName || 'BunkManager User';
+  const subject = noteData?.subject || '';
+
+  // Serve HTML page with smart redirect
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title} - BunkManager</title>
+  <meta property="og:title" content="${title}" />
+  <meta property="og:description" content="${description}" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="BunkManager" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 32px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+    .logo-container {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 16px;
+    }
+    .logo-img {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      object-fit: contain;
+    }
+    .app-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: #3B82F6;
+      margin-bottom: 20px;
+    }
+    .divider {
+      height: 1px;
+      background: #e5e7eb;
+      margin: 20px 0;
+    }
+    .note-label {
+      font-size: 12px;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    .title { font-size: 22px; font-weight: 700; color: #1f2937; margin-bottom: 8px; }
+    .author { font-size: 14px; color: #6b7280; margin-bottom: 12px; }
+    .subject {
+      display: inline-block;
+      background: #dbeafe;
+      color: #1d4ed8;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 16px;
+    }
+    .description { font-size: 14px; color: #4b5563; margin-bottom: 24px; line-height: 1.6; }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 16px 24px;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary {
+      background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+      color: white;
+      border: none;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+    }
+    .status { font-size: 13px; color: #9ca3af; margin-top: 8px; }
+    .footer {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .team { font-size: 11px; color: #9ca3af; }
+    .team-names { font-size: 12px; color: #6b7280; margin-top: 4px; font-weight: 500; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo-container">
+      <img src="/public/logo.png" alt="BunkManager" class="logo-img" />
+    </div>
+    <p class="app-name">BunkManager</p>
+
+    <div class="divider"></div>
+
+    <p class="note-label">📚 Shared Note</p>
+    <h1 class="title">${title}</h1>
+    <p class="author">By ${authorName}</p>
+    ${subject ? `<span class="subject">${subject}</span>` : ''}
+    ${description ? `<p class="description">${description}</p>` : ''}
+
+    <a href="${appScheme}" class="btn btn-primary">📱 Open in BunkManager</a>
+    <p class="status">Tap to view this note in the app</p>
+
+    <div class="footer">
+      <p class="team">Developed with ❤️ by</p>
+      <p class="team-names">Nevil • Lavanya • Manas • Manasvi • Mithun • Naren</p>
+    </div>
+  </div>
+  <script>
+    // Auto-try to open app on mobile
+    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      setTimeout(() => { window.location.href = '${appScheme}'; }, 500);
+    }
+  </script>
+</body>
+</html>
+  `;
+
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
+});
+
+// ============================================
 // ERROR HANDLING
 // ============================================
 
@@ -488,7 +774,10 @@ app.use((req, res) => {
       'POST /send-notification-all',
       'POST /send-daily-reminders',
       'POST /send-class-reminders',
-      'GET /tokens/:userId'
+      'GET /tokens/:userId',
+      'POST /upload',
+      'DELETE /upload/:fileId',
+      'GET /note/:noteId'
     ],
     timestamp: formatISTDateTime()
   });
@@ -527,6 +816,7 @@ app.listen(PORT, () => {
   console.log('   POST /send-class-reminders');
   console.log('   GET  /tokens/:userId');
   console.log('   GET  /tokens');
+  console.log('   GET  /note/:noteId (Deep Link)');
   console.log('\n⏰ Note: Deploy cron-service separately for scheduled notifications');
   console.log('════════════════════════════════════════════════════════════\n');
 });
