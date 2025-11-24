@@ -379,10 +379,10 @@ export function ExploreScreen() {
                           size={14}
                           color={theme.colors.onSurfaceVariant}
                         />
-                        <Text variant="bodySmall" style={styles.authorText}>
+                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                           {note.authorName}
                         </Text>
-                        <Text variant="bodySmall" style={styles.rollNoText}>
+                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.8 }}>
                           ({note.authorRollNumber})
                         </Text>
                       </View>
@@ -532,7 +532,7 @@ const styles = StyleSheet.create({
   },
   notesListContainer: {
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.08)',
+    borderTopColor: 'rgba(128,128,128,0.2)',
   },
   noteItem: {
     flexDirection: 'row',
@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
     padding: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
+    borderBottomColor: 'rgba(128,128,128,0.15)',
     gap: 12,
   },
   noteDetails: {
@@ -554,11 +554,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-  },
-  authorText: {
-    color: 'rgba(0,0,0,0.6)',
-  },
-  rollNoText: {
-    color: 'rgba(0,0,0,0.5)',
   },
 });
