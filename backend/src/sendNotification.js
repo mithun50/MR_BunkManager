@@ -277,6 +277,129 @@ async function cleanupInvalidTokens(tokens, responses) {
 }
 
 /**
+ * Get followers of a user
+ * @param {string} userId - User ID to get followers for
+ * @returns {Promise<Array>} Array of follower user IDs
+ */
+async function getUserFollowers(userId) {
+  const db = getFirestore();
+
+  try {
+    const followersSnapshot = await db
+      .collection('users')
+      .doc(userId)
+      .collection('followers')
+      .get();
+
+    return followersSnapshot.docs.map(doc => doc.id);
+  } catch (error) {
+    console.error('Error fetching followers:', error);
+    return [];
+  }
+}
+
+/**
+ * Send notification to all followers of a user (for new note uploads)
+ * @param {string} authorId - User ID of the note author
+ * @param {Object} noteInfo - Note information {title, subject, authorName, noteId}
+ * @returns {Promise<Object>} Result of sending notifications
+ */
+export async function sendNotificationToFollowers(authorId, noteInfo) {
+  try {
+    const followers = await getUserFollowers(authorId);
+
+    if (followers.length === 0) {
+      return {
+        success: true,
+        message: 'No followers to notify',
+        sent: 0
+      };
+    }
+
+    console.log(`📤 Sending note notification to ${followers.length} followers of ${authorId}...`);
+
+    const message = {
+      title: `📚 ${noteInfo.authorName} shared a new note!`,
+      body: noteInfo.subject
+        ? `${noteInfo.title} - ${noteInfo.subject}`
+        : noteInfo.title,
+      data: {
+        type: 'new_note',
+        noteId: noteInfo.noteId,
+        authorId: authorId,
+        authorName: noteInfo.authorName
+      }
+    };
+
+    let totalSent = 0;
+    let totalFailed = 0;
+    let totalInvalidRemoved = 0;
+
+    // Send to each follower
+    for (const followerId of followers) {
+      const tokenObjects = await getUserPushTokens(followerId);
+
+      if (tokenObjects.length === 0) continue;
+
+      const tokens = tokenObjects.map(t => t.token);
+
+      const fcmMessage = {
+        notification: {
+          title: message.title,
+          body: message.body,
+        },
+        data: Object.fromEntries(
+          Object.entries(message.data).map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)])
+        ),
+        android: {
+          notification: {
+            color: '#3B82F6',
+            sound: 'default',
+            priority: 'high',
+            channelId: 'default',
+          },
+        },
+        apns: {
+          payload: {
+            aps: {
+              sound: 'default',
+              badge: 1,
+            },
+          },
+        },
+        tokens: tokens,
+      };
+
+      const messaging = getMessaging();
+      const response = await messaging.sendEachForMulticast(fcmMessage);
+
+      totalSent += response.successCount;
+      totalFailed += response.failureCount;
+
+      // Clean up invalid tokens
+      const invalidRemoved = await cleanupInvalidTokens(tokens, response.responses);
+      totalInvalidRemoved += invalidRemoved;
+    }
+
+    console.log(`✅ Note notifications sent: ${totalSent} success, ${totalFailed} failed`);
+
+    return {
+      success: true,
+      followersCount: followers.length,
+      sent: totalSent,
+      failed: totalFailed,
+      invalidTokensRemoved: totalInvalidRemoved
+    };
+  } catch (error) {
+    console.error('Error sending notification to followers:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
  * Send notification to a specific user
  * @param {string} userId - User ID to send notification to
  * @param {Object} customMessage - Optional custom message {title, body, data}

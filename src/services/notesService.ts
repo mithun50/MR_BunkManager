@@ -28,6 +28,7 @@ import googleDriveService from './googleDriveService';
 
 const NOTES_COLLECTION = 'notes';
 const PAGE_SIZE = 10;
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:3000';
 
 class NotesService {
   // Create a new note
@@ -83,11 +84,54 @@ class NotesService {
       { merge: true }
     );
 
+    // Notify followers about the new note (fire and forget - don't block)
+    this.notifyFollowers(authorProfile.uid, {
+      authorName: authorProfile.displayName || 'Someone',
+      noteId,
+      title: input.title,
+      subject: input.subject,
+    }).catch((error) => {
+      console.error('Error notifying followers:', error);
+    });
+
     return {
       ...note,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
+  }
+
+  // Notify followers when a new note is created
+  private async notifyFollowers(authorId: string, noteInfo: {
+    authorName: string;
+    noteId: string;
+    title: string;
+    subject?: string;
+  }): Promise<void> {
+    try {
+      const response = await fetch(`${BACKEND_URL}/notify-followers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          authorId,
+          authorName: noteInfo.authorName,
+          noteId: noteInfo.noteId,
+          title: noteInfo.title,
+          subject: noteInfo.subject,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        console.log('✅ Followers notified successfully');
+      } else {
+        console.error('❌ Failed to notify followers:', data.error);
+      }
+    } catch (error) {
+      console.error('❌ Error calling notify-followers endpoint:', error);
+    }
   }
 
   // Get a single note by ID

@@ -20,6 +20,7 @@ import {
   sendNotificationToAllUsers,
   sendDailyReminders,
   sendClassReminders,
+  sendNotificationToFollowers,
   isValidExpoPushToken
 } from './sendNotification.js';
 import {
@@ -312,6 +313,56 @@ app.post('/send-notification', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to send notification',
+      details: error.message,
+      timestamp: formatISTDateTime()
+    });
+  }
+});
+
+/**
+ * Notify followers when a user uploads a new note
+ * POST /notify-followers
+ *
+ * Body:
+ * {
+ *   "authorId": "user123",
+ *   "authorName": "John Doe",
+ *   "noteId": "note123",
+ *   "title": "Note title",
+ *   "subject": "Math" (optional)
+ * }
+ */
+app.post('/notify-followers', async (req, res) => {
+  try {
+    const { authorId, authorName, noteId, title, subject } = req.body;
+
+    if (!authorId || !authorName || !noteId || !title) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: authorId, authorName, noteId, title'
+      });
+    }
+
+    console.log(`📤 Notifying followers of ${authorName} about new note at ${formatISTDateTime()}`);
+
+    const result = await sendNotificationToFollowers(authorId, {
+      authorName,
+      noteId,
+      title,
+      subject
+    });
+
+    res.json({
+      success: true,
+      message: 'Followers notified successfully',
+      result,
+      timestamp: formatISTDateTime()
+    });
+  } catch (error) {
+    console.error('❌ Error notifying followers:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to notify followers',
       details: error.message,
       timestamp: formatISTDateTime()
     });
