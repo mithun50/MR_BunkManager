@@ -1,4 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
+import { Platform } from 'react-native';
+
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:3000';
 
 interface UploadResult {
   fileId: string;
@@ -95,6 +98,59 @@ class FileUploadService {
 
   async uploadDocument(docUri: string, fileName: string, mimeType: string): Promise<UploadResult> {
     return this.uploadFile(docUri, fileName, mimeType);
+  }
+
+  /**
+   * Upload a file from a File object (for web platform)
+   * Routes through backend to avoid CORS issues with Catbox
+   */
+  async uploadFileFromBlob(
+    file: File,
+    onProgress?: (progress: number) => void
+  ): Promise<UploadResult> {
+    try {
+      onProgress?.(10);
+
+      // Create form data with file
+      const formData = new FormData();
+      formData.append('file', file);
+
+      onProgress?.(30);
+
+      // Upload through backend proxy to avoid CORS
+      const response = await fetch(`${BACKEND_URL}/upload-catbox`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      onProgress?.(80);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to upload file');
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Upload failed');
+      }
+
+      onProgress?.(100);
+
+      return {
+        fileId: result.fileId,
+        fileName: result.fileName,
+        mimeType: result.mimeType,
+        webViewLink: result.webViewLink,
+        webContentLink: result.webContentLink,
+        thumbnailLink: result.thumbnailLink,
+        size: result.size,
+      };
+    } catch (error) {
+      console.error('Error uploading file from web:', error);
+      throw error;
+    }
   }
 
   async deleteFile(fileId: string): Promise<void> {

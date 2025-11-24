@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import {
   TextInput,
@@ -17,6 +17,8 @@ import * as DocumentPicker from 'expo-document-picker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NoteContentType, CreateNoteInput } from '../../types/notes';
 import googleDriveService from '../../services/googleDriveService';
+
+const isWeb = Platform.OS === 'web';
 
 interface NoteEditorProps {
   initialData?: Partial<CreateNoteInput>;
@@ -51,7 +53,29 @@ export function NoteEditor({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Web file picker helper
+  const pickFileWeb = (accept: string): Promise<File | null> => {
+    return new Promise((resolve) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = accept;
+      input.onchange = (e: any) => {
+        const file = e.target?.files?.[0];
+        resolve(file || null);
+      };
+      input.click();
+    });
+  };
+
   const pickImage = async () => {
+    if (isWeb) {
+      const file = await pickFileWeb('image/*');
+      if (file) {
+        await uploadFileWeb(file);
+      }
+      return;
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
@@ -68,6 +92,12 @@ export function NoteEditor({
   };
 
   const takePhoto = async () => {
+    if (isWeb) {
+      // Camera not supported on web, use file picker instead
+      await pickImage();
+      return;
+    }
+
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
       Alert.alert('Permission needed', 'Camera permission is required');
@@ -89,6 +119,14 @@ export function NoteEditor({
   };
 
   const pickDocument = async () => {
+    if (isWeb) {
+      const file = await pickFileWeb('.pdf,.doc,.docx,application/pdf,application/msword');
+      if (file) {
+        await uploadFileWeb(file);
+      }
+      return;
+    }
+
     const result = await DocumentPicker.getDocumentAsync({
       type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
       copyToCacheDirectory: true,
@@ -100,6 +138,27 @@ export function NoteEditor({
         result.assets[0].name,
         result.assets[0].mimeType || 'application/pdf'
       );
+    }
+  };
+
+  // Web-specific file upload using File object
+  const uploadFileWeb = async (file: File) => {
+    setIsUploading(true);
+    setUploadProgress(0);
+    try {
+      const result = await googleDriveService.uploadFileFromBlob(file, (progress) => {
+        setUploadProgress(progress / 100);
+      });
+      setFileUrl(result.webViewLink);
+      setFileName(result.fileName);
+      setThumbnailUrl(result.thumbnailLink || googleDriveService.getThumbnailUrl(result.fileId));
+      window.alert('File uploaded successfully!');
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      window.alert(error.message || 'Could not upload file');
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 

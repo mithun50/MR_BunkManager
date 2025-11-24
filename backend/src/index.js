@@ -603,6 +603,76 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 });
 
 /**
+ * Proxy upload to Catbox.moe (CORS-free for web clients)
+ * POST /upload-catbox
+ *
+ * Multipart form with:
+ * - file: The file to upload
+ *
+ * Returns: { success, url, fileId, fileName, mimeType }
+ */
+app.post('/upload-catbox', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No file provided',
+        timestamp: formatISTDateTime()
+      });
+    }
+
+    console.log(`📤 Proxying file to Catbox: ${req.file.originalname} (${req.file.mimetype})`);
+
+    // Create form data for Catbox
+    const FormData = (await import('form-data')).default;
+    const formData = new FormData();
+    formData.append('reqtype', 'fileupload');
+    formData.append('fileToUpload', req.file.buffer, {
+      filename: req.file.originalname,
+      contentType: req.file.mimetype,
+    });
+
+    // Upload to Catbox
+    const fetch = (await import('node-fetch')).default;
+    const response = await fetch('https://catbox.moe/user/api.php', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const url = await response.text();
+
+    if (!url.startsWith('https://')) {
+      throw new Error(url || 'Upload to Catbox failed');
+    }
+
+    const fileId = url.split('/').pop() || '';
+
+    console.log(`✅ File uploaded to Catbox: ${url}`);
+
+    res.json({
+      success: true,
+      message: 'File uploaded successfully',
+      url: url,
+      fileId: fileId,
+      fileName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+      webViewLink: url,
+      webContentLink: url,
+      thumbnailLink: req.file.mimetype.startsWith('image/') ? url : undefined,
+      timestamp: formatISTDateTime()
+    });
+  } catch (error) {
+    console.error('❌ Error uploading to Catbox:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to upload file',
+      timestamp: formatISTDateTime()
+    });
+  }
+});
+
+/**
  * Delete a file from Google Drive
  * DELETE /upload/:fileId
  */
