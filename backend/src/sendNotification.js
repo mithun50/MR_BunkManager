@@ -336,10 +336,18 @@ export async function sendNotificationToFollowers(authorId, noteInfo) {
     let totalInvalidRemoved = 0;
 
     // Send to each follower
+    let followersWithTokens = 0;
+    let followersWithoutTokens = 0;
+
     for (const followerId of followers) {
       const tokenObjects = await getUserPushTokens(followerId);
 
-      if (tokenObjects.length === 0) continue;
+      if (tokenObjects.length === 0) {
+        followersWithoutTokens++;
+        console.log(`   ⚠️ Follower ${followerId} has no push token (web user or notifications disabled)`);
+        continue;
+      }
+      followersWithTokens++;
 
       const tokens = tokenObjects.map(t => t.token);
 
@@ -382,10 +390,15 @@ export async function sendNotificationToFollowers(authorId, noteInfo) {
     }
 
     console.log(`✅ Note notifications sent: ${totalSent} success, ${totalFailed} failed`);
+    if (followersWithoutTokens > 0) {
+      console.log(`   ℹ️ ${followersWithoutTokens}/${followers.length} followers have no push tokens (web users or notifications disabled)`);
+    }
 
     return {
       success: true,
       followersCount: followers.length,
+      followersWithTokens,
+      followersWithoutTokens,
       sent: totalSent,
       failed: totalFailed,
       invalidTokensRemoved: totalInvalidRemoved
