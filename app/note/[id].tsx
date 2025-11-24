@@ -18,6 +18,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
 import { WebView } from 'react-native-webview';
 import { useAuthStore } from '@/src/store/authStore';
+import { useNotesStore } from '@/src/store/notesStore';
 import { CommentSection } from '@/src/components/notes';
 import { FeedNote } from '@/src/types/notes';
 import { UserProfile } from '@/src/types/user';
@@ -36,15 +37,22 @@ export default function NoteDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
+
+  // Use global store for like/save state
+  const { interactions, setLiked, setSaved, setInteraction } = useNotesStore();
+
   const [note, setNote] = useState<FeedNote | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLiked, setIsLiked] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
   const [commentsCount, setCommentsCount] = useState(0);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(true);
+
+  // Get state from store or note data
+  const storedInteraction = id ? interactions[id] : null;
+  const isLiked = storedInteraction?.isLiked ?? note?.isLiked ?? false;
+  const isSaved = storedInteraction?.isSaved ?? note?.isSaved ?? false;
+  const likesCount = storedInteraction?.likesCount ?? note?.likesCount ?? 0;
 
   useEffect(() => {
     const loadData = async () => {
@@ -57,10 +65,13 @@ export default function NoteDetailScreen() {
         ]);
         if (noteData) {
           setNote(noteData);
-          setIsLiked(noteData.isLiked);
-          setIsSaved(noteData.isSaved);
-          setLikesCount(noteData.likesCount);
           setCommentsCount(noteData.commentsCount);
+          // Initialize store with note data
+          setInteraction(noteData.id, {
+            isLiked: noteData.isLiked,
+            isSaved: noteData.isSaved,
+            likesCount: noteData.likesCount,
+          });
         }
         setProfile(userProfile);
       } catch (error) {
@@ -77,8 +88,9 @@ export default function NoteDetailScreen() {
     if (!note || !user) return;
     try {
       const newIsLiked = await socialService.toggleLike(note.id, user.uid);
-      setIsLiked(newIsLiked);
-      setLikesCount(newIsLiked ? likesCount + 1 : likesCount - 1);
+      const newCount = newIsLiked ? likesCount + 1 : likesCount - 1;
+      // Update global store
+      setLiked(note.id, newIsLiked, newCount);
     } catch (error) {
       console.error('Error toggling like:', error);
     }
@@ -88,7 +100,8 @@ export default function NoteDetailScreen() {
     if (!note || !user) return;
     try {
       const newIsSaved = await socialService.toggleSave(note.id, user.uid);
-      setIsSaved(newIsSaved);
+      // Update global store
+      setSaved(note.id, newIsSaved);
     } catch (error) {
       console.error('Error toggling save:', error);
     }

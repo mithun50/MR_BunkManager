@@ -30,7 +30,53 @@ const NOTES_COLLECTION = 'notes';
 const PAGE_SIZE = 10;
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:3000';
 
+// Cache for author photos to reduce Firestore reads within a session
+const authorPhotoCache: Map<string, { photoURL: string | null; timestamp: number }> = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
+
 class NotesService {
+  // Helper: Get fresh author photo URL from user profile
+  private async getAuthorPhoto(authorId: string): Promise<string | null> {
+    // Check cache first
+    const cached = authorPhotoCache.get(authorId);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.photoURL;
+    }
+
+    try {
+      const userRef = doc(db, 'users', authorId);
+      const userSnap = await getDoc(userRef);
+      const photoURL = userSnap.exists() ? userSnap.data().photoURL || null : null;
+
+      // Update cache
+      authorPhotoCache.set(authorId, { photoURL, timestamp: Date.now() });
+      return photoURL;
+    } catch (error) {
+      console.error('Error fetching author photo:', error);
+      return null;
+    }
+  }
+
+  // Helper: Batch fetch author photos for multiple notes
+  private async enrichNotesWithFreshPhotos(notes: Note[]): Promise<Note[]> {
+    // Get unique author IDs
+    const authorIds = [...new Set(notes.map(note => note.authorId))];
+
+    // Fetch fresh photos for all authors in parallel
+    const photoPromises = authorIds.map(async (authorId) => {
+      const photoURL = await this.getAuthorPhoto(authorId);
+      return { authorId, photoURL };
+    });
+
+    const photoResults = await Promise.all(photoPromises);
+    const photoMap = new Map(photoResults.map(r => [r.authorId, r.photoURL]));
+
+    // Update notes with fresh photos
+    return notes.map(note => ({
+      ...note,
+      authorPhotoURL: photoMap.get(note.authorId) ?? note.authorPhotoURL,
+    }));
+  }
   // Create a new note
   async createNote(
     authorProfile: UserProfile,
@@ -160,6 +206,9 @@ class NotesService {
       viewsCount: increment(1),
     });
 
+    // Get fresh author photo
+    const freshPhoto = await this.getAuthorPhoto(note.authorId);
+
     const [isLiked, isSaved, isFollowing] = await Promise.all([
       this.isNoteLiked(noteId, currentUserId),
       this.isNoteSaved(noteId, currentUserId),
@@ -168,6 +217,7 @@ class NotesService {
 
     return {
       ...note,
+      authorPhotoURL: freshPhoto ?? note.authorPhotoURL,
       isLiked,
       isSaved,
       isFollowingAuthor: isFollowing,
@@ -260,9 +310,13 @@ class NotesService {
     }
 
     const snapshot = await getDocs(q);
-    const notes = await Promise.all(
-      snapshot.docs.map(async (docSnap) => {
-        const note = this.convertToNote(docSnap.data());
+    let notes = snapshot.docs.map((docSnap) => this.convertToNote(docSnap.data()));
+
+    // Enrich with fresh author photos
+    notes = await this.enrichNotesWithFreshPhotos(notes);
+
+    const feedNotes = await Promise.all(
+      notes.map(async (note) => {
         const [isLiked, isSaved] = await Promise.all([
           this.isNoteLiked(note.id, currentUserId),
           this.isNoteSaved(note.id, currentUserId),
@@ -277,7 +331,7 @@ class NotesService {
     );
 
     return {
-      items: notes,
+      items: feedNotes,
       lastDoc: snapshot.docs[snapshot.docs.length - 1] || null,
       hasMore: snapshot.docs.length === PAGE_SIZE,
     };
@@ -325,9 +379,13 @@ class NotesService {
     }
 
     const snapshot = await getDocs(q);
-    const notes = await Promise.all(
-      snapshot.docs.map(async (docSnap) => {
-        const note = this.convertToNote(docSnap.data());
+    let notes = snapshot.docs.map((docSnap) => this.convertToNote(docSnap.data()));
+
+    // Enrich with fresh author photos
+    notes = await this.enrichNotesWithFreshPhotos(notes);
+
+    const feedNotes = await Promise.all(
+      notes.map(async (note) => {
         const [isLiked, isSaved, isFollowing] = await Promise.all([
           this.isNoteLiked(note.id, currentUserId),
           this.isNoteSaved(note.id, currentUserId),
@@ -343,7 +401,7 @@ class NotesService {
     );
 
     return {
-      items: notes,
+      items: feedNotes,
       lastDoc: snapshot.docs[snapshot.docs.length - 1] || null,
       hasMore: snapshot.docs.length === PAGE_SIZE,
     };
@@ -366,9 +424,12 @@ class NotesService {
     }
 
     const snapshot = await getDocs(q);
-    const notes = snapshot.docs.map((docSnap) =>
+    let notes = snapshot.docs.map((docSnap) =>
       this.convertToNote(docSnap.data())
     );
+
+    // Enrich with fresh author photos (even for user's own notes)
+    notes = await this.enrichNotesWithFreshPhotos(notes);
 
     return {
       items: notes,
@@ -394,9 +455,13 @@ class NotesService {
     );
 
     const snapshot = await getDocs(q);
-    const notes = await Promise.all(
-      snapshot.docs.map(async (docSnap) => {
-        const note = this.convertToNote(docSnap.data());
+    let notes = snapshot.docs.map((docSnap) => this.convertToNote(docSnap.data()));
+
+    // Enrich with fresh author photos
+    notes = await this.enrichNotesWithFreshPhotos(notes);
+
+    const feedNotes = await Promise.all(
+      notes.map(async (note) => {
         const [isLiked, isSaved, isFollowing] = await Promise.all([
           this.isNoteLiked(note.id, currentUserId),
           this.isNoteSaved(note.id, currentUserId),
@@ -411,7 +476,7 @@ class NotesService {
       })
     );
 
-    return notes;
+    return feedNotes;
   }
 
   // Helper: Check if note is liked by user
@@ -452,6 +517,16 @@ class NotesService {
   private extractFileIdFromUrl(url: string): string | null {
     const match = url.match(/[-\w]{25,}/);
     return match ? match[0] : null;
+  }
+
+  // Clear the author photo cache for a specific user (call after profile update)
+  clearAuthorPhotoCache(authorId: string): void {
+    authorPhotoCache.delete(authorId);
+  }
+
+  // Clear all author photo cache (useful for full refresh)
+  clearAllAuthorPhotoCache(): void {
+    authorPhotoCache.clear();
   }
 }
 

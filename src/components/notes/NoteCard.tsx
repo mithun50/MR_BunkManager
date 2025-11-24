@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Pressable, Share, Alert, Platform } from 'react-native';
 import {
   Surface,
@@ -14,6 +14,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { FeedNote, NoteContentType } from '../../types/notes';
 import socialService from '../../services/socialService';
 import notesService from '../../services/notesService';
+import { useNotesStore } from '../../store/notesStore';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://your-app.vercel.app';
 
@@ -53,12 +54,30 @@ export function NoteCard({
   compact = false,
 }: NoteCardProps) {
   const theme = useTheme();
-  const [isLiked, setIsLiked] = useState(note.isLiked);
-  const [isSaved, setIsSaved] = useState(note.isSaved);
-  const [likesCount, setLikesCount] = useState(note.likesCount);
+
+  // Use global store for like/save state
+  const { interactions, setLiked, setSaved, setInteraction } = useNotesStore();
+  const storedInteraction = interactions[note.id];
+
+  // Use store state if available, otherwise fall back to prop
+  const isLiked = storedInteraction?.isLiked ?? note.isLiked;
+  const isSaved = storedInteraction?.isSaved ?? note.isSaved;
+  const likesCount = storedInteraction?.likesCount ?? note.likesCount;
+
   const [isLiking, setIsLiking] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Initialize store with note data if not present
+  useEffect(() => {
+    if (!storedInteraction) {
+      setInteraction(note.id, {
+        isLiked: note.isLiked,
+        isSaved: note.isSaved,
+        likesCount: note.likesCount,
+      });
+    }
+  }, [note.id, note.isLiked, note.isSaved, note.likesCount]);
 
   const isAuthor = note.authorId === currentUserId;
 
@@ -68,8 +87,8 @@ export function NoteCard({
     try {
       const newIsLiked = await socialService.toggleLike(note.id, currentUserId);
       const newCount = newIsLiked ? likesCount + 1 : likesCount - 1;
-      setIsLiked(newIsLiked);
-      setLikesCount(newCount);
+      // Update global store
+      setLiked(note.id, newIsLiked, newCount);
       onLikeChange?.(newIsLiked, newCount);
     } catch (error) {
       console.error('Error toggling like:', error);
@@ -83,7 +102,8 @@ export function NoteCard({
     setIsSaving(true);
     try {
       const newIsSaved = await socialService.toggleSave(note.id, currentUserId);
-      setIsSaved(newIsSaved);
+      // Update global store
+      setSaved(note.id, newIsSaved);
       onSaveChange?.(newIsSaved);
     } catch (error) {
       console.error('Error toggling save:', error);

@@ -879,6 +879,9 @@ export default function ProfileScreen() {
       // Update profile in Firestore
       await firestoreService.updateUserProfile(user.uid, updatedProfile);
 
+      // Clear the author photo cache so notes show the new photo
+      notesService.clearAuthorPhotoCache(user.uid);
+
       // Update local state
       setProfile(updatedProfile);
       setShowEditProfile(false);
