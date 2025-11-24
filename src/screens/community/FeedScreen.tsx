@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, StyleSheet, FlatList, RefreshControl, ScrollView, Pressable } from 'react-native';
 import {
   Text,
@@ -10,6 +10,7 @@ import {
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore } from '../../store/authStore';
 import { NoteCard } from '../../components/notes';
 import { FeedNote } from '../../types/notes';
@@ -65,6 +66,8 @@ export function FeedScreen() {
     }
   };
 
+  const isFirstLoad = useRef(true);
+
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
@@ -73,6 +76,18 @@ export function FeedScreen() {
     };
     init();
   }, [user]);
+
+  // Refresh when screen comes into focus (after creating a note)
+  useFocusEffect(
+    useCallback(() => {
+      if (isFirstLoad.current) {
+        isFirstLoad.current = false;
+        return;
+      }
+      // Silently refresh without showing loading indicator
+      loadNotes(true);
+    }, [user, followingIds])
+  );
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, StyleSheet, FlatList, RefreshControl, ScrollView, Pressable } from 'react-native';
 import {
   Text,
@@ -11,6 +11,7 @@ import {
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore } from '../../store/authStore';
 import { NoteCard } from '../../components/notes';
 import { FeedNote, NoteFilters, NoteContentType } from '../../types/notes';
@@ -98,6 +99,8 @@ export function ExploreScreen() {
     }
   };
 
+  const isFirstLoad = useRef(true);
+
   useEffect(() => {
     if (profile) {
       const init = async () => {
@@ -108,6 +111,20 @@ export function ExploreScreen() {
       init();
     }
   }, [profile, selectedType, sortBy, subjectFilter, authorNameFilter, rollNoFilter]);
+
+  // Refresh when screen comes into focus (after creating a note)
+  useFocusEffect(
+    useCallback(() => {
+      if (isFirstLoad.current) {
+        isFirstLoad.current = false;
+        return;
+      }
+      if (profile) {
+        // Silently refresh without showing loading indicator
+        loadNotes(true);
+      }
+    }, [profile, selectedType, sortBy, subjectFilter, authorNameFilter, rollNoFilter])
+  );
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);

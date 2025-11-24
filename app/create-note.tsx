@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Alert, Platform } from 'react-native';
 import { Appbar, useTheme } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -37,18 +37,31 @@ export default function CreateNoteScreen() {
 
   const handleSubmit = async (noteData: CreateNoteInput) => {
     if (!profile) {
-      Alert.alert('Error', 'Profile not loaded');
+      if (Platform.OS === 'web') {
+        window.alert('Profile not loaded');
+      } else {
+        Alert.alert('Error', 'Profile not loaded');
+      }
       return;
     }
 
     try {
       await notesService.createNote(profile, noteData);
-      Alert.alert('Success', 'Note posted successfully!', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      if (Platform.OS === 'web') {
+        window.alert('Note posted successfully!');
+        router.back();
+      } else {
+        Alert.alert('Success', 'Note posted successfully!', [
+          { text: 'OK', onPress: () => router.back() },
+        ]);
+      }
     } catch (error: any) {
       console.error('Error creating note:', error);
-      Alert.alert('Error', error.message || 'Failed to create note');
+      if (Platform.OS === 'web') {
+        window.alert(error.message || 'Failed to create note');
+      } else {
+        Alert.alert('Error', error.message || 'Failed to create note');
+      }
     }
   };
 

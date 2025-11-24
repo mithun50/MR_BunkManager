@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
 import {
   Text,
@@ -8,6 +8,7 @@ import {
   FAB,
 } from 'react-native-paper';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore } from '../../store/authStore';
 import { NoteCard } from '../../components/notes';
 import { Note, FeedNote } from '../../types/notes';
@@ -70,6 +71,8 @@ export function MyNotesScreen() {
     }
   };
 
+  const isFirstLoad = useRef(true);
+
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
@@ -80,6 +83,18 @@ export function MyNotesScreen() {
     };
     init();
   }, [user, viewMode]);
+
+  // Refresh when screen comes into focus (after creating a note)
+  useFocusEffect(
+    useCallback(() => {
+      if (isFirstLoad.current) {
+        isFirstLoad.current = false;
+        return;
+      }
+      // Silently refresh without showing loading indicator
+      loadNotes(true);
+    }, [user, viewMode])
+  );
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
