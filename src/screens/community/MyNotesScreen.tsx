@@ -118,7 +118,7 @@ export function MyNotesScreen() {
     router.push(`/user/${authorId}` as any);
   };
 
-  if (isLoading) {
+  if (isLoading || !user) {
     return (
       <View style={[styles.centered, { backgroundColor: theme.colors.background }]}>
         <ActivityIndicator size="large" />
