@@ -1,16 +1,12 @@
 /**
  * WebRTC Service for Group Voice/Video Calls
  * Uses Firebase Firestore for signaling
+ *
+ * NOTE: All react-native-webrtc imports are lazy-loaded to prevent
+ * app crashes on startup. The native module is only loaded when
+ * actually needed (when joining a call).
  */
 
-import {
-  RTCPeerConnection,
-  RTCIceCandidate,
-  RTCSessionDescription,
-  mediaDevices,
-  MediaStream,
-  MediaStreamTrack,
-} from 'react-native-webrtc';
 import {
   collection,
   doc,
@@ -25,6 +21,36 @@ import {
   Unsubscribe,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
+
+// Lazy-loaded WebRTC types - will be initialized on first use
+let RTCPeerConnection: any;
+let RTCIceCandidate: any;
+let RTCSessionDescription: any;
+let mediaDevices: any;
+
+// Track if WebRTC module has been loaded
+let webrtcLoaded = false;
+
+/**
+ * Lazily load the WebRTC module to prevent crashes on app startup
+ */
+async function loadWebRTC(): Promise<boolean> {
+  if (webrtcLoaded) return true;
+
+  try {
+    const webrtc = await import('react-native-webrtc');
+    RTCPeerConnection = webrtc.RTCPeerConnection;
+    RTCIceCandidate = webrtc.RTCIceCandidate;
+    RTCSessionDescription = webrtc.RTCSessionDescription;
+    mediaDevices = webrtc.mediaDevices;
+    webrtcLoaded = true;
+    console.log('✅ WebRTC module loaded successfully');
+    return true;
+  } catch (error) {
+    console.error('❌ Failed to load WebRTC module:', error);
+    return false;
+  }
+}
 
 // Free STUN servers for NAT traversal
 const ICE_SERVERS = {
@@ -47,9 +73,12 @@ export interface CallParticipant {
   joinedAt: Date;
 }
 
+// Use 'any' for MediaStream since WebRTC is lazy-loaded
+type MediaStreamType = any;
+
 export interface WebRTCCallbacks {
-  onLocalStream: (stream: MediaStream) => void;
-  onRemoteStream: (userId: string, stream: MediaStream) => void;
+  onLocalStream: (stream: MediaStreamType) => void;
+  onRemoteStream: (userId: string, stream: MediaStreamType) => void;
   onParticipantJoined: (participant: CallParticipant) => void;
   onParticipantLeft: (userId: string) => void;
   onParticipantUpdated: (participant: CallParticipant) => void;
@@ -58,9 +87,9 @@ export interface WebRTCCallbacks {
 }
 
 class WebRTCService {
-  private localStream: MediaStream | null = null;
-  private peerConnections: Map<string, RTCPeerConnection> = new Map();
-  private remoteStreams: Map<string, MediaStream> = new Map();
+  private localStream: MediaStreamType | null = null;
+  private peerConnections: Map<string, any> = new Map();
+  private remoteStreams: Map<string, MediaStreamType> = new Map();
   private callbacks: WebRTCCallbacks | null = null;
   private currentUserId: string = '';
   private currentGroupId: string = '';
@@ -84,6 +113,12 @@ class WebRTCService {
     this.callbacks = callbacks;
 
     try {
+      // Load WebRTC module first
+      const loaded = await loadWebRTC();
+      if (!loaded) {
+        throw new Error('Failed to load WebRTC module');
+      }
+
       // Get local media stream
       this.localStream = await this.getLocalStream(isVideo);
       callbacks.onLocalStream(this.localStream);
@@ -108,7 +143,7 @@ class WebRTCService {
   /**
    * Get local media stream (audio/video)
    */
-  private async getLocalStream(isVideo: boolean): Promise<MediaStream> {
+  private async getLocalStream(isVideo: boolean): Promise<MediaStreamType> {
     const constraints = {
       audio: true,
       video: isVideo ? {
@@ -120,7 +155,7 @@ class WebRTCService {
     };
 
     const stream = await mediaDevices.getUserMedia(constraints);
-    return stream as MediaStream;
+    return stream as MediaStreamType;
   }
 
   /**
@@ -217,7 +252,7 @@ class WebRTCService {
   /**
    * Create peer connection for a participant
    */
-  private async createPeerConnection(remoteUserId: string, isInitiator: boolean): Promise<RTCPeerConnection> {
+  private async createPeerConnection(remoteUserId: string, isInitiator: boolean): Promise<any> {
     const pc = new RTCPeerConnection(ICE_SERVERS);
     this.peerConnections.set(remoteUserId, pc);
 
@@ -419,14 +454,14 @@ class WebRTCService {
   /**
    * Get local stream
    */
-  getLocalStream(): MediaStream | null {
+  getLocalStream(): MediaStreamType | null {
     return this.localStream;
   }
 
   /**
    * Get remote streams
    */
-  getRemoteStreams(): Map<string, MediaStream> {
+  getRemoteStreams(): Map<string, MediaStreamType> {
     return this.remoteStreams;
   }
 }
