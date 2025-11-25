@@ -103,6 +103,7 @@ app.get('/', (req, res) => {
       'POST /save-token',
       'DELETE /delete-token',
       'POST /send-notification',
+      'POST /notify-group-members',
       'POST /notify-followers',
       'POST /send-notification-all',
       'POST /send-daily-reminders',
