@@ -752,6 +752,169 @@ function isClassStartingSoon(startTime, minutesBefore) {
 }
 
 /**
+ * Get all members of a group
+ * @param {string} groupId - Group ID
+ * @returns {Promise<Array>} Array of member user IDs
+ */
+async function getGroupMembers(groupId) {
+  const db = getFirestore();
+
+  try {
+    const membersSnapshot = await db
+      .collection('groups')
+      .doc(groupId)
+      .collection('members')
+      .get();
+
+    return membersSnapshot.docs.map(doc => doc.id);
+  } catch (error) {
+    console.error('Error fetching group members:', error);
+    return [];
+  }
+}
+
+/**
+ * Send notification to all members of a group
+ * @param {string} groupId - Group ID
+ * @param {string} groupName - Group name for notification
+ * @param {string} senderId - User ID who triggered the notification (to exclude from recipients)
+ * @param {string} senderName - Name of the sender
+ * @param {string} type - Notification type: 'message', 'file', 'call'
+ * @param {Object} extra - Extra data (fileName, message preview, isVideo for calls)
+ * @returns {Promise<Object>} Result of sending notifications
+ */
+export async function sendNotificationToGroupMembers(groupId, groupName, senderId, senderName, type, extra = {}) {
+  try {
+    const members = await getGroupMembers(groupId);
+
+    // Exclude sender from recipients
+    const recipients = members.filter(memberId => memberId !== senderId);
+
+    if (recipients.length === 0) {
+      return {
+        success: true,
+        message: 'No other members to notify',
+        sent: 0
+      };
+    }
+
+    console.log(`📤 Sending ${type} notification to ${recipients.length} group members...`);
+
+    // Create notification message based on type
+    let title, body;
+    const data = {
+      type: `group_${type}`,
+      groupId,
+      groupName,
+      senderId,
+      senderName
+    };
+
+    switch (type) {
+      case 'message':
+        title = `💬 ${groupName}`;
+        body = `${senderName}: ${extra.message?.substring(0, 50) || 'New message'}${extra.message?.length > 50 ? '...' : ''}`;
+        data.messagePreview = extra.message?.substring(0, 100) || '';
+        break;
+      case 'file':
+        title = `📎 ${groupName}`;
+        body = `${senderName} shared a file: ${extra.fileName || 'File'}`;
+        data.fileName = extra.fileName || '';
+        break;
+      case 'call':
+        const callType = extra.isVideo ? 'video' : 'voice';
+        title = extra.isVideo ? `📹 ${groupName}` : `📞 ${groupName}`;
+        body = `${senderName} started a ${callType} call`;
+        data.isVideo = String(extra.isVideo || false);
+        break;
+      default:
+        title = `🔔 ${groupName}`;
+        body = `New activity from ${senderName}`;
+    }
+
+    let totalSent = 0;
+    let totalFailed = 0;
+    let totalInvalidRemoved = 0;
+    let recipientsWithTokens = 0;
+    let recipientsWithoutTokens = 0;
+
+    // Send to each recipient
+    for (const recipientId of recipients) {
+      const tokenObjects = await getUserPushTokens(recipientId);
+
+      if (tokenObjects.length === 0) {
+        recipientsWithoutTokens++;
+        continue;
+      }
+      recipientsWithTokens++;
+
+      const tokens = tokenObjects.map(t => t.token);
+
+      const fcmMessage = {
+        notification: {
+          title,
+          body,
+        },
+        data: Object.fromEntries(
+          Object.entries(data).map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)])
+        ),
+        android: {
+          notification: {
+            color: '#3B82F6',
+            sound: 'default',
+            priority: 'high',
+            channelId: 'default',
+          },
+        },
+        apns: {
+          payload: {
+            aps: {
+              sound: 'default',
+              badge: 1,
+            },
+          },
+        },
+        tokens: tokens,
+      };
+
+      const messaging = getMessaging();
+      const response = await messaging.sendEachForMulticast(fcmMessage);
+
+      totalSent += response.successCount;
+      totalFailed += response.failureCount;
+
+      // Clean up invalid tokens
+      const invalidRemoved = await cleanupInvalidTokens(tokens, response.responses);
+      totalInvalidRemoved += invalidRemoved;
+    }
+
+    console.log(`✅ Group notifications sent: ${totalSent} success, ${totalFailed} failed`);
+    if (recipientsWithoutTokens > 0) {
+      console.log(`   ℹ️ ${recipientsWithoutTokens}/${recipients.length} members have no push tokens`);
+    }
+
+    return {
+      success: true,
+      groupId,
+      groupName,
+      type,
+      membersCount: recipients.length,
+      recipientsWithTokens,
+      recipientsWithoutTokens,
+      sent: totalSent,
+      failed: totalFailed,
+      invalidTokensRemoved: totalInvalidRemoved
+    };
+  } catch (error) {
+    console.error('Error sending notification to group members:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
  * Send class reminder notifications (30 min or 10 min before)
  * @param {number} minutesBefore - Minutes before class (30 or 10)
  * @returns {Promise<Object>} Summary of sending results

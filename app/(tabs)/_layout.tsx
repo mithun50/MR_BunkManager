@@ -189,15 +189,6 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="attendance"
-          options={{
-            title: 'Attendance',
-            tabBarIcon: ({ color, size }) => (
-              <MaterialCommunityIcons name="calendar-check" size={size} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
           name="timetable"
           options={{
             title: 'Timetable',
@@ -207,9 +198,18 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="groups"
+          name="attendance"
           options={{
             title: 'Groups',
+            tabBarIcon: ({ color, size }) => (
+              <MaterialCommunityIcons name="forum" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="groups"
+          options={{
+            title: 'Community',
             tabBarIcon: ({ color, size }) => (
               <MaterialCommunityIcons name="account-group" size={size} color={color} />
             ),

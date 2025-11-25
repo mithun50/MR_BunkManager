@@ -60,7 +60,10 @@ module.exports = ({ config }) => {
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.READ_MEDIA_IMAGES",
         "android.permission.POST_NOTIFICATIONS",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_CONNECT"
       ]
     },
     plugins: [
@@ -89,6 +92,13 @@ module.exports = ({ config }) => {
         "expo-speech-recognition",
         {
           microphonePermission: "Allow Bunk Manager to use the microphone for voice input."
+        }
+      ],
+      [
+        "@config-plugins/react-native-webrtc",
+        {
+          cameraPermission: "Allow Bunk Manager to access camera for video calls.",
+          microphonePermission: "Allow Bunk Manager to access microphone for voice calls."
         }
       ]
     ],

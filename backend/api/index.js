@@ -18,6 +18,7 @@ import {
   sendDailyReminders,
   sendClassReminders,
   sendNotificationToFollowers,
+  sendNotificationToGroupMembers,
   isValidExpoPushToken
 } from '../src/sendNotification.js';
 
@@ -263,6 +264,67 @@ app.post('/send-notification', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to send notification',
+      details: error.message,
+      timestamp: formatISTDateTime()
+    });
+  }
+});
+
+/**
+ * Notify all members of a group
+ * POST /notify-group-members
+ *
+ * Body:
+ * {
+ *   "groupId": "group123",
+ *   "groupName": "Study Group",
+ *   "senderId": "user123",
+ *   "senderName": "John Doe",
+ *   "type": "message" | "file" | "call",
+ *   "extra": { "message": "Hello", "fileName": "doc.pdf", "isVideo": true }
+ * }
+ */
+app.post('/notify-group-members', async (req, res) => {
+  try {
+    const { groupId, groupName, senderId, senderName, type, extra } = req.body;
+
+    if (!groupId || !groupName || !senderId || !senderName || !type) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: groupId, groupName, senderId, senderName, type'
+      });
+    }
+
+    const validTypes = ['message', 'file', 'call'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid type. Must be one of: message, file, call'
+      });
+    }
+
+    console.log(`📤 Notifying group ${groupName} members about ${type}`);
+
+    const result = await sendNotificationToGroupMembers(
+      groupId,
+      groupName,
+      senderId,
+      senderName,
+      type,
+      extra || {}
+    );
+
+    res.json({
+      success: true,
+      message: 'Group members notified successfully',
+      result,
+      timestamp: formatISTDateTime()
+    });
+  } catch (error) {
+    console.error('Error notifying group members:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to notify group members',
       details: error.message,
       timestamp: formatISTDateTime()
     });
