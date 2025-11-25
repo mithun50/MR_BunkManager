@@ -1,36 +1,26 @@
 {
   "project_info": {
-    "project_number": "1057431059560",
-    "project_id": "mr-bunkmanager",
-    "storage_bucket": "mr-bunkmanager.firebasestorage.app"
+    "project_number": "95599322254",
+    "project_id": "mr-bunkmanager-28ef8",
+    "storage_bucket": "mr-bunkmanager-28ef8.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1057431059560:android:3bfa104eb14ac23e574fdd",
+        "mobilesdk_app_id": "1:95599322254:android:20b01afd23106c8c2f15df",
         "android_client_info": {
           "package_name": "com.idtl.mrbunkmanager"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "1057431059560-dtoae4ftv7fa2rls2kb9noe5bmo6gqeu.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDONcwK_OTNhejSl5UnabpZAhah6fMXsf8"
+          "current_key": "AIzaSyD6oqOMUmT-2zaTu-2Z3d4NupO2LmLV6cI"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "1057431059560-dtoae4ftv7fa2rls2kb9noe5bmo6gqeu.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

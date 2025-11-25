@@ -320,6 +320,162 @@ app.post('/send-notification', async (req, res) => {
 });
 
 /**
+ * Notify group members about activity (message, file, call)
+ * POST /notify-group-members
+ *
+ * Body:
+ * {
+ *   "groupId": "group123",
+ *   "groupName": "Study Group",
+ *   "senderId": "user123",
+ *   "senderName": "John Doe",
+ *   "type": "message" | "file" | "call",
+ *   "extra": { "message": "...", "fileName": "...", "isVideo": false }
+ * }
+ */
+app.post('/notify-group-members', async (req, res) => {
+  try {
+    const { groupId, groupName, senderId, senderName, type, extra = {} } = req.body;
+
+    if (!groupId || !groupName || !senderId || !senderName || !type) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: groupId, groupName, senderId, senderName, type'
+      });
+    }
+
+    console.log(`📤 Notifying group members of ${groupName} about ${type} at ${formatISTDateTime()}`);
+
+    // Get group members
+    const membersSnapshot = await db
+      .collection('groups')
+      .doc(groupId)
+      .collection('members')
+      .get();
+
+    if (membersSnapshot.empty) {
+      return res.json({
+        success: true,
+        message: 'No members to notify',
+        notified: 0,
+        timestamp: formatISTDateTime()
+      });
+    }
+
+    // Get member user IDs (excluding sender)
+    const memberIds = membersSnapshot.docs
+      .map(doc => doc.data().userId)
+      .filter(id => id !== senderId);
+
+    if (memberIds.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No other members to notify',
+        notified: 0,
+        timestamp: formatISTDateTime()
+      });
+    }
+
+    // Build notification message based on type
+    let title = groupName;
+    let body = '';
+
+    switch (type) {
+      case 'message':
+        body = `${senderName}: ${extra.message?.substring(0, 100) || 'New message'}`;
+        break;
+      case 'file':
+        body = `${senderName} shared a file: ${extra.fileName || 'File'}`;
+        break;
+      case 'call':
+        body = `${senderName} started a ${extra.isVideo ? 'video' : 'voice'} call`;
+        break;
+      default:
+        body = `${senderName} - New activity`;
+    }
+
+    // Get tokens for all members
+    const tokenPromises = memberIds.map(async (userId) => {
+      const tokensSnapshot = await db
+        .collection('pushTokens')
+        .where('userId', '==', userId)
+        .where('active', '==', true)
+        .get();
+
+      return tokensSnapshot.docs.map(doc => doc.data().token);
+    });
+
+    const tokenArrays = await Promise.all(tokenPromises);
+    const tokens = tokenArrays.flat().filter(Boolean);
+
+    if (tokens.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No push tokens found for members',
+        notified: 0,
+        timestamp: formatISTDateTime()
+      });
+    }
+
+    // Send notifications using Expo
+    const { default: Expo } = await import('expo-server-sdk');
+    const expo = new Expo();
+
+    const messages = tokens
+      .filter(token => Expo.isExpoPushToken(token))
+      .map(token => ({
+        to: token,
+        sound: 'default',
+        title,
+        body,
+        data: {
+          type: 'group_activity',
+          groupId,
+          activityType: type,
+          ...extra
+        },
+      }));
+
+    if (messages.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No valid Expo tokens',
+        notified: 0,
+        timestamp: formatISTDateTime()
+      });
+    }
+
+    const chunks = expo.chunkPushNotifications(messages);
+    let successCount = 0;
+
+    for (const chunk of chunks) {
+      try {
+        const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
+        successCount += ticketChunk.filter(t => t.status === 'ok').length;
+      } catch (error) {
+        console.error('❌ Error sending chunk:', error);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Group members notified',
+      notified: successCount,
+      totalMembers: memberIds.length,
+      timestamp: formatISTDateTime()
+    });
+  } catch (error) {
+    console.error('❌ Error notifying group members:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to notify group members',
+      details: error.message,
+      timestamp: formatISTDateTime()
+    });
+  }
+});
+
+/**
  * Notify followers when a user uploads a new note
  * POST /notify-followers
  *
