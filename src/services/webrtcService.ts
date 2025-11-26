@@ -52,16 +52,38 @@ async function loadWebRTC(): Promise<boolean> {
   }
 }
 
-// Free STUN servers for NAT traversal
+// ICE servers for NAT traversal
+// STUN servers help discover public IP, TURN servers relay media when direct connection fails
 const ICE_SERVERS = {
   iceServers: [
+    // Google STUN servers
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' },
-    { urls: 'stun:stun.stunprotocol.org:3478' },
+    // Free TURN servers from Open Relay Project (metered.ca)
+    // These are essential for mobile networks behind symmetric NAT
+    {
+      urls: 'turn:a.relay.metered.ca:80',
+      username: 'e8dd65c92f6ec3a2949fa549',
+      credential: 'uWdEpQ1hE5J8lxBU',
+    },
+    {
+      urls: 'turn:a.relay.metered.ca:80?transport=tcp',
+      username: 'e8dd65c92f6ec3a2949fa549',
+      credential: 'uWdEpQ1hE5J8lxBU',
+    },
+    {
+      urls: 'turn:a.relay.metered.ca:443',
+      username: 'e8dd65c92f6ec3a2949fa549',
+      credential: 'uWdEpQ1hE5J8lxBU',
+    },
+    {
+      urls: 'turns:a.relay.metered.ca:443',
+      username: 'e8dd65c92f6ec3a2949fa549',
+      credential: 'uWdEpQ1hE5J8lxBU',
+    },
   ],
+  iceCandidatePoolSize: 10,
 };
 
 export interface CallParticipant {
@@ -265,8 +287,33 @@ class WebRTCService {
 
     // Handle incoming tracks
     pc.ontrack = (event: any) => {
+      console.log(`📥 Track received from ${remoteUserId}:`, {
+        kind: event.track?.kind,
+        enabled: event.track?.enabled,
+        readyState: event.track?.readyState,
+        streamsCount: event.streams?.length,
+      });
+
       const remoteStream = event.streams[0];
       if (remoteStream) {
+        // Log track details for debugging
+        const audioTracks = remoteStream.getAudioTracks();
+        const videoTracks = remoteStream.getVideoTracks();
+        console.log(`📊 Remote stream from ${remoteUserId}:`, {
+          audioTracks: audioTracks.length,
+          videoTracks: videoTracks.length,
+          audioEnabled: audioTracks[0]?.enabled,
+          audioReadyState: audioTracks[0]?.readyState,
+        });
+
+        // Ensure audio track is enabled
+        audioTracks.forEach((track: any) => {
+          if (!track.enabled) {
+            console.log(`🔊 Enabling audio track from ${remoteUserId}`);
+            track.enabled = true;
+          }
+        });
+
         this.remoteStreams.set(remoteUserId, remoteStream);
         this.callbacks?.onRemoteStream(remoteUserId, remoteStream);
       }
@@ -283,7 +330,35 @@ class WebRTCService {
 
     // Handle connection state changes
     pc.onconnectionstatechange = () => {
-      console.log(`Connection state with ${remoteUserId}:`, pc.connectionState);
+      const state = pc.connectionState;
+      console.log(`Connection state with ${remoteUserId}:`, state);
+      this.callbacks?.onConnectionStateChange(`peer-${remoteUserId}: ${state}`);
+
+      if (state === 'failed') {
+        console.error(`❌ Connection failed with ${remoteUserId} - ICE negotiation failed`);
+        // Try to restart ICE
+        this.restartIce(remoteUserId, pc);
+      } else if (state === 'disconnected') {
+        console.warn(`⚠️ Connection disconnected with ${remoteUserId}`);
+      }
+    };
+
+    // Handle ICE connection state for more detailed debugging
+    pc.oniceconnectionstatechange = () => {
+      const iceState = pc.iceConnectionState;
+      console.log(`ICE connection state with ${remoteUserId}:`, iceState);
+
+      if (iceState === 'failed') {
+        console.error(`❌ ICE connection failed with ${remoteUserId}`);
+        this.callbacks?.onError(new Error(`ICE connection failed with peer`));
+      } else if (iceState === 'connected' || iceState === 'completed') {
+        console.log(`✅ ICE connection successful with ${remoteUserId}`);
+      }
+    };
+
+    // Handle ICE gathering state
+    pc.onicegatheringstatechange = () => {
+      console.log(`ICE gathering state with ${remoteUserId}:`, pc.iceGatheringState);
     };
 
     // If we're the initiator, create and send an offer
@@ -354,6 +429,23 @@ class WebRTCService {
       payload,
       timestamp: serverTimestamp(),
     });
+  }
+
+  /**
+   * Restart ICE for a failed connection
+   */
+  private async restartIce(remoteUserId: string, pc: any): Promise<void> {
+    try {
+      console.log(`🔄 Restarting ICE for ${remoteUserId}`);
+      const offer = await pc.createOffer({ iceRestart: true });
+      await pc.setLocalDescription(offer);
+      await this.sendSignalingMessage(remoteUserId, 'offer', {
+        sdp: offer.sdp,
+        type: offer.type,
+      });
+    } catch (error) {
+      console.error('Failed to restart ICE:', error);
+    }
   }
 
   /**

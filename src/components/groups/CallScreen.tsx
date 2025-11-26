@@ -128,14 +128,18 @@ export function CallScreen({
   useEffect(() => {
     const initializeCall = async () => {
       try {
-        // Configure audio mode
+        // Configure audio mode for voice calls
         await Audio.setAudioModeAsync({
           allowsRecordingIOS: true,
           playsInSilentModeIOS: true,
           staysActiveInBackground: true,
-          shouldDuckAndroid: true,
+          shouldDuckAndroid: false, // Don't duck other audio - we want full voice call
           playThroughEarpieceAndroid: !isSpeakerOn,
+          interruptionModeIOS: 1, // Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX
+          interruptionModeAndroid: 1, // Audio.INTERRUPTION_MODE_ANDROID_DO_NOT_MIX
         });
+
+        console.log('🔊 Audio mode configured for voice call');
 
         // Play ringtone while connecting
         await playRingtone();
