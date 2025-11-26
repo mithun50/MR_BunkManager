@@ -7,6 +7,7 @@
  * actually needed (when joining a call).
  */
 
+import { Platform, PermissionsAndroid } from 'react-native';
 import {
   collection,
   doc,
@@ -21,6 +22,48 @@ import {
   Unsubscribe,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
+
+/**
+ * Request microphone and camera permissions on Android
+ */
+async function requestMediaPermissions(isVideo: boolean): Promise<boolean> {
+  if (Platform.OS !== 'android') {
+    return true; // iOS handles permissions via Info.plist
+  }
+
+  try {
+    const permissions = [PermissionsAndroid.PERMISSIONS.RECORD_AUDIO];
+
+    if (isVideo) {
+      permissions.push(PermissionsAndroid.PERMISSIONS.CAMERA);
+    }
+
+    console.log('📱 Requesting permissions:', permissions);
+
+    const granted = await PermissionsAndroid.requestMultiple(permissions);
+
+    const audioGranted = granted[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] === PermissionsAndroid.RESULTS.GRANTED;
+    const cameraGranted = !isVideo || granted[PermissionsAndroid.PERMISSIONS.CAMERA] === PermissionsAndroid.RESULTS.GRANTED;
+
+    console.log('📱 Permission results:', {
+      audio: audioGranted ? 'granted' : 'denied',
+      camera: isVideo ? (cameraGranted ? 'granted' : 'denied') : 'not requested',
+    });
+
+    if (!audioGranted) {
+      throw new Error('Microphone permission is required for calls');
+    }
+
+    if (isVideo && !cameraGranted) {
+      throw new Error('Camera permission is required for video calls');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('❌ Permission request failed:', error);
+    throw error;
+  }
+}
 
 // Lazy-loaded WebRTC types - will be initialized on first use
 let RTCPeerConnection: any;
@@ -154,6 +197,10 @@ class WebRTCService {
       if (!loaded) {
         throw new Error('Failed to load WebRTC module');
       }
+
+      // Request permissions BEFORE accessing media
+      console.log('📱 Requesting media permissions...');
+      await requestMediaPermissions(isVideo);
 
       console.log('🎙️ Getting local media stream...');
 

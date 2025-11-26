@@ -35,18 +35,19 @@ import { db } from '../../config/firebase';
 
 // Try to import WebRTC (only works in development builds, not Expo Go)
 let RTCView: any = null;
-let webrtcService: any = null;
 let isWebRTCAvailable = false;
 
 try {
   const webrtc = require('react-native-webrtc');
   RTCView = webrtc.RTCView;
-  webrtcService = require('../../services/webrtcService').default;
   isWebRTCAvailable = true;
   console.log('✅ WebRTC is available');
 } catch (e) {
-  console.log('⚠️ WebRTC not available (requires development build)');
+  console.log('⚠️ WebRTC not available (requires development build)', e);
 }
+
+// Always import webrtcService - it handles its own lazy loading
+import webrtcService from '../../services/webrtcService';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -144,8 +145,9 @@ export function CallScreen({
         // Play ringtone while connecting
         await playRingtone();
 
-        if (isWebRTCAvailable && webrtcService) {
+        if (isWebRTCAvailable) {
           // Use real WebRTC
+          console.log('🚀 Starting WebRTC call...');
           await webrtcService.joinCall(
             groupId,
             currentUserId,
@@ -213,10 +215,13 @@ export function CallScreen({
 
       } catch (error: any) {
         console.error('Error initializing call:', error);
+        console.error('Error details:', error?.message, error?.stack);
         stopRingtone();
-        Alert.alert('Connection Error', 'Failed to connect to call. Please try again.', [
-          { text: 'OK', onPress: onEndCall }
-        ]);
+        Alert.alert(
+          'Connection Error',
+          `Failed to connect to call: ${error?.message || 'Unknown error'}. Please try again.`,
+          [{ text: 'OK', onPress: onEndCall }]
+        );
       }
     };
 
@@ -288,7 +293,7 @@ export function CallScreen({
     }
     stopRingtone();
 
-    if (isWebRTCAvailable && webrtcService) {
+    if (isWebRTCAvailable) {
       await webrtcService.leaveCall();
     } else {
       // Cleanup simulation mode
@@ -318,7 +323,7 @@ export function CallScreen({
     setIsMuted(newMuteState);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    if (isWebRTCAvailable && webrtcService) {
+    if (isWebRTCAvailable) {
       webrtcService.toggleMute(newMuteState);
     } else {
       // Update in Firestore for simulation mode
@@ -337,7 +342,7 @@ export function CallScreen({
     setIsVideoOff(newVideoState);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    if (isWebRTCAvailable && webrtcService) {
+    if (isWebRTCAvailable) {
       webrtcService.toggleVideo(newVideoState);
     } else {
       // Update in Firestore for simulation mode
@@ -352,7 +357,7 @@ export function CallScreen({
 
   // Switch camera
   const switchCamera = async () => {
-    if (isWebRTCAvailable && webrtcService) {
+    if (isWebRTCAvailable) {
       await webrtcService.switchCamera();
     }
     setIsFrontCamera(!isFrontCamera);
