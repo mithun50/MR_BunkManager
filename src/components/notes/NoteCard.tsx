@@ -5,7 +5,6 @@ import {
   Text,
   Avatar,
   IconButton,
-  Chip,
   useTheme,
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -228,19 +227,16 @@ export function NoteCard({
               {note.authorRollNumber} • {timeAgo}
             </Text>
           </View>
-          <Chip
-            icon={() => (
-              <MaterialCommunityIcons
-                name={contentTypeIcons[note.contentType]}
-                size={14}
-                color={contentTypeColors[note.contentType]}
-              />
-            )}
-            compact
-            style={styles.typeChip}
-          >
-            {note.contentType.toUpperCase()}
-          </Chip>
+          <View style={[styles.typeBadge, { backgroundColor: contentTypeColors[note.contentType] + '20' }]}>
+            <MaterialCommunityIcons
+              name={contentTypeIcons[note.contentType]}
+              size={14}
+              color={contentTypeColors[note.contentType]}
+            />
+            <Text style={[styles.typeBadgeText, { color: contentTypeColors[note.contentType] }]}>
+              {note.contentType.toUpperCase()}
+            </Text>
+          </View>
         </Pressable>
 
         {/* Note Content */}
@@ -287,14 +283,23 @@ export function NoteCard({
           {/* Subject & Tags */}
           <View style={styles.tags}>
             {note.subject && (
-              <Chip compact style={styles.subjectChip} icon="book-outline">
-                {note.subject}
-              </Chip>
+              <View style={[styles.subjectBadge, { backgroundColor: theme.colors.primaryContainer }]}>
+                <MaterialCommunityIcons
+                  name="book-outline"
+                  size={12}
+                  color={theme.colors.onPrimaryContainer}
+                />
+                <Text style={[styles.badgeText, { color: theme.colors.onPrimaryContainer }]}>
+                  {note.subject}
+                </Text>
+              </View>
             )}
             {note.tags.slice(0, 2).map((tag, index) => (
-              <Chip key={index} compact style={styles.tagChip}>
-                #{tag}
-              </Chip>
+              <View key={index} style={[styles.tagBadge, { backgroundColor: theme.colors.surfaceVariant }]}>
+                <Text style={[styles.badgeText, { color: theme.colors.onSurfaceVariant }]}>
+                  #{tag}
+                </Text>
+              </View>
             ))}
           </View>
         </View>
@@ -396,9 +401,6 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
   },
-  typeChip: {
-    height: 28,
-  },
   content: {
     paddingHorizontal: 12,
     paddingBottom: 8,
@@ -427,11 +429,25 @@ const styles = StyleSheet.create({
     marginTop: 8,
     gap: 6,
   },
-  subjectChip: {
-    height: 26,
+  subjectBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  tagChip: {
-    height: 26,
+  tagBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   actions: {
     flexDirection: 'row',
