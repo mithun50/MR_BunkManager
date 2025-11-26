@@ -292,18 +292,15 @@ export function GroupChatScreen({
           />
           <Divider />
           {currentUserRole === 'admin' && onDeleteGroup && (
-            <>
-              <Menu.Item
-                onPress={() => {
-                  setMenuVisible(false);
-                  onDeleteGroup();
-                }}
-                leadingIcon="delete"
-                title="Delete Group"
-                titleStyle={{ color: theme.colors.error }}
-              />
-              <Divider />
-            </>
+            <Menu.Item
+              onPress={() => {
+                setMenuVisible(false);
+                onDeleteGroup();
+              }}
+              leadingIcon="delete"
+              title="Delete Group"
+              titleStyle={{ color: theme.colors.error }}
+            />
           )}
           <Menu.Item
             onPress={() => {

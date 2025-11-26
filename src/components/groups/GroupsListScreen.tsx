@@ -349,7 +349,7 @@ export function GroupsListScreen({
           onViewMembers={handleViewMembers}
           onAddMembers={() => setShowAddMembersModal(true)}
           onLeaveGroup={handleLeaveGroup}
-          onDeleteGroup={currentUserRole === 'admin' ? handleDeleteGroup : undefined}
+          onDeleteGroup={handleDeleteGroup}
           onUserPress={onUserPress}
         />
 
