@@ -4,6 +4,8 @@ import {
   StyleSheet,
   Alert,
   Pressable,
+  Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import {
   Text,
@@ -16,7 +18,7 @@ import {
   Divider,
   ActivityIndicator,
 } from 'react-native-paper';
-import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboard-controller';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Unsubscribe } from 'firebase/firestore';
@@ -316,7 +318,11 @@ export function GroupChatScreen({
       </Appbar.Header>
 
       {/* Messages */}
-      <View style={styles.chatContainer}>
+      <KeyboardAvoidingView
+        style={styles.chatContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
         {isLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" />
@@ -331,7 +337,7 @@ export function GroupChatScreen({
             ]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
-            bottomOffset={80}
+            bottomOffset={60}
           >
             {messages.length === 0 ? (
               renderEmptyMessages()
@@ -342,41 +348,39 @@ export function GroupChatScreen({
         )}
 
         {/* Message Input */}
-        <KeyboardStickyView offset={{ closed: 0, opened: 0 }}>
-          <View style={[styles.inputContainer, { backgroundColor: theme.colors.surface, paddingBottom: insets.bottom }]}>
-            <IconButton
-              icon="paperclip"
-              size={24}
-              onPress={handleFileUpload}
-              iconColor={theme.colors.primary}
-              disabled={isSending}
-            />
-            <TextInput
-              value={newMessage}
-              onChangeText={setNewMessage}
-              placeholder="Type a message..."
-              mode="flat"
-              style={styles.input}
-              multiline
-              maxLength={1000}
-              underlineColor="transparent"
-              activeUnderlineColor="transparent"
-              disabled={isSending}
-              onSubmitEditing={handleSendMessage}
-            />
-            <IconButton
-              icon="send"
-              mode="contained"
-              size={24}
-              onPress={handleSendMessage}
-              disabled={!newMessage.trim() || isSending}
-              loading={isSending}
-              containerColor={newMessage.trim() ? theme.colors.primary : theme.colors.surfaceVariant}
-              iconColor={newMessage.trim() ? theme.colors.onPrimary : theme.colors.onSurfaceVariant}
-            />
-          </View>
-        </KeyboardStickyView>
-      </View>
+        <View style={[styles.inputContainer, { backgroundColor: theme.colors.surface }]}>
+          <IconButton
+            icon="paperclip"
+            size={24}
+            onPress={handleFileUpload}
+            iconColor={theme.colors.primary}
+            disabled={isSending}
+          />
+          <TextInput
+            value={newMessage}
+            onChangeText={setNewMessage}
+            placeholder="Type a message..."
+            mode="flat"
+            style={styles.input}
+            multiline
+            maxLength={1000}
+            underlineColor="transparent"
+            activeUnderlineColor="transparent"
+            disabled={isSending}
+            onSubmitEditing={handleSendMessage}
+          />
+          <IconButton
+            icon="send"
+            mode="contained"
+            size={24}
+            onPress={handleSendMessage}
+            disabled={!newMessage.trim() || isSending}
+            loading={isSending}
+            containerColor={newMessage.trim() ? theme.colors.primary : theme.colors.surfaceVariant}
+            iconColor={newMessage.trim() ? theme.colors.onPrimary : theme.colors.onSurfaceVariant}
+          />
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
