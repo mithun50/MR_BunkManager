@@ -1,6 +1,10 @@
 /**
  * WebRTC Service for Group Voice/Video Calls
  * Uses Firebase Firestore for signaling
+ *
+ * NOTE: All react-native-webrtc imports are lazy-loaded to prevent
+ * app crashes on startup in Expo Go (where native modules aren't available).
+ * The module is loaded when joinCall() is called.
  */
 
 import { Platform, PermissionsAndroid } from 'react-native';
@@ -8,7 +12,6 @@ import {
   collection,
   doc,
   setDoc,
-  getDoc,
   getDocs,
   deleteDoc,
   onSnapshot,
@@ -18,28 +21,6 @@ import {
   Unsubscribe,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
-
-// Import WebRTC components - these are loaded when this module is imported
-// The CallScreen already checks if WebRTC is available before using this service
-import {
-  RTCPeerConnection,
-  RTCIceCandidate,
-  RTCSessionDescription,
-  MediaStream,
-  mediaDevices,
-  registerGlobals,
-} from 'react-native-webrtc';
-
-// Register globals for browser-compatible WebRTC functions
-registerGlobals();
-
-console.log('📦 WebRTC Service initialized with:', {
-  RTCPeerConnection: !!RTCPeerConnection,
-  RTCIceCandidate: !!RTCIceCandidate,
-  RTCSessionDescription: !!RTCSessionDescription,
-  MediaStream: !!MediaStream,
-  mediaDevices: !!mediaDevices,
-});
 
 /**
  * Request microphone and camera permissions on Android
@@ -80,6 +61,57 @@ async function requestMediaPermissions(isVideo: boolean): Promise<boolean> {
   } catch (error) {
     console.error('❌ Permission request failed:', error);
     throw error;
+  }
+}
+
+// Lazy-loaded WebRTC module reference
+let webrtcModule: any = null;
+let webrtcLoaded = false;
+
+/**
+ * Lazy-load WebRTC module and initialize it
+ */
+async function loadWebRTC(): Promise<boolean> {
+  if (webrtcLoaded && webrtcModule) return true;
+
+  try {
+    console.log('📦 Loading WebRTC module...');
+
+    // Dynamic require to avoid crash at startup in Expo Go
+    webrtcModule = require('react-native-webrtc');
+
+    console.log('📦 WebRTC module loaded, available exports:', Object.keys(webrtcModule));
+
+    // Call registerGlobals to set up browser-compatible WebRTC functions
+    if (typeof webrtcModule.registerGlobals === 'function') {
+      webrtcModule.registerGlobals();
+      console.log('📦 registerGlobals() called successfully');
+    }
+
+    // Verify essential components are available
+    if (!webrtcModule.RTCPeerConnection) {
+      throw new Error('RTCPeerConnection not found in WebRTC module');
+    }
+    if (!webrtcModule.mediaDevices || !webrtcModule.mediaDevices.getUserMedia) {
+      throw new Error('mediaDevices.getUserMedia not found in WebRTC module');
+    }
+
+    console.log('✅ WebRTC module initialized successfully:', {
+      RTCPeerConnection: !!webrtcModule.RTCPeerConnection,
+      RTCIceCandidate: !!webrtcModule.RTCIceCandidate,
+      RTCSessionDescription: !!webrtcModule.RTCSessionDescription,
+      MediaStream: !!webrtcModule.MediaStream,
+      mediaDevices: !!webrtcModule.mediaDevices,
+      getUserMedia: !!webrtcModule.mediaDevices?.getUserMedia,
+    });
+
+    webrtcLoaded = true;
+    return true;
+  } catch (error: any) {
+    console.error('❌ Failed to load WebRTC module:', error);
+    webrtcModule = null;
+    webrtcLoaded = false;
+    throw new Error(`WebRTC not available: ${error.message}. Make sure you're using a development build, not Expo Go.`);
   }
 }
 
@@ -137,14 +169,14 @@ export interface WebRTCCallbacks {
 
 class WebRTCService {
   private localStream: MediaStreamType | null = null;
-  private peerConnections: Map<string, RTCPeerConnection> = new Map();
+  private peerConnections: Map<string, any> = new Map();
   private remoteStreams: Map<string, MediaStreamType> = new Map();
   private callbacks: WebRTCCallbacks | null = null;
   private currentUserId: string = '';
   private currentGroupId: string = '';
   private unsubscribers: Unsubscribe[] = [];
   private isVideoCall: boolean = false;
-  private pendingIceCandidates: Map<string, RTCIceCandidate[]> = new Map();
+  private pendingIceCandidates: Map<string, any[]> = new Map();
 
   /**
    * Initialize and join a call
@@ -163,6 +195,10 @@ class WebRTCService {
     this.callbacks = callbacks;
 
     try {
+      // Load WebRTC module first
+      console.log('📦 Loading WebRTC...');
+      await loadWebRTC();
+
       // Request permissions BEFORE accessing media
       console.log('📱 Requesting media permissions...');
       await requestMediaPermissions(isVideo);
@@ -204,7 +240,11 @@ class WebRTCService {
    * Get local media stream (audio/video)
    */
   private async getLocalStream(isVideo: boolean): Promise<MediaStreamType> {
-    let mediaConstraints: any = {
+    if (!webrtcModule || !webrtcModule.mediaDevices) {
+      throw new Error('WebRTC module not loaded');
+    }
+
+    const mediaConstraints: any = {
       audio: true,
       video: isVideo ? {
         frameRate: 30,
@@ -215,7 +255,7 @@ class WebRTCService {
     console.log('📱 Requesting media with constraints:', mediaConstraints);
 
     try {
-      const mediaStream = await mediaDevices.getUserMedia(mediaConstraints);
+      const mediaStream = await webrtcModule.mediaDevices.getUserMedia(mediaConstraints);
 
       if (!mediaStream) {
         throw new Error('getUserMedia returned null');
@@ -341,13 +381,19 @@ class WebRTCService {
   /**
    * Create peer connection for a participant
    */
-  private async createPeerConnection(remoteUserId: string, isInitiator: boolean): Promise<RTCPeerConnection> {
+  private async createPeerConnection(remoteUserId: string, isInitiator: boolean): Promise<any> {
     console.log(`🔗 Creating peer connection for ${remoteUserId} (initiator: ${isInitiator})`);
+
+    if (!webrtcModule) {
+      throw new Error('WebRTC module not loaded');
+    }
 
     if (this.peerConnections.has(remoteUserId)) {
       console.log(`⚠️ Peer connection already exists for ${remoteUserId}`);
       return this.peerConnections.get(remoteUserId)!;
     }
+
+    const { RTCPeerConnection, MediaStream } = webrtcModule;
 
     const pc = new RTCPeerConnection(ICE_SERVERS);
     this.peerConnections.set(remoteUserId, pc);
@@ -432,6 +478,12 @@ class WebRTCService {
   private async handleOffer(fromUserId: string, payload: any): Promise<void> {
     console.log(`📥 Handling offer from ${fromUserId}`);
 
+    if (!webrtcModule) {
+      throw new Error('WebRTC module not loaded');
+    }
+
+    const { RTCSessionDescription } = webrtcModule;
+
     if (!this.pendingIceCandidates.has(fromUserId)) {
       this.pendingIceCandidates.set(fromUserId, []);
     }
@@ -466,6 +518,12 @@ class WebRTCService {
   private async handleAnswer(fromUserId: string, payload: any): Promise<void> {
     console.log(`📥 Handling answer from ${fromUserId}`);
 
+    if (!webrtcModule) {
+      throw new Error('WebRTC module not loaded');
+    }
+
+    const { RTCSessionDescription } = webrtcModule;
+
     const pc = this.peerConnections.get(fromUserId);
     if (pc) {
       try {
@@ -482,6 +540,12 @@ class WebRTCService {
    */
   private async handleIceCandidate(fromUserId: string, payload: any): Promise<void> {
     if (!payload.candidate) return;
+
+    if (!webrtcModule) {
+      throw new Error('WebRTC module not loaded');
+    }
+
+    const { RTCIceCandidate } = webrtcModule;
 
     const pc = this.peerConnections.get(fromUserId);
     const candidate = new RTCIceCandidate(payload.candidate);
@@ -543,7 +607,7 @@ class WebRTCService {
   /**
    * Restart ICE
    */
-  private async restartIce(remoteUserId: string, pc: RTCPeerConnection): Promise<void> {
+  private async restartIce(remoteUserId: string, pc: any): Promise<void> {
     try {
       console.log(`🔄 Restarting ICE for ${remoteUserId}`);
       const offer = await pc.createOffer({ iceRestart: true });
@@ -641,7 +705,7 @@ class WebRTCService {
         db, 'groups', this.currentGroupId, 'calls', 'active', 'signaling', this.currentUserId, 'messages'
       );
       const messages = await getDocs(signalingRef);
-      messages.forEach((doc) => deleteDoc(doc.ref).catch(console.error));
+      messages.forEach((msgDoc) => deleteDoc(msgDoc.ref).catch(console.error));
     }
 
     this.callbacks = null;
