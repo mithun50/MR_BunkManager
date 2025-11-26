@@ -206,9 +206,14 @@ class WebRTCService {
 
       // Get local media stream
       this.localStream = await this.getLocalStream(isVideo);
+
+      if (!this.localStream) {
+        throw new Error('Failed to get local media stream');
+      }
+
       console.log('✅ Local stream obtained:', {
-        audioTracks: this.localStream.getAudioTracks().length,
-        videoTracks: this.localStream.getVideoTracks().length,
+        audioTracks: this.localStream.getAudioTracks?.()?.length ?? 0,
+        videoTracks: this.localStream.getVideoTracks?.()?.length ?? 0,
       });
 
       callbacks.onLocalStream(this.localStream);
@@ -246,18 +251,33 @@ class WebRTCService {
     };
 
     console.log('📱 Requesting media with constraints:', constraints);
+    console.log('📱 mediaDevices available:', !!mediaDevices);
 
-    const stream = await mediaDevices.getUserMedia(constraints);
+    try {
+      const stream = await mediaDevices.getUserMedia(constraints);
 
-    // If voice-only call, disable video track (following official docs)
-    if (!isVideo) {
-      const videoTracks = stream.getVideoTracks();
-      videoTracks.forEach((track: any) => {
-        track.enabled = false;
-      });
+      if (!stream) {
+        throw new Error('getUserMedia returned null stream');
+      }
+
+      console.log('✅ getUserMedia succeeded, stream:', stream);
+      console.log('✅ Stream tracks:', stream.getTracks?.()?.length || 'unknown');
+
+      // If voice-only call, disable video track (following official docs)
+      if (!isVideo && stream.getVideoTracks) {
+        const videoTracks = stream.getVideoTracks();
+        videoTracks.forEach((track: any) => {
+          track.enabled = false;
+        });
+      }
+
+      return stream as MediaStreamType;
+    } catch (error: any) {
+      console.error('❌ getUserMedia failed:', error);
+      console.error('❌ Error name:', error?.name);
+      console.error('❌ Error message:', error?.message);
+      throw new Error(`Failed to access camera/microphone: ${error?.message || error}`);
     }
-
-    return stream as MediaStreamType;
   }
 
   /**
