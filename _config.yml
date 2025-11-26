@@ -1,0 +1,89 @@
+# Jekyll configuration for MR BunkManager Documentation
+# GitHub Pages with Jekyll
+
+# Site settings
+title: MR BunkManager
+description: A comprehensive attendance management and student collaboration platform built with React Native (Expo) and Firebase.
+baseurl: "/MR_BunkManager"
+url: "https://mithun50.github.io"
+
+# Theme
+remote_theme: pages-themes/cayman@v0.2.0
+plugins:
+  - jekyll-remote-theme
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    block:
+      line_numbers: true
+
+# Exclude from build
+exclude:
+  - node_modules
+  - vendor
+  - .bundle
+  - Gemfile
+  - Gemfile.lock
+  - package.json
+  - package-lock.json
+  - app.config.js
+  - babel.config.js
+  - metro.config.js
+  - tsconfig.json
+  - eas.json
+  - google-services.json
+  - backend
+  - src
+  - app
+  - assets
+  - android
+  - ios
+  - .expo
+  - .git
+  - "*.apk"
+  - "*.aab"
+
+# Include documentation and assets
+include:
+  - _pages
+  - docs
+  - assets/images
+
+# Collections for documentation pages
+collections:
+  docs:
+    output: true
+    permalink: /docs/:name/
+
+# Default front matter
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "default"
+  - scope:
+      path: "docs"
+      type: "docs"
+    values:
+      layout: "default"
+
+# SEO and social
+author: MR BunkManager Team
+twitter:
+  card: summary
+social:
+  name: MR BunkManager
+  links:
+    - https://github.com/mithun50/MR_BunkManager
+
+# Google Analytics (optional - add your tracking ID)
+# google_analytics: UA-XXXXXXXX-X

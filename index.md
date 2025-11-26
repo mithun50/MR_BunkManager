@@ -1,6 +1,26 @@
-# MR BunkManager
+---
+layout: default
+title: MR BunkManager
+description: A comprehensive attendance management and student collaboration platform built with React Native (Expo) and Firebase.
+---
 
-A comprehensive attendance management and student collaboration platform built with React Native (Expo) and Firebase.
+<p align="center">
+  <img src="assets/images/logo.png" alt="MR BunkManager Logo" width="200" height="200">
+</p>
+
+<h1 align="center">MR BunkManager</h1>
+
+<p align="center">
+  <strong>A comprehensive attendance management and student collaboration platform built with React Native (Expo) and Firebase.</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/mithun50/MR_BunkManager">GitHub</a> •
+  <a href="docs/API.html">API Docs</a> •
+  <a href="docs/ARCHITECTURE.html">Architecture</a>
+</p>
+
+---
 
 ## Overview
 
@@ -101,62 +121,16 @@ MR_BunkManager/
 │   │   ├── NetworkMonitor.tsx    # Connectivity
 │   │   ├── ThemeSwitcher.tsx     # Theme toggle
 │   │   ├── notes/                # Notes components
-│   │   │   ├── NoteCard.tsx
-│   │   │   ├── NoteEditor.tsx
-│   │   │   ├── CommentSection.tsx
-│   │   │   └── UserCard.tsx
 │   │   └── groups/               # Groups components
-│   │       ├── GroupCard.tsx
-│   │       ├── GroupChatScreen.tsx
-│   │       ├── MessageBubble.tsx
-│   │       ├── CreateGroupModal.tsx
-│   │       ├── MembersModal.tsx
-│   │       └── AddMembersModal.tsx
 │   ├── screens/                  # Screen implementations
-│   │   ├── auth/
-│   │   ├── onboarding/
-│   │   ├── community/
-│   │   └── groups/
 │   ├── services/                 # API & business logic
-│   │   ├── authService.ts        # Firebase auth
-│   │   ├── firestoreService.ts   # Database operations
-│   │   ├── chatService.ts        # AI chat API
-│   │   ├── notesService.ts       # Notes CRUD
-│   │   ├── groupsService.ts      # Groups & chat
-│   │   ├── socialService.ts      # Likes, comments, saves
-│   │   ├── followService.ts      # Social graph
-│   │   ├── notificationService.ts
-│   │   ├── cacheService.ts       # Local caching
-│   │   ├── offlineQueueService.ts
-│   │   ├── imageUploadService.ts
-│   │   ├── fileUploadService.ts
-│   │   └── googleDriveService.ts
 │   ├── store/                    # Zustand stores
-│   │   ├── authStore.ts
-│   │   ├── networkStore.ts
-│   │   ├── themeStore.ts
-│   │   ├── notesStore.ts
-│   │   └── groupsStore.ts
 │   ├── types/                    # TypeScript definitions
-│   │   ├── user.ts
-│   │   ├── notes.ts
-│   │   └── groups.ts
-│   └── config/
-│       ├── firebase.ts
-│       └── theme.ts
+│   └── config/                   # App configuration
 ├── backend/                      # Notification server
-│   ├── src/
-│   │   ├── index.js              # Express server
-│   │   ├── sendNotification.js   # FCM logic
-│   │   └── driveUpload.js        # Google Drive
-│   ├── api/
-│   │   └── index.js              # Vercel serverless
-│   └── cron-service/             # Scheduled tasks
-├── assets/
-│   └── images/
-├── app.config.js                 # Expo configuration
-├── package.json
-└── google-services.json          # Firebase Android config
+├── assets/                       # Static assets
+├── docs/                         # Documentation
+└── app.config.js                 # Expo configuration
 ```
 
 ## Installation
@@ -224,26 +198,6 @@ eas build -p android --profile preview
 eas build -p android --profile production
 ```
 
-## Backend Setup
-
-See [backend/README.md](backend/README.md) for backend deployment instructions.
-
-### Quick Start
-
-```bash
-cd backend
-npm install
-npm start
-```
-
-### Environment Variables (Backend)
-
-```env
-FIREBASE_SERVICE_ACCOUNT=<JSON credentials>
-GOOGLE_DRIVE_FOLDER_ID=<folder ID>
-PORT=3000
-```
-
 ## Database Schema
 
 ### Firestore Collections
@@ -284,7 +238,7 @@ groups/
 │       └── messages/
 
 pushTokens/
-├── {token}  # Token as document ID
+├── {token}
 │   ├── userId
 │   ├── tokenType (expo|fcm)
 │   └── active
@@ -418,6 +372,8 @@ For issues and feature requests, please use the [GitHub Issues](https://github.c
 
 ---
 
-**Package**: `com.idtl.mrbunkmanager`
-**Version**: 1.0.0
-**Min SDK**: Android 6.0+ (API 23)
+<p align="center">
+  <strong>Package</strong>: <code>com.idtl.mrbunkmanager</code><br>
+  <strong>Version</strong>: 1.0.0<br>
+  <strong>Min SDK</strong>: Android 6.0+ (API 23)
+</p>
