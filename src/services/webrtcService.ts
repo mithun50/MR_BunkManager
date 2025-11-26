@@ -304,12 +304,22 @@ class WebRTCService {
           videoTracks: videoTracks.length,
           audioEnabled: audioTracks[0]?.enabled,
           audioReadyState: audioTracks[0]?.readyState,
+          videoEnabled: videoTracks[0]?.enabled,
+          videoReadyState: videoTracks[0]?.readyState,
         });
 
         // Ensure audio track is enabled
         audioTracks.forEach((track: any) => {
           if (!track.enabled) {
             console.log(`🔊 Enabling audio track from ${remoteUserId}`);
+            track.enabled = true;
+          }
+        });
+
+        // Ensure video track is enabled
+        videoTracks.forEach((track: any) => {
+          if (!track.enabled) {
+            console.log(`📹 Enabling video track from ${remoteUserId}`);
             track.enabled = true;
           }
         });
