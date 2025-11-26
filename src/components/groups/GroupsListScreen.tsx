@@ -25,7 +25,6 @@ import { GroupChatScreen } from './GroupChatScreen';
 import { CreateGroupModal } from './CreateGroupModal';
 import { MembersModal } from './MembersModal';
 import { AddMembersModal } from './AddMembersModal';
-import { CallScreen } from './CallScreen';
 import groupsService from '../../services/groupsService';
 import { ThemeSwitcher } from '../ThemeSwitcher';
 
@@ -61,13 +60,6 @@ export function GroupsListScreen({
   const [showAddMembersModal, setShowAddMembersModal] = useState(false);
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [currentUserRole, setCurrentUserRole] = useState<'admin' | 'member' | null>(null);
-
-  // Call state
-  const [activeCall, setActiveCall] = useState<{
-    groupId: string;
-    groupName: string;
-    isVideo: boolean;
-  } | null>(null);
 
   // Load groups
   useEffect(() => {
@@ -303,30 +295,6 @@ export function GroupsListScreen({
     }
   };
 
-  // Call handlers
-  const handleStartCall = (isVideo: boolean) => {
-    if (!selectedGroup) return;
-    setActiveCall({
-      groupId: selectedGroup.id,
-      groupName: selectedGroup.name,
-      isVideo,
-    });
-
-    // Send notification to group members about the call (non-blocking)
-    groupsService.notifyGroupMembers(
-      selectedGroup.id,
-      selectedGroup.name,
-      currentUserId,
-      currentUserName,
-      'call',
-      { isVideo }
-    );
-  };
-
-  const handleEndCall = () => {
-    setActiveCall(null);
-  };
-
   // Filter groups based on search
   const filteredGroups = viewMode === 'my-groups'
     ? myGroups.filter((g) =>
@@ -369,7 +337,7 @@ export function GroupsListScreen({
   );
 
   // If a group is selected, show the chat screen
-  if (selectedGroup && !activeCall) {
+  if (selectedGroup) {
     return (
       <>
         <GroupChatScreen
@@ -383,8 +351,6 @@ export function GroupsListScreen({
           onLeaveGroup={handleLeaveGroup}
           onDeleteGroup={currentUserRole === 'admin' ? handleDeleteGroup : undefined}
           onUserPress={onUserPress}
-          onStartVoiceCall={() => handleStartCall(false)}
-          onStartVideoCall={() => handleStartCall(true)}
         />
 
         {/* Members Modal */}
@@ -409,21 +375,6 @@ export function GroupsListScreen({
           groupName={selectedGroup.name}
         />
       </>
-    );
-  }
-
-  // If there's an active call, show the call screen
-  if (activeCall) {
-    return (
-      <CallScreen
-        groupId={activeCall.groupId}
-        groupName={activeCall.groupName}
-        isVideo={activeCall.isVideo}
-        currentUserId={currentUserId}
-        currentUserName={currentUserName}
-        currentUserPhotoURL={currentUserPhotoURL}
-        onEndCall={handleEndCall}
-      />
     );
   }
 

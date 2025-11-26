@@ -93,13 +93,6 @@ module.exports = ({ config }) => {
         {
           microphonePermission: "Allow Bunk Manager to use the microphone for voice input."
         }
-      ],
-      [
-        "@config-plugins/react-native-webrtc",
-        {
-          cameraPermission: "Allow Bunk Manager to access camera for video calls.",
-          microphonePermission: "Allow Bunk Manager to access microphone for voice calls."
-        }
       ]
     ],
     experiments: {

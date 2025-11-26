@@ -36,8 +36,6 @@ interface GroupChatScreenProps {
   onLeaveGroup: () => void;
   onDeleteGroup?: () => void;
   onUserPress?: (userId: string) => void;
-  onStartVoiceCall?: () => void;
-  onStartVideoCall?: () => void;
 }
 
 export function GroupChatScreen({
@@ -51,8 +49,6 @@ export function GroupChatScreen({
   onLeaveGroup,
   onDeleteGroup,
   onUserPress,
-  onStartVoiceCall,
-  onStartVideoCall,
 }: GroupChatScreenProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -261,12 +257,6 @@ export function GroupChatScreen({
             </Text>
           </View>
         </Pressable>
-        {onStartVideoCall && (
-          <Appbar.Action icon="video" onPress={onStartVideoCall} />
-        )}
-        {onStartVoiceCall && (
-          <Appbar.Action icon="phone" onPress={onStartVoiceCall} />
-        )}
         <Menu
           visible={menuVisible}
           onDismiss={() => setMenuVisible(false)}
