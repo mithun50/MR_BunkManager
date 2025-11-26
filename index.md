@@ -4,376 +4,455 @@ title: MR BunkManager
 description: A comprehensive attendance management and student collaboration platform built with React Native (Expo) and Firebase.
 ---
 
-<p align="center">
-  <img src="assets/images/logo.png" alt="MR BunkManager Logo" width="200" height="200">
-</p>
+<style>
+  /* Custom styles for unique UI */
+  .hero-section {
+    text-align: center;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    margin-bottom: 40px;
+    box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+  }
 
-<h1 align="center">MR BunkManager</h1>
+  .hero-section img {
+    width: 150px;
+    height: 150px;
+    border-radius: 30px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    margin-bottom: 20px;
+    border: 4px solid rgba(255,255,255,0.3);
+  }
 
-<p align="center">
-  <strong>A comprehensive attendance management and student collaboration platform built with React Native (Expo) and Firebase.</strong>
-</p>
+  .hero-section h1 {
+    color: #ffffff;
+    font-size: 2.5em;
+    margin: 10px 0;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+  }
 
-<p align="center">
-  <a href="https://github.com/mithun50/MR_BunkManager">GitHub</a> •
-  <a href="docs/API.html">API Docs</a> •
-  <a href="docs/ARCHITECTURE.html">Architecture</a>
-</p>
+  .hero-section p {
+    color: rgba(255,255,255,0.9);
+    font-size: 1.2em;
+    max-width: 600px;
+    margin: 0 auto 20px;
+  }
 
----
+  .nav-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-top: 25px;
+  }
 
-## Overview
+  .nav-buttons a {
+    display: inline-block;
+    padding: 12px 28px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
 
-MR BunkManager helps students track their attendance, manage their class schedule, collaborate with peers through study groups, and share study materials. The app features an AI-powered assistant that provides personalized attendance advice.
+  .btn-primary {
+    background: #ffffff;
+    color: #667eea;
+  }
 
-## Features
+  .btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+  }
 
-### Core Features
+  .btn-secondary {
+    background: rgba(255,255,255,0.2);
+    color: #ffffff;
+    border: 2px solid rgba(255,255,255,0.5);
+  }
 
-- **Attendance Tracking**: Track attendance across all subjects with visual analytics
-- **Smart Dashboard**: View overall and subject-wise attendance with donut charts
-- **Timetable Management**: Add, edit, and manage class schedules
-- **Attendance Calculator**: Know how many classes you can bunk or must attend
+  .btn-secondary:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-3px);
+  }
 
-### Social Features
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin: 40px 0;
+  }
 
-- **Study Groups**: Create and join study groups with real-time chat
-- **Notes Sharing**: Share study materials (text, PDFs, images, links)
-- **Social Feed**: Follow classmates and see their shared notes
-- **Comments & Likes**: Engage with shared content
+  .feature-card {
+    background: linear-gradient(145deg, #f8f9fa, #ffffff);
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+  }
 
-### AI Features
+  .feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  }
 
-- **BunkBot AI Assistant**: Get personalized attendance advice
-- **Voice Bot**: Voice-based interaction with AI assistant
-- **Smart Timetable Extraction**: Extract timetable from images (OCR)
+  .feature-card h3 {
+    color: #667eea;
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 
-### Additional Features
+  .feature-icon {
+    font-size: 1.5em;
+  }
 
-- **Push Notifications**: Daily reminders and class notifications
-- **Offline Support**: Queue operations when offline
-- **Dark/Light Theme**: System theme support
-- **File Uploads**: Google Drive and Catbox.moe integration
+  .tech-stack {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 16px;
+    padding: 30px;
+    margin: 40px 0;
+    color: #ffffff;
+  }
 
-## Tech Stack
+  .tech-stack h2 {
+    color: #ffffff;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 10px;
+  }
 
-### Frontend (Mobile App)
+  .tech-stack table {
+    width: 100%;
+    border-collapse: collapse;
+  }
 
-| Technology | Purpose |
-|------------|---------|
-| React Native 0.81 | Cross-platform mobile framework |
-| Expo SDK 54 | Development and build tooling |
-| Expo Router | File-based navigation |
-| React Native Paper | Material Design UI components |
-| Zustand | State management |
-| Firebase JS SDK | Authentication & Firestore |
-| React Native Reanimated | Animations |
-| Groq API | AI chat (Llama 4 Maverick) |
+  .tech-stack th {
+    background: rgba(102, 126, 234, 0.3);
+    color: #ffffff;
+    padding: 12px;
+    text-align: left;
+  }
 
-### Backend (Notification Server)
+  .tech-stack td {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.9);
+  }
 
-| Technology | Purpose |
-|------------|---------|
-| Node.js 18+ | Runtime |
-| Express.js | HTTP server |
-| Firebase Admin SDK | FCM notifications |
-| Google Drive API | File storage |
-| Vercel/Railway | Deployment |
+  .team-section {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    border-radius: 16px;
+    padding: 30px;
+    margin: 40px 0;
+    color: #ffffff;
+  }
 
-### Database & Storage
+  .team-section h2 {
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 30px;
+  }
 
-| Service | Purpose |
-|---------|---------|
-| Firebase Firestore | Primary database |
-| Firebase Authentication | User auth |
-| Google Drive | Note file storage |
-| Catbox.moe | Avatar image hosting |
-| AsyncStorage | Local cache |
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+  }
 
-## Project Structure
+  .team-card {
+    background: rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+  }
 
-```
-MR_BunkManager/
-├── app/                          # Expo Router screens
-│   ├── (auth)/                   # Authentication screens
-│   │   ├── login.tsx
-│   │   ├── signup.tsx
-│   │   ├── email-verification.tsx
-│   │   └── forgot-password.tsx
-│   ├── (onboarding)/             # Onboarding flow
-│   │   └── index.tsx
-│   ├── (tabs)/                   # Main app tabs
-│   │   ├── index.tsx             # Dashboard
-│   │   ├── timetable.tsx
-│   │   ├── attendance.tsx
-│   │   ├── groups.tsx
-│   │   └── profile.tsx
-│   ├── note/[id].tsx             # Note detail
-│   ├── user/[id].tsx             # User profile
-│   ├── create-note.tsx
-│   ├── search-users.tsx
-│   └── _layout.tsx               # Root layout
-├── src/
-│   ├── components/               # Reusable components
-│   │   ├── ChatBot.tsx           # AI assistant
-│   │   ├── VoiceBot.tsx          # Voice assistant
-│   │   ├── DonutChart.tsx        # Attendance chart
-│   │   ├── NetworkMonitor.tsx    # Connectivity
-│   │   ├── ThemeSwitcher.tsx     # Theme toggle
-│   │   ├── notes/                # Notes components
-│   │   └── groups/               # Groups components
-│   ├── screens/                  # Screen implementations
-│   ├── services/                 # API & business logic
-│   ├── store/                    # Zustand stores
-│   ├── types/                    # TypeScript definitions
-│   └── config/                   # App configuration
-├── backend/                      # Notification server
-├── assets/                       # Static assets
-├── docs/                         # Documentation
-└── app.config.js                 # Expo configuration
-```
+  .team-card h4 {
+    margin: 10px 0 5px;
+    color: #ffffff;
+  }
 
-## Installation
+  .team-card .role {
+    font-size: 0.85em;
+    color: rgba(255,255,255,0.8);
+    margin-bottom: 8px;
+  }
 
-### Prerequisites
+  .team-card .badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75em;
+    margin: 2px;
+  }
 
-- Node.js 18+
-- npm or yarn
-- Expo CLI (`npm install -g expo-cli`)
-- EAS CLI (`npm install -g eas-cli`)
-- Android Studio (for Android builds)
-- Firebase project
+  .avatar-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    margin: 0 auto;
+    color: #ffffff;
+  }
 
-### Setup
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/mithun50/MR_BunkManager.git
-   cd MR_BunkManager
-   ```
+  .section-title::before {
+    content: '';
+    width: 5px;
+    height: 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 3px;
+  }
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+  .install-section {
+    background: #f8f9fa;
+    border-radius: 16px;
+    padding: 30px;
+    margin: 40px 0;
+    border-left: 5px solid #667eea;
+  }
 
-3. **Configure environment variables**
+  .footer-section {
+    text-align: center;
+    padding: 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    margin-top: 40px;
+    color: #ffffff;
+  }
 
-   Create a `.env` file in the root directory:
-   ```env
-   # Firebase Configuration
-   EXPO_PUBLIC_FIREBASE_API_KEY=your_api_key
-   EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-   EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-   EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-   EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-   EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
+  .footer-section code {
+    background: rgba(255,255,255,0.2);
+    padding: 3px 10px;
+    border-radius: 5px;
+    color: #ffffff;
+  }
 
-   # AI Service
-   EXPO_PUBLIC_GROQ_API_KEY=your_groq_api_key
+  @media (max-width: 768px) {
+    .hero-section h1 {
+      font-size: 1.8em;
+    }
+    .nav-buttons {
+      flex-direction: column;
+      align-items: center;
+    }
+    .nav-buttons a {
+      width: 80%;
+      text-align: center;
+    }
+  }
+</style>
 
-   # Backend
-   EXPO_PUBLIC_BACKEND_URL=https://your-backend.vercel.app
-   ```
+<div class="hero-section">
+  <img src="https://raw.githubusercontent.com/mithun50/MR_BunkManager/main/assets/images/logo.png" alt="MR BunkManager Logo">
+  <h1>MR BunkManager</h1>
+  <p>A comprehensive attendance management and student collaboration platform built with React Native & Firebase</p>
+  <div class="nav-buttons">
+    <a href="https://github.com/mithun50/MR_BunkManager" class="btn-primary">⭐ View on GitHub</a>
+    <a href="docs/API.html" class="btn-secondary">📚 API Docs</a>
+    <a href="docs/ARCHITECTURE.html" class="btn-secondary">🏗️ Architecture</a>
+  </div>
+</div>
 
-4. **Add Firebase configuration**
-   - Download `google-services.json` from Firebase Console
-   - Place it in the project root
+<h2 class="section-title">Features</h2>
 
-5. **Start development server**
-   ```bash
-   npx expo start
-   ```
+<div class="feature-grid">
+  <div class="feature-card">
+    <h3><span class="feature-icon">📊</span> Attendance Tracking</h3>
+    <p>Track attendance across all subjects with beautiful visual analytics and donut charts. Know exactly how many classes you can skip!</p>
+  </div>
 
-### Building for Production
+  <div class="feature-card">
+    <h3><span class="feature-icon">📅</span> Timetable Management</h3>
+    <p>Add, edit, and manage your class schedules with ease. Smart OCR extraction from timetable images.</p>
+  </div>
+
+  <div class="feature-card">
+    <h3><span class="feature-icon">👥</span> Study Groups</h3>
+    <p>Create and join study groups with real-time chat, file sharing, and voice/video calls.</p>
+  </div>
+
+  <div class="feature-card">
+    <h3><span class="feature-icon">📝</span> Notes Sharing</h3>
+    <p>Share study materials including text, PDFs, images, and links. Follow classmates and build your feed.</p>
+  </div>
+
+  <div class="feature-card">
+    <h3><span class="feature-icon">🤖</span> AI Assistant</h3>
+    <p>BunkBot AI provides personalized attendance advice. Voice-enabled for hands-free interaction.</p>
+  </div>
+
+  <div class="feature-card">
+    <h3><span class="feature-icon">🔔</span> Smart Notifications</h3>
+    <p>Daily reminders, class alerts 30/10 minutes before, and activity notifications from your network.</p>
+  </div>
+</div>
+
+<div class="tech-stack">
+  <h2>🛠️ Tech Stack</h2>
+
+  <h3>Frontend (Mobile App)</h3>
+  <table>
+    <tr><th>Technology</th><th>Purpose</th></tr>
+    <tr><td>React Native 0.81</td><td>Cross-platform mobile framework</td></tr>
+    <tr><td>Expo SDK 54</td><td>Development and build tooling</td></tr>
+    <tr><td>Expo Router</td><td>File-based navigation</td></tr>
+    <tr><td>React Native Paper</td><td>Material Design UI components</td></tr>
+    <tr><td>Zustand</td><td>State management</td></tr>
+    <tr><td>Groq API</td><td>AI chat (Llama 4 Maverick)</td></tr>
+  </table>
+
+  <h3 style="margin-top: 25px;">Backend & Database</h3>
+  <table>
+    <tr><th>Service</th><th>Purpose</th></tr>
+    <tr><td>Node.js + Express</td><td>Notification server</td></tr>
+    <tr><td>Firebase Firestore</td><td>Primary database</td></tr>
+    <tr><td>Firebase Auth</td><td>User authentication</td></tr>
+    <tr><td>Google Drive API</td><td>File storage</td></tr>
+    <tr><td>FCM</td><td>Push notifications</td></tr>
+  </table>
+</div>
+
+<div class="install-section">
+  <h2 class="section-title">Quick Start</h2>
+
+  <h3>Prerequisites</h3>
+  <ul>
+    <li>Node.js 18+</li>
+    <li>Expo CLI & EAS CLI</li>
+    <li>Firebase project</li>
+  </ul>
+
+  <h3>Installation</h3>
 
 ```bash
-# Configure EAS
-eas build:configure
+# Clone the repository
+git clone https://github.com/mithun50/MR_BunkManager.git
+cd MR_BunkManager
 
+# Install dependencies
+npm install
+
+# Start development server
+npx expo start
+```
+
+  <h3>Build for Production</h3>
+
+```bash
 # Build Android APK
 eas build -p android --profile preview
 
-# Build Android App Bundle (for Play Store)
+# Build for Play Store
 eas build -p android --profile production
 ```
+</div>
 
-## Database Schema
-
-### Firestore Collections
+<h2 class="section-title">Project Structure</h2>
 
 ```
-users/
-├── {userId}
-│   ├── displayName, email, photoURL
-│   ├── college, course, department, semester
-│   ├── rollNumber, section
-│   ├── minimumAttendance
-│   ├── onboardingCompleted
-│   └── Subcollections:
-│       ├── timetable/
-│       ├── subjects/
-│       └── followers/
-
-notes/
-├── {noteId}
-│   ├── title, description, content
-│   ├── contentType (text|pdf|image|link)
-│   ├── authorId, authorName
-│   ├── subject, tags[]
-│   ├── isPublic
-│   ├── likesCount, commentsCount, savesCount
-│   └── Subcollections:
-│       ├── likes/
-│       └── comments/
-
-groups/
-├── {groupId}
-│   ├── name, description
-│   ├── category (study|project|social|general)
-│   ├── isPrivate, memberCount
-│   ├── createdBy, createdByName
-│   └── Subcollections:
-│       ├── members/
-│       └── messages/
-
-pushTokens/
-├── {token}
-│   ├── userId
-│   ├── tokenType (expo|fcm)
-│   └── active
+MR_BunkManager/
+├── app/                    # Expo Router screens
+│   ├── (auth)/             # Authentication screens
+│   ├── (onboarding)/       # Onboarding flow
+│   ├── (tabs)/             # Main app tabs
+│   └── note/[id].tsx       # Dynamic routes
+├── src/
+│   ├── components/         # Reusable components
+│   ├── services/           # API & business logic
+│   ├── store/              # Zustand stores
+│   └── types/              # TypeScript definitions
+├── backend/                # Notification server
+└── docs/                   # Documentation
 ```
 
-## API Endpoints
-
-### Backend API
+<h2 class="section-title">API Endpoints</h2>
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/health` | Server health check |
 | POST | `/save-token` | Register push token |
-| DELETE | `/delete-token` | Remove push token |
 | POST | `/send-notification` | Send to specific user |
-| POST | `/send-notification-all` | Broadcast to all |
-| POST | `/send-daily-reminders` | Personalized daily reminders |
-| POST | `/send-class-reminders` | Class reminder (30/10 min before) |
-| POST | `/notify-group-members` | Group activity notification |
-| POST | `/notify-followers` | New note notification |
+| POST | `/send-daily-reminders` | Daily class reminders |
+| POST | `/send-class-reminders` | 30/10 min before class |
+| POST | `/notify-group-members` | Group activity alerts |
+| POST | `/notify-followers` | New note notifications |
 | POST | `/upload` | Upload to Google Drive |
-| POST | `/upload-catbox` | Upload to Catbox.moe |
-| GET | `/note/:noteId` | Deep link handler |
 
-## Key Services
+<div class="team-section">
+  <h2>👨‍💻 Development Team</h2>
+  <div class="team-grid">
+    <div class="team-card">
+      <div class="avatar-circle" style="background: linear-gradient(135deg, #FF9800, #F57C00);">M</div>
+      <h4>Mithun Gowda B</h4>
+      <div class="role">Core Developer</div>
+      <span class="badge">Main Dev</span>
+      <span class="badge">Full-Stack</span>
+    </div>
 
-### authService
-- Email/password authentication
-- Google Sign-In
-- Email verification
-- Password reset
+    <div class="team-card">
+      <div class="avatar-circle" style="background: linear-gradient(135deg, #2196F3, #1976D2);">N</div>
+      <h4>Nevil Dsouza</h4>
+      <div class="role">Team Leader</div>
+      <span class="badge">Core Dev</span>
+      <span class="badge">Tester</span>
+    </div>
 
-### firestoreService
-- User profile CRUD
-- Timetable management
-- Subject attendance tracking
-- Offline queue integration
+    <div class="team-card">
+      <div class="avatar-circle" style="background: linear-gradient(135deg, #4CAF50, #388E3C);">N</div>
+      <h4>Naren V</h4>
+      <div class="role">Developer</div>
+      <span class="badge">UI Designer</span>
+    </div>
 
-### chatService
-- AI chat with Groq API
-- Attendance context awareness
-- Image analysis support
+    <div class="team-card">
+      <div class="avatar-circle" style="background: linear-gradient(135deg, #00BCD4, #0097A7);">M</div>
+      <h4>Manas Habbu</h4>
+      <div class="role">Developer</div>
+      <span class="badge">Documentation</span>
+      <span class="badge">Design</span>
+    </div>
 
-### groupsService
-- Group CRUD operations
-- Real-time messaging
-- Member management
-- File sharing in chats
+    <div class="team-card">
+      <div class="avatar-circle" style="background: linear-gradient(135deg, #9C27B0, #7B1FA2);">M</div>
+      <h4>Manasvi R</h4>
+      <div class="role">Developer</div>
+      <span class="badge">Documentation</span>
+      <span class="badge">Presentation</span>
+    </div>
 
-### notesService
-- Note creation and editing
-- Feed generation
-- Search and filtering
-- File attachments
+    <div class="team-card">
+      <div class="avatar-circle" style="background: linear-gradient(135deg, #E91E63, #C2185B);">L</div>
+      <h4>Lavanya</h4>
+      <div class="role">Developer</div>
+      <span class="badge">Documentation</span>
+      <span class="badge">Presentation</span>
+    </div>
+  </div>
+</div>
 
-### socialService
-- Likes, comments, saves
-- Download tracking
-
-### followService
-- Follow/unfollow users
-- Follower suggestions
-- Social graph queries
-
-## State Management
-
-### Zustand Stores
-
-| Store | Purpose |
-|-------|---------|
-| `authStore` | User authentication state |
-| `networkStore` | Connectivity monitoring |
-| `themeStore` | Theme preference (light/dark/system) |
-| `notesStore` | Note interactions cache |
-| `groupsStore` | Group and chat state |
-
-## Offline Support
-
-The app supports offline functionality through:
-
-1. **Cache Service**: Stores user profile, subjects, timetable, attendance records
-2. **Offline Queue**: Queues write operations when offline
-3. **Network Monitor**: Detects connectivity changes
-4. **Auto-sync**: Processes queue when back online
-
-## Push Notifications
-
-### Notification Types
-
-- **Daily Reminders**: Tomorrow's class schedule (8 AM)
-- **Class Reminders**: 30 and 10 minutes before class
-- **Group Activity**: New messages, files, calls
-- **New Notes**: When followed users share content
-
-### Scheduled Tasks
-
-```
-08:00 AM IST - Daily reminders
-09:25 AM IST - 30-minute class reminders
-09:45 AM IST - 10-minute class reminders
-02:25 PM IST - 30-minute class reminders
-02:45 PM IST - 10-minute class reminders
-```
-
-## Development Team
-
-| Name | Role | Responsibilities | Contact |
-|------|------|------------------|---------|
-| **Mithun Gowda B** | Core Developer | Main Dev, Full-Stack Development | mithungowda.b7411@gmail.com |
-| **Nevil Dsouza** | Team Leader | Core Dev, Testing | nevilansondsouza@gmail.com |
-| **Naren V** | Developer | UI Designer | narenbhaskar2007@gmail.com |
-| **Manas Habbu** | Developer | Documentation, Presentation, Design | manaskiranhabbu@gmail.com |
-| **Manasvi R** | Developer | Documentation, Presentation Design | manasvi0523@gmail.com |
-| **Lavanya** | Developer | Documentation, Presentation | - |
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is proprietary software. All rights reserved.
-
-## Support
-
-For issues and feature requests, please use the [GitHub Issues](https://github.com/mithun50/MR_BunkManager/issues) page.
-
----
-
-<p align="center">
-  <strong>Package</strong>: <code>com.idtl.mrbunkmanager</code><br>
-  <strong>Version</strong>: 1.0.0<br>
-  <strong>Min SDK</strong>: Android 6.0+ (API 23)
-</p>
+<div class="footer-section">
+  <h3>📱 App Details</h3>
+  <p>
+    <strong>Package:</strong> <code>com.idtl.mrbunkmanager</code><br>
+    <strong>Version:</strong> <code>1.0.0</code><br>
+    <strong>Min SDK:</strong> <code>Android 6.0+ (API 23)</code>
+  </p>
+  <p style="margin-top: 20px; opacity: 0.8;">
+    Made with ❤️ by the MR BunkManager Team
+  </p>
+</div>
