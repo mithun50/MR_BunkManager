@@ -278,7 +278,7 @@ description: A comprehensive attendance management and student collaboration pla
 
   <div class="feature-card">
     <h3><span class="feature-icon">📅</span> Timetable Management</h3>
-    <p>Add, edit, and manage your class schedules with ease. Smart OCR extraction from timetable images.</p>
+    <p>Add, edit, and manage your class schedules with ease. Manual entry with intuitive UI for quick setup.</p>
   </div>
 
   <div class="feature-card">
@@ -445,14 +445,3 @@ MR_BunkManager/
   </div>
 </div>
 
-<div class="footer-section">
-  <h3>📱 App Details</h3>
-  <p>
-    <strong>Package:</strong> <code>com.idtl.mrbunkmanager</code><br>
-    <strong>Version:</strong> <code>1.0.0</code><br>
-    <strong>Min SDK:</strong> <code>Android 6.0+ (API 23)</code>
-  </p>
-  <p style="margin-top: 20px; opacity: 0.8;">
-    Made with ❤️ by the MR BunkManager Team
-  </p>
-</div>

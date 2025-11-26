@@ -974,7 +974,7 @@ export default function ProfileScreen() {
           },
           {
             name: "Lavanya",
-            email: null,
+            email: "Kk7318069@gmail.com",
             role: "Developer",
             badges: ["Documentation", "Presentation"],
             avatar: "L",

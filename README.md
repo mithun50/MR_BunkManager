@@ -26,7 +26,6 @@ MR BunkManager helps students track their attendance, manage their class schedul
 
 - **BunkBot AI Assistant**: Get personalized attendance advice
 - **Voice Bot**: Voice-based interaction with AI assistant
-- **Smart Timetable Extraction**: Extract timetable from images (OCR)
 
 ### Additional Features
 
@@ -398,7 +397,7 @@ The app supports offline functionality through:
 | **Naren V** | Developer | UI Designer | narenbhaskar2007@gmail.com |
 | **Manas Habbu** | Developer | Documentation, Presentation, Design | manaskiranhabbu@gmail.com |
 | **Manasvi R** | Developer | Documentation, Presentation Design | manasvi0523@gmail.com |
-| **Lavanya** | Developer | Documentation, Presentation | - |
+| **Lavanya** | Developer | Documentation, Presentation | Kk7318069@gmail.com |
 
 ## Contributing
 
