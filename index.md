@@ -5,331 +5,461 @@ description: A comprehensive attendance management and student collaboration pla
 ---
 
 <style>
-  /* Custom styles for unique UI */
-  .hero-section {
+  /* Glassmorphism Theme Styles */
+  .hero {
     text-align: center;
-    padding: 40px 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 20px;
-    margin-bottom: 40px;
-    box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+    padding: 80px 20px;
+    margin-bottom: 60px;
   }
 
-  .hero-section img {
-    width: 150px;
-    height: 150px;
-    border-radius: 30px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  .hero-logo {
+    width: 120px;
+    height: 120px;
+    border-radius: 28px;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    margin-bottom: 30px;
+  }
+
+  .hero h1 {
+    font-size: 3.5em;
+    font-weight: 800;
+    letter-spacing: -0.03em;
     margin-bottom: 20px;
-    border: 4px solid rgba(255,255,255,0.3);
+    background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.6) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
-  .hero-section h1 {
-    color: #ffffff;
-    font-size: 2.5em;
-    margin: 10px 0;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-  }
-
-  .hero-section p {
-    color: rgba(255,255,255,0.9);
-    font-size: 1.2em;
+  .hero-subtitle {
+    font-size: 1.25em;
+    color: rgba(255,255,255,0.6);
     max-width: 600px;
-    margin: 0 auto 20px;
+    margin: 0 auto 40px;
+    line-height: 1.6;
   }
 
-  .nav-buttons {
+  .hero-buttons {
     display: flex;
     justify-content: center;
-    gap: 15px;
+    gap: 16px;
     flex-wrap: wrap;
-    margin-top: 25px;
   }
 
-  .nav-buttons a {
-    display: inline-block;
-    padding: 12px 28px;
-    border-radius: 50px;
+  .hero-buttons a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 28px;
+    border-radius: 14px;
     text-decoration: none;
     font-weight: 600;
-    transition: all 0.3s ease;
+    font-size: 0.95em;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .btn-primary {
-    background: #ffffff;
-    color: #667eea;
+    background: #fff;
+    color: #0a0a0a;
   }
 
   .btn-primary:hover {
     transform: translateY(-3px);
-    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 40px rgba(255,255,255,0.2);
   }
 
-  .btn-secondary {
-    background: rgba(255,255,255,0.2);
-    color: #ffffff;
-    border: 2px solid rgba(255,255,255,0.5);
+  .btn-glass {
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.9);
+    border: 1px solid rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
   }
 
-  .btn-secondary:hover {
-    background: rgba(255,255,255,0.3);
+  .btn-glass:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.2);
     transform: translateY(-3px);
   }
 
-  .feature-grid {
+  /* Section Titles */
+  .section-header {
+    margin-bottom: 40px;
+  }
+
+  .section-header h2 {
+    font-size: 2em;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #fff;
+  }
+
+  .section-header p {
+    color: rgba(255,255,255,0.5);
+    font-size: 1.1em;
+  }
+
+  /* Feature Grid */
+  .features-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 25px;
-    margin: 40px 0;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+    margin-bottom: 80px;
   }
 
   .feature-card {
-    background: linear-gradient(145deg, #f8f9fa, #ffffff);
-    border-radius: 16px;
-    padding: 25px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    border: 1px solid rgba(0,0,0,0.05);
-    transition: all 0.3s ease;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 32px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .feature-card:hover {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.1);
     transform: translateY(-5px);
-    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-  }
-
-  .feature-card h3 {
-    color: #667eea;
-    margin-top: 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
   }
 
   .feature-icon {
-    font-size: 1.5em;
-  }
-
-  .tech-stack {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    border-radius: 16px;
-    padding: 30px;
-    margin: 40px 0;
-    color: #ffffff;
-  }
-
-  .tech-stack h2 {
-    color: #ffffff;
-    border-bottom: 2px solid #667eea;
-    padding-bottom: 10px;
-  }
-
-  .tech-stack table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .tech-stack th {
-    background: rgba(102, 126, 234, 0.3);
-    color: #ffffff;
-    padding: 12px;
-    text-align: left;
-  }
-
-  .tech-stack td {
-    padding: 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.9);
-  }
-
-  .team-section {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    border-radius: 16px;
-    padding: 30px;
-    margin: 40px 0;
-    color: #ffffff;
-  }
-
-  .team-section h2 {
-    color: #ffffff;
-    text-align: center;
-    margin-bottom: 30px;
-  }
-
-  .team-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-  }
-
-  .team-card {
-    background: rgba(255,255,255,0.15);
-    border-radius: 12px;
-    padding: 20px;
-    text-align: center;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.2);
-  }
-
-  .team-card h4 {
-    margin: 10px 0 5px;
-    color: #ffffff;
-  }
-
-  .team-card .role {
-    font-size: 0.85em;
-    color: rgba(255,255,255,0.8);
-    margin-bottom: 8px;
-  }
-
-  .team-card .badge {
-    display: inline-block;
-    background: rgba(255,255,255,0.2);
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.75em;
-    margin: 2px;
-  }
-
-  .avatar-circle {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
+    width: 50px;
+    height: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.5em;
-    font-weight: bold;
-    margin: 0 auto;
-    color: #ffffff;
-  }
-
-  .section-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
     margin-bottom: 20px;
   }
 
-  .section-title::before {
-    content: '';
-    width: 5px;
-    height: 30px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 3px;
+  .feature-card h3 {
+    font-size: 1.2em;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 12px;
   }
 
-  .install-section {
-    background: #f8f9fa;
-    border-radius: 16px;
-    padding: 30px;
-    margin: 40px 0;
-    border-left: 5px solid #667eea;
+  .feature-card p {
+    color: rgba(255,255,255,0.5);
+    font-size: 0.95em;
+    line-height: 1.7;
+    margin: 0;
   }
 
-  .footer-section {
+  /* Tech Stack */
+  .tech-section {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 24px;
+    padding: 40px;
+    margin-bottom: 80px;
+  }
+
+  .tech-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 40px;
+  }
+
+  .tech-category h3 {
+    font-size: 0.85em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 20px;
+  }
+
+  .tech-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .tech-item:last-child {
+    border-bottom: none;
+  }
+
+  .tech-name {
+    color: #fff;
+    font-weight: 500;
+  }
+
+  .tech-purpose {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.9em;
+  }
+
+  /* Quick Start */
+  .quickstart-section {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 24px;
+    padding: 40px;
+    margin-bottom: 80px;
+  }
+
+  .quickstart-section h3 {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 30px 0 15px;
+  }
+
+  .quickstart-section h3:first-of-type {
+    margin-top: 0;
+  }
+
+  .quickstart-section ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .quickstart-section ul li {
+    color: rgba(255,255,255,0.7);
+    padding: 8px 0;
+    padding-left: 20px;
+    position: relative;
+  }
+
+  .quickstart-section ul li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: rgba(255,255,255,0.3);
+  }
+
+  /* Team Section */
+  .team-section {
+    margin-bottom: 60px;
+  }
+
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+  }
+
+  .team-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 18px;
+    padding: 24px 16px;
     text-align: center;
-    padding: 30px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transition: all 0.3s ease;
+  }
+
+  .team-card:hover {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.08);
+    transform: translateY(-4px);
+  }
+
+  .avatar {
+    width: 56px;
+    height: 56px;
     border-radius: 16px;
-    margin-top: 40px;
-    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3em;
+    font-weight: 700;
+    margin: 0 auto 16px;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.1);
   }
 
-  .footer-section code {
-    background: rgba(255,255,255,0.2);
-    padding: 3px 10px;
-    border-radius: 5px;
-    color: #ffffff;
+  .team-card h4 {
+    font-size: 1em;
+    font-weight: 600;
+    color: #fff;
+    margin: 0 0 4px;
   }
 
+  .team-role {
+    font-size: 0.85em;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 12px;
+  }
+
+  .team-badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .badge {
+    font-size: 0.7em;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.6);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  /* API Table */
+  .api-section {
+    margin-bottom: 80px;
+  }
+
+  /* Responsive */
   @media (max-width: 768px) {
-    .hero-section h1 {
-      font-size: 1.8em;
+    .hero h1 {
+      font-size: 2.2em;
     }
-    .nav-buttons {
+
+    .hero-subtitle {
+      font-size: 1em;
+    }
+
+    .hero-buttons {
       flex-direction: column;
       align-items: center;
     }
-    .nav-buttons a {
-      width: 80%;
-      text-align: center;
+
+    .hero-buttons a {
+      width: 100%;
+      max-width: 280px;
+      justify-content: center;
+    }
+
+    .features-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .tech-section, .quickstart-section {
+      padding: 24px;
     }
   }
 </style>
 
-<div class="hero-section">
-  <img src="https://raw.githubusercontent.com/mithun50/MR_BunkManager/main/assets/images/logo.png" alt="MR BunkManager Logo">
+<!-- Hero Section -->
+<div class="hero">
+  <img src="https://raw.githubusercontent.com/mithun50/MR_BunkManager/main/assets/images/logo.png" alt="MR BunkManager" class="hero-logo">
   <h1>MR BunkManager</h1>
-  <p>A comprehensive attendance management and student collaboration platform built with React Native & Firebase</p>
-  <div class="nav-buttons">
-    <a href="https://github.com/mithun50/MR_BunkManager" class="btn-primary">⭐ View on GitHub</a>
-    <a href="docs/API.html" class="btn-secondary">📚 API Docs</a>
-    <a href="docs/ARCHITECTURE.html" class="btn-secondary">🏗️ Architecture</a>
+  <p class="hero-subtitle">A comprehensive attendance management and student collaboration platform built with React Native & Firebase</p>
+  <div class="hero-buttons">
+    <a href="https://github.com/mithun50/MR_BunkManager" class="btn-primary">View on GitHub</a>
+    <a href="docs/API" class="btn-glass">API Docs</a>
+    <a href="docs/ARCHITECTURE" class="btn-glass">Architecture</a>
   </div>
 </div>
 
-<h2 class="section-title">Features</h2>
+<!-- Features Section -->
+<div class="section-header">
+  <h2>Features</h2>
+  <p>Everything you need to manage your attendance and collaborate with peers</p>
+</div>
 
-<div class="feature-grid">
+<div class="features-grid">
   <div class="feature-card">
-    <h3><span class="feature-icon">📊</span> Attendance Tracking</h3>
-    <p>Track attendance across all subjects with beautiful visual analytics and donut charts. Know exactly how many classes you can skip!</p>
+    <div class="feature-icon">📊</div>
+    <h3>Attendance Tracking</h3>
+    <p>Track attendance across all subjects with beautiful visual analytics and donut charts. Know exactly how many classes you can skip.</p>
   </div>
 
   <div class="feature-card">
-    <h3><span class="feature-icon">📅</span> Timetable Management</h3>
+    <div class="feature-icon">📅</div>
+    <h3>Timetable Management</h3>
     <p>Add, edit, and manage your class schedules with ease. Manual entry with intuitive UI for quick setup.</p>
   </div>
 
   <div class="feature-card">
-    <h3><span class="feature-icon">👥</span> Study Groups</h3>
+    <div class="feature-icon">👥</div>
+    <h3>Study Groups</h3>
     <p>Create and join study groups with real-time chat, file sharing, and voice/video calls.</p>
   </div>
 
   <div class="feature-card">
-    <h3><span class="feature-icon">📝</span> Notes Sharing</h3>
+    <div class="feature-icon">📝</div>
+    <h3>Notes Sharing</h3>
     <p>Share study materials including text, PDFs, images, and links. Follow classmates and build your feed.</p>
   </div>
 
   <div class="feature-card">
-    <h3><span class="feature-icon">🤖</span> AI Assistant</h3>
+    <div class="feature-icon">🤖</div>
+    <h3>AI Assistant</h3>
     <p>BunkBot AI provides personalized attendance advice. Voice-enabled for hands-free interaction.</p>
   </div>
 
   <div class="feature-card">
-    <h3><span class="feature-icon">🔔</span> Smart Notifications</h3>
+    <div class="feature-icon">🔔</div>
+    <h3>Smart Notifications</h3>
     <p>Daily reminders, class alerts 30/10 minutes before, and activity notifications from your network.</p>
   </div>
 </div>
 
-<div class="tech-stack">
-  <h2>🛠️ Tech Stack</h2>
-
-  <h3>Frontend (Mobile App)</h3>
-  <table>
-    <tr><th>Technology</th><th>Purpose</th></tr>
-    <tr><td>React Native 0.81</td><td>Cross-platform mobile framework</td></tr>
-    <tr><td>Expo SDK 54</td><td>Development and build tooling</td></tr>
-    <tr><td>Expo Router</td><td>File-based navigation</td></tr>
-    <tr><td>React Native Paper</td><td>Material Design UI components</td></tr>
-    <tr><td>Zustand</td><td>State management</td></tr>
-    <tr><td>Groq API</td><td>AI chat (Llama 4 Maverick)</td></tr>
-  </table>
-
-  <h3 style="margin-top: 25px;">Backend & Database</h3>
-  <table>
-    <tr><th>Service</th><th>Purpose</th></tr>
-    <tr><td>Node.js + Express</td><td>Notification server</td></tr>
-    <tr><td>Firebase Firestore</td><td>Primary database</td></tr>
-    <tr><td>Firebase Auth</td><td>User authentication</td></tr>
-    <tr><td>Google Drive API</td><td>File storage</td></tr>
-    <tr><td>FCM</td><td>Push notifications</td></tr>
-  </table>
+<!-- Tech Stack Section -->
+<div class="section-header">
+  <h2>Tech Stack</h2>
+  <p>Built with modern technologies for the best experience</p>
 </div>
 
-<div class="install-section">
-  <h2 class="section-title">Quick Start</h2>
+<div class="tech-section">
+  <div class="tech-grid">
+    <div class="tech-category">
+      <h3>Frontend</h3>
+      <div class="tech-item">
+        <span class="tech-name">React Native 0.81</span>
+        <span class="tech-purpose">Mobile Framework</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-name">Expo SDK 54</span>
+        <span class="tech-purpose">Build Tooling</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-name">Expo Router</span>
+        <span class="tech-purpose">Navigation</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-name">React Native Paper</span>
+        <span class="tech-purpose">UI Components</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-name">Zustand</span>
+        <span class="tech-purpose">State Management</span>
+      </div>
+    </div>
+    <div class="tech-category">
+      <h3>Backend & Services</h3>
+      <div class="tech-item">
+        <span class="tech-name">Node.js + Express</span>
+        <span class="tech-purpose">Notification Server</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-name">Firebase Firestore</span>
+        <span class="tech-purpose">Database</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-name">Firebase Auth</span>
+        <span class="tech-purpose">Authentication</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-name">Google Drive API</span>
+        <span class="tech-purpose">File Storage</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-name">Groq API</span>
+        <span class="tech-purpose">AI Chat</span>
+      </div>
+    </div>
+  </div>
+</div>
 
+<!-- Quick Start Section -->
+<div class="section-header">
+  <h2>Quick Start</h2>
+  <p>Get up and running in minutes</p>
+</div>
+
+<div class="quickstart-section">
   <h3>Prerequisites</h3>
   <ul>
     <li>Node.js 18+</li>
@@ -362,25 +492,13 @@ eas build -p android --profile production
 ```
 </div>
 
-<h2 class="section-title">Project Structure</h2>
+<!-- API Section -->
+<div class="section-header">
+  <h2>API Endpoints</h2>
+  <p>Backend notification server endpoints</p>
+</div>
 
-```
-MR_BunkManager/
-├── app/                    # Expo Router screens
-│   ├── (auth)/             # Authentication screens
-│   ├── (onboarding)/       # Onboarding flow
-│   ├── (tabs)/             # Main app tabs
-│   └── note/[id].tsx       # Dynamic routes
-├── src/
-│   ├── components/         # Reusable components
-│   ├── services/           # API & business logic
-│   ├── store/              # Zustand stores
-│   └── types/              # TypeScript definitions
-├── backend/                # Notification server
-└── docs/                   # Documentation
-```
-
-<h2 class="section-title">API Endpoints</h2>
+<div class="api-section">
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -393,55 +511,73 @@ MR_BunkManager/
 | POST | `/notify-followers` | New note notifications |
 | POST | `/upload` | Upload to Google Drive |
 
+</div>
+
+<!-- Team Section -->
+<div class="section-header">
+  <h2>Development Team</h2>
+  <p>The people behind MR BunkManager</p>
+</div>
+
 <div class="team-section">
-  <h2>👨‍💻 Development Team</h2>
   <div class="team-grid">
     <div class="team-card">
-      <div class="avatar-circle" style="background: linear-gradient(135deg, #FF9800, #F57C00);">M</div>
+      <div class="avatar" style="background: linear-gradient(135deg, rgba(255,152,0,0.2), rgba(245,124,0,0.2));">M</div>
       <h4>Mithun Gowda B</h4>
-      <div class="role">Core Developer</div>
-      <span class="badge">Main Dev</span>
-      <span class="badge">Full-Stack</span>
+      <div class="team-role">Core Developer</div>
+      <div class="team-badges">
+        <span class="badge">Main Dev</span>
+        <span class="badge">Full-Stack</span>
+      </div>
     </div>
 
     <div class="team-card">
-      <div class="avatar-circle" style="background: linear-gradient(135deg, #2196F3, #1976D2);">N</div>
+      <div class="avatar" style="background: linear-gradient(135deg, rgba(33,150,243,0.2), rgba(25,118,210,0.2));">N</div>
       <h4>Nevil Dsouza</h4>
-      <div class="role">Team Leader</div>
-      <span class="badge">Core Dev</span>
-      <span class="badge">Tester</span>
+      <div class="team-role">Team Leader</div>
+      <div class="team-badges">
+        <span class="badge">Core Dev</span>
+        <span class="badge">Tester</span>
+      </div>
     </div>
 
     <div class="team-card">
-      <div class="avatar-circle" style="background: linear-gradient(135deg, #4CAF50, #388E3C);">N</div>
+      <div class="avatar" style="background: linear-gradient(135deg, rgba(76,175,80,0.2), rgba(56,142,60,0.2));">N</div>
       <h4>Naren V</h4>
-      <div class="role">Developer</div>
-      <span class="badge">UI Designer</span>
+      <div class="team-role">Developer</div>
+      <div class="team-badges">
+        <span class="badge">UI Designer</span>
+      </div>
     </div>
 
     <div class="team-card">
-      <div class="avatar-circle" style="background: linear-gradient(135deg, #00BCD4, #0097A7);">M</div>
+      <div class="avatar" style="background: linear-gradient(135deg, rgba(0,188,212,0.2), rgba(0,151,167,0.2));">M</div>
       <h4>Manas Habbu</h4>
-      <div class="role">Developer</div>
-      <span class="badge">Documentation</span>
-      <span class="badge">Design</span>
+      <div class="team-role">Developer</div>
+      <div class="team-badges">
+        <span class="badge">Docs</span>
+        <span class="badge">Design</span>
+      </div>
     </div>
 
     <div class="team-card">
-      <div class="avatar-circle" style="background: linear-gradient(135deg, #9C27B0, #7B1FA2);">M</div>
+      <div class="avatar" style="background: linear-gradient(135deg, rgba(156,39,176,0.2), rgba(123,31,162,0.2));">M</div>
       <h4>Manasvi R</h4>
-      <div class="role">Developer</div>
-      <span class="badge">Documentation</span>
-      <span class="badge">Presentation</span>
+      <div class="team-role">Developer</div>
+      <div class="team-badges">
+        <span class="badge">Docs</span>
+        <span class="badge">Presentation</span>
+      </div>
     </div>
 
     <div class="team-card">
-      <div class="avatar-circle" style="background: linear-gradient(135deg, #E91E63, #C2185B);">L</div>
+      <div class="avatar" style="background: linear-gradient(135deg, rgba(233,30,99,0.2), rgba(194,24,91,0.2));">L</div>
       <h4>Lavanya</h4>
-      <div class="role">Developer</div>
-      <span class="badge">Documentation</span>
-      <span class="badge">Presentation</span>
+      <div class="team-role">Developer</div>
+      <div class="team-badges">
+        <span class="badge">Docs</span>
+        <span class="badge">Presentation</span>
+      </div>
     </div>
   </div>
 </div>
-

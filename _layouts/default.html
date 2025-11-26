@@ -5,37 +5,86 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   {% seo %}
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
   <style>
-    /* Reset and Base Styles */
-    * {
+    /* Reset */
+    *, *::before, *::after {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
 
+    /* Root Variables */
+    :root {
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #111111;
+      --bg-card: rgba(255, 255, 255, 0.03);
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.7);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --accent: #ffffff;
+      --accent-glow: rgba(255, 255, 255, 0.2);
+      --border-color: rgba(255, 255, 255, 0.08);
+    }
+
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+      line-height: 1.7;
+      color: var(--text-primary);
+      background: var(--bg-primary);
       min-height: 100vh;
+      overflow-x: hidden;
     }
 
-    /* Custom Navbar */
-    .custom-navbar {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 15px 0;
-      position: sticky;
+    /* Animated Background */
+    .bg-gradient {
+      position: fixed;
       top: 0;
-      z-index: 1000;
-      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
+        radial-gradient(ellipse at 40% 60%, rgba(255, 255, 255, 0.015) 0%, transparent 40%);
+      pointer-events: none;
+      z-index: 0;
     }
 
-    .navbar-container {
+    .noise-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      opacity: 0.015;
+      pointer-events: none;
+      z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    }
+
+    /* Glassmorphism Navbar */
+    .navbar {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 40px);
       max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px;
+      z-index: 1000;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 15px 30px;
+      box-shadow: var(--glass-shadow);
+    }
+
+    .navbar-inner {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -44,86 +93,121 @@
     .navbar-brand {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
       text-decoration: none;
-      color: white;
+      color: var(--text-primary);
     }
 
     .navbar-logo {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     }
 
     .navbar-title {
-      font-size: 1.4em;
+      font-size: 1.3em;
       font-weight: 700;
-      color: white;
+      letter-spacing: -0.02em;
     }
 
     .navbar-links {
       display: flex;
-      gap: 20px;
+      gap: 8px;
       align-items: center;
     }
 
     .navbar-links a {
-      color: rgba(255,255,255,0.9);
+      color: var(--text-secondary);
       text-decoration: none;
       font-weight: 500;
-      padding: 8px 16px;
-      border-radius: 25px;
-      transition: all 0.3s ease;
+      font-size: 0.9em;
+      padding: 10px 18px;
+      border-radius: 12px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid transparent;
     }
 
     .navbar-links a:hover {
-      background: rgba(255,255,255,0.2);
-      color: white;
+      color: var(--text-primary);
+      background: var(--glass-bg);
+      border-color: var(--glass-border);
     }
 
     .navbar-links .btn-github {
-      background: rgba(255,255,255,0.15);
-      border: 1px solid rgba(255,255,255,0.3);
+      background: var(--text-primary);
+      color: var(--bg-primary);
+      font-weight: 600;
     }
 
     .navbar-links .btn-github:hover {
-      background: white;
-      color: #667eea;
+      box-shadow: 0 0 30px var(--accent-glow);
+      transform: translateY(-2px);
     }
 
-    /* Main Content */
+    /* Main Content Wrapper */
+    .page-wrapper {
+      position: relative;
+      z-index: 1;
+      padding-top: 120px;
+    }
+
     .main-content {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 30px 20px;
+      padding: 0 20px 60px;
     }
 
-    /* Custom Footer */
-    .custom-footer {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-      color: white;
-      padding: 40px 0 20px;
-      margin-top: 60px;
+    /* Glassmorphism Cards */
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 30px;
+      margin-bottom: 20px;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .glass-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      transform: translateY(-4px);
+    }
+
+    /* Footer */
+    .footer {
+      position: relative;
+      z-index: 1;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--glass-border);
+      padding: 60px 20px 30px;
+      margin-top: 80px;
     }
 
     .footer-container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 0 20px;
     }
 
     .footer-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 40px;
-      margin-bottom: 30px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 50px;
+      margin-bottom: 50px;
     }
 
     .footer-section h4 {
-      color: #667eea;
-      margin-bottom: 15px;
-      font-size: 1.1em;
+      color: var(--text-primary);
+      font-size: 0.85em;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 20px;
     }
 
     .footer-section ul {
@@ -131,167 +215,388 @@
     }
 
     .footer-section ul li {
-      margin-bottom: 8px;
+      margin-bottom: 12px;
     }
 
     .footer-section ul li a {
-      color: rgba(255,255,255,0.7);
+      color: var(--text-muted);
       text-decoration: none;
+      font-size: 0.95em;
       transition: color 0.3s ease;
     }
 
     .footer-section ul li a:hover {
-      color: #667eea;
+      color: var(--text-primary);
     }
 
     .footer-section p {
-      color: rgba(255,255,255,0.7);
+      color: var(--text-muted);
       font-size: 0.95em;
+      line-height: 1.8;
     }
 
     .footer-bottom {
-      border-top: 1px solid rgba(255,255,255,0.1);
-      padding-top: 20px;
-      text-align: center;
-      color: rgba(255,255,255,0.5);
+      border-top: 1px solid var(--border-color);
+      padding-top: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .footer-bottom p {
+      color: var(--text-muted);
       font-size: 0.9em;
     }
 
-    .footer-bottom .heart {
-      color: #f5576c;
+    .footer-social {
+      display: flex;
+      gap: 15px;
     }
 
-    /* Mobile Responsive */
-    @media (max-width: 768px) {
-      .navbar-container {
-        flex-direction: column;
-        gap: 15px;
-      }
-
-      .navbar-links {
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-
-      .footer-grid {
-        grid-template-columns: 1fr;
-        text-align: center;
-      }
+    .footer-social a {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all 0.3s ease;
     }
 
-    /* Content Styles */
-    .main-content h1, .main-content h2, .main-content h3 {
-      color: #333;
-      margin-top: 1.5em;
+    .footer-social a:hover {
+      background: var(--text-primary);
+      color: var(--bg-primary);
+      transform: translateY(-3px);
+    }
+
+    /* Content Typography */
+    .main-content h1 {
+      font-size: 3em;
+      font-weight: 800;
+      letter-spacing: -0.03em;
       margin-bottom: 0.5em;
+      background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .main-content h2 {
+      font-size: 1.8em;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 2em 0 1em;
+      color: var(--text-primary);
+    }
+
+    .main-content h3 {
+      font-size: 1.3em;
+      font-weight: 600;
+      margin: 1.5em 0 0.8em;
+      color: var(--text-primary);
+    }
+
+    .main-content p {
+      color: var(--text-secondary);
+      margin-bottom: 1.2em;
     }
 
     .main-content a {
-      color: #667eea;
+      color: var(--text-primary);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      transition: opacity 0.3s ease;
+    }
+
+    .main-content a:hover {
+      opacity: 0.7;
+    }
+
+    .main-content ul, .main-content ol {
+      color: var(--text-secondary);
+      margin: 1em 0;
+      padding-left: 1.5em;
+    }
+
+    .main-content li {
+      margin-bottom: 0.5em;
     }
 
     .main-content code {
-      background: #f4f4f4;
-      padding: 2px 6px;
-      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 3px 8px;
+      border-radius: 6px;
       font-size: 0.9em;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      border: 1px solid var(--border-color);
     }
 
     .main-content pre {
-      background: #1a1a2e;
-      color: #f8f8f2;
-      padding: 20px;
-      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 24px;
       overflow-x: auto;
-      margin: 1em 0;
+      margin: 1.5em 0;
     }
 
     .main-content pre code {
       background: transparent;
       padding: 0;
-      color: inherit;
+      border: none;
+      color: var(--text-secondary);
     }
 
     .main-content table {
       width: 100%;
       border-collapse: collapse;
-      margin: 1em 0;
-    }
-
-    .main-content th, .main-content td {
-      padding: 12px;
-      border: 1px solid #e0e0e0;
-      text-align: left;
+      margin: 1.5em 0;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--glass-border);
     }
 
     .main-content th {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      font-weight: 600;
+      font-size: 0.85em;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 16px 20px;
+      text-align: left;
+      border-bottom: 1px solid var(--glass-border);
     }
 
-    .main-content tr:nth-child(even) {
-      background: #f9f9f9;
+    .main-content td {
+      padding: 14px 20px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .main-content tr:last-child td {
+      border-bottom: none;
+    }
+
+    .main-content tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .main-content blockquote {
+      border-left: 3px solid var(--text-primary);
+      padding-left: 20px;
+      margin: 1.5em 0;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    .main-content hr {
+      border: none;
+      height: 1px;
+      background: var(--border-color);
+      margin: 3em 0;
+    }
+
+    .main-content img {
+      max-width: 100%;
+      border-radius: 16px;
+      border: 1px solid var(--glass-border);
+    }
+
+    /* Mobile Menu Toggle */
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      font-size: 1.5em;
+      cursor: pointer;
+      padding: 5px;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .navbar {
+        top: 10px;
+        width: calc(100% - 20px);
+        padding: 12px 20px;
+        border-radius: 16px;
+      }
+
+      .navbar-links {
+        display: none;
+        position: absolute;
+        top: calc(100% + 10px);
+        left: 0;
+        right: 0;
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        padding: 20px;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .navbar-links.active {
+        display: flex;
+      }
+
+      .navbar-links a {
+        width: 100%;
+        text-align: center;
+        padding: 14px;
+      }
+
+      .menu-toggle {
+        display: block;
+      }
+
+      .main-content h1 {
+        font-size: 2em;
+      }
+
+      .footer-bottom {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .page-wrapper {
+        padding-top: 100px;
+      }
+
+      .main-content {
+        padding: 0 15px 40px;
+      }
+
+      .glass-card {
+        padding: 20px;
+        border-radius: 18px;
+      }
+
+      .footer-grid {
+        gap: 30px;
+      }
+    }
+
+    /* Smooth Scroll */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* Selection */
+    ::selection {
+      background: rgba(255, 255, 255, 0.2);
+      color: var(--text-primary);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-primary);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
     }
   </style>
 </head>
 <body>
-  <!-- Custom Navbar -->
-  <nav class="custom-navbar">
-    <div class="navbar-container">
+  <!-- Background Effects -->
+  <div class="bg-gradient"></div>
+  <div class="noise-overlay"></div>
+
+  <!-- Glassmorphism Navbar -->
+  <nav class="navbar">
+    <div class="navbar-inner">
       <a href="{{ '/' | relative_url }}" class="navbar-brand">
         <img src="https://raw.githubusercontent.com/mithun50/MR_BunkManager/main/assets/images/logo.png" alt="Logo" class="navbar-logo">
         <span class="navbar-title">MR BunkManager</span>
       </a>
+      <button class="menu-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('active')">☰</button>
       <div class="navbar-links">
         <a href="{{ '/' | relative_url }}">Home</a>
-        <a href="{{ '/docs/API' | relative_url }}">API Docs</a>
+        <a href="{{ '/docs/API' | relative_url }}">API</a>
         <a href="{{ '/docs/ARCHITECTURE' | relative_url }}">Architecture</a>
-        <a href="https://github.com/mithun50/MR_BunkManager" class="btn-github">⭐ GitHub</a>
+        <a href="https://github.com/mithun50/MR_BunkManager" class="btn-github">GitHub</a>
       </div>
     </div>
   </nav>
 
-  <!-- Main Content -->
-  <main class="main-content">
-    {{ content }}
-  </main>
+  <!-- Page Content -->
+  <div class="page-wrapper">
+    <main class="main-content">
+      {{ content }}
+    </main>
 
-  <!-- Custom Footer -->
-  <footer class="custom-footer">
-    <div class="footer-container">
-      <div class="footer-grid">
-        <div class="footer-section">
-          <h4>📱 About</h4>
-          <p>MR BunkManager is a comprehensive attendance management and student collaboration platform.</p>
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-container">
+        <div class="footer-grid">
+          <div class="footer-section">
+            <h4>About</h4>
+            <p>MR BunkManager is a comprehensive attendance management and student collaboration platform built with React Native & Firebase.</p>
+          </div>
+          <div class="footer-section">
+            <h4>Documentation</h4>
+            <ul>
+              <li><a href="{{ '/docs/API' | relative_url }}">API Reference</a></li>
+              <li><a href="{{ '/docs/ARCHITECTURE' | relative_url }}">Architecture</a></li>
+            </ul>
+          </div>
+          <div class="footer-section">
+            <h4>Resources</h4>
+            <ul>
+              <li><a href="https://github.com/mithun50/MR_BunkManager">Source Code</a></li>
+              <li><a href="https://github.com/mithun50/MR_BunkManager/issues">Issue Tracker</a></li>
+              <li><a href="https://github.com/mithun50/MR_BunkManager/releases">Releases</a></li>
+            </ul>
+          </div>
+          <div class="footer-section">
+            <h4>App Details</h4>
+            <p>
+              Package: com.idtl.mrbunkmanager<br>
+              Version: 1.0.0<br>
+              Platform: Android 6.0+
+            </p>
+          </div>
         </div>
-        <div class="footer-section">
-          <h4>📚 Documentation</h4>
-          <ul>
-            <li><a href="{{ '/docs/API' | relative_url }}">API Reference</a></li>
-            <li><a href="{{ '/docs/ARCHITECTURE' | relative_url }}">Architecture</a></li>
-          </ul>
-        </div>
-        <div class="footer-section">
-          <h4>🔗 Links</h4>
-          <ul>
-            <li><a href="https://github.com/mithun50/MR_BunkManager">GitHub Repository</a></li>
-            <li><a href="https://github.com/mithun50/MR_BunkManager/issues">Report Issues</a></li>
-          </ul>
-        </div>
-        <div class="footer-section">
-          <h4>📦 App Info</h4>
-          <p>
-            Package: com.idtl.mrbunkmanager<br>
-            Version: 1.0.0<br>
-            Min SDK: Android 6.0+
-          </p>
+        <div class="footer-bottom">
+          <p>© {{ site.time | date: '%Y' }} MR BunkManager Team. All rights reserved.</p>
+          <div class="footer-social">
+            <a href="https://github.com/mithun50/MR_BunkManager" title="GitHub">⭐</a>
+          </div>
         </div>
       </div>
-      <div class="footer-bottom">
-        <p>Made with <span class="heart">❤️</span> by the MR BunkManager Team</p>
-        <p style="margin-top: 8px;">© {{ site.time | date: '%Y' }} MR BunkManager. All rights reserved.</p>
-      </div>
-    </div>
-  </footer>
+    </footer>
+  </div>
+
+  <script>
+    // Close mobile menu when clicking outside
+    document.addEventListener('click', function(e) {
+      const navbar = document.querySelector('.navbar');
+      const navLinks = document.querySelector('.navbar-links');
+      if (!navbar.contains(e.target) && navLinks.classList.contains('active')) {
+        navLinks.classList.remove('active');
+      }
+    });
+  </script>
 </body>
 </html>
