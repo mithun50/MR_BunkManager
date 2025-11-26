@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { Card, Text, Chip, Button, useTheme } from 'react-native-paper';
+import { Card, Text, Button, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Group } from '../../types/groups';
 
@@ -65,14 +65,11 @@ export function GroupCard({ group, onPress, onJoin, showJoinButton, isMember }: 
                 {group.description || 'No description provided'}
               </Text>
               <View style={styles.meta}>
-                <Chip
-                  mode="flat"
-                  compact
-                  style={[styles.categoryChip, { backgroundColor: categoryColor + '20' }]}
-                  textStyle={{ color: categoryColor, fontSize: 11, fontWeight: '600' }}
-                >
-                  {group.category.toUpperCase()}
-                </Chip>
+                <View style={[styles.categoryBadge, { backgroundColor: categoryColor + '20' }]}>
+                  <Text style={[styles.categoryText, { color: categoryColor }]}>
+                    {group.category.toUpperCase()}
+                  </Text>
+                </View>
                 <View style={styles.membersInfo}>
                   <MaterialCommunityIcons
                     name="account-multiple"
@@ -156,9 +153,17 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 8,
   },
-  categoryChip: {
-    height: 26,
-    borderRadius: 13,
+  categoryBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  categoryText: {
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   membersInfo: {
     flexDirection: 'row',
