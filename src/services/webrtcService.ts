@@ -83,11 +83,33 @@ async function loadWebRTC(): Promise<boolean> {
 
   try {
     const webrtc = await import('react-native-webrtc');
+
+    console.log('📦 WebRTC module keys:', Object.keys(webrtc));
+
     RTCPeerConnection = webrtc.RTCPeerConnection;
     RTCIceCandidate = webrtc.RTCIceCandidate;
     RTCSessionDescription = webrtc.RTCSessionDescription;
     MediaStream = webrtc.MediaStream;
     mediaDevices = webrtc.mediaDevices;
+
+    console.log('📦 Loaded components:', {
+      RTCPeerConnection: !!RTCPeerConnection,
+      RTCIceCandidate: !!RTCIceCandidate,
+      RTCSessionDescription: !!RTCSessionDescription,
+      MediaStream: !!MediaStream,
+      mediaDevices: !!mediaDevices,
+      getUserMedia: !!mediaDevices?.getUserMedia,
+    });
+
+    if (!mediaDevices || !mediaDevices.getUserMedia) {
+      console.error('❌ mediaDevices.getUserMedia not available');
+      // Try alternative access
+      if ((webrtc as any).default?.mediaDevices) {
+        mediaDevices = (webrtc as any).default.mediaDevices;
+        console.log('📦 Using default.mediaDevices');
+      }
+    }
+
     webrtcLoaded = true;
     console.log('✅ WebRTC module loaded successfully');
     return true;
@@ -252,9 +274,20 @@ class WebRTCService {
 
     console.log('📱 Requesting media with constraints:', constraints);
     console.log('📱 mediaDevices available:', !!mediaDevices);
+    console.log('📱 getUserMedia available:', !!mediaDevices?.getUserMedia);
+
+    if (!mediaDevices) {
+      throw new Error('mediaDevices is not available - WebRTC module not properly loaded');
+    }
+
+    if (!mediaDevices.getUserMedia) {
+      throw new Error('getUserMedia is not available on mediaDevices');
+    }
 
     try {
+      console.log('📱 Calling getUserMedia...');
       const stream = await mediaDevices.getUserMedia(constraints);
+      console.log('📱 getUserMedia returned:', stream, typeof stream);
 
       if (!stream) {
         throw new Error('getUserMedia returned null stream');
