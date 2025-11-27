@@ -275,6 +275,12 @@
       transform: translateY(-3px);
     }
 
+    .footer-logo {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+    }
+
     /* Content Typography */
     .main-content h1 {
       font-size: 3em;
@@ -614,7 +620,9 @@
         <div class="footer-bottom">
           <p>© {{ site.time | date: '%Y' }} MR BunkManager Team. All rights reserved.</p>
           <div class="footer-social">
-            <a href="https://github.com/mithun50/MR_BunkManager" title="GitHub">⭐</a>
+            <a href="https://github.com/mithun50/MR_BunkManager" title="GitHub">
+              <img src="https://raw.githubusercontent.com/mithun50/MR_BunkManager/main/assets/images/logo.png" alt="MR BunkManager" class="footer-logo">
+            </a>
           </div>
         </div>
       </div>
