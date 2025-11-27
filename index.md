@@ -430,7 +430,8 @@ description: A comprehensive attendance management and student collaboration pla
   <h1>MR BunkManager</h1>
   <p class="hero-subtitle">A comprehensive attendance management and student collaboration platform built with React Native & Firebase</p>
   <div class="hero-buttons">
-    <a href="https://github.com/mithun50/MR_BunkManager" class="btn-primary">View on GitHub</a>
+    <a href="https://github.com/mithun50/MR_BunkManager/releases/download/v1.0.0/Mr-BunkManagerv1beta.apk" class="btn-primary">Download APK</a>
+    <a href="https://github.com/mithun50/MR_BunkManager" class="btn-glass">View on GitHub</a>
     <a href="docs/API" class="btn-glass">API Docs</a>
     <a href="docs/ARCHITECTURE" class="btn-glass">Architecture</a>
   </div>

@@ -2,6 +2,10 @@
 
 A comprehensive attendance management and student collaboration platform built with React Native (Expo) and Firebase.
 
+## Download
+
+**[Click here to download the app (APK)](https://github.com/mithun50/MR_BunkManager/releases/download/v1.0.0/Mr-BunkManagerv1beta.apk)**
+
 ## Overview
 
 MR BunkManager helps students track their attendance, manage their class schedule, collaborate with peers through study groups, and share study materials. The app features an AI-powered assistant that provides personalized attendance advice.
