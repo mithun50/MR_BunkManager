@@ -307,7 +307,7 @@ description: Technical architecture guide for MR BunkManager application
 </style>
 
 <div class="page-header">
-  <a href="../" class="back-link">← Back to Home</a>
+  <a href="{{ '/' | relative_url }}" class="back-link">← Back to Home</a>
   <h1>Architecture Documentation</h1>
   <p>Technical architecture guide for the MR BunkManager application</p>
 </div>
@@ -315,9 +315,7 @@ description: Technical architecture guide for MR BunkManager application
 <div class="arch-card">
   <h3>System Architecture Overview</h3>
   <div class="diagram-box">
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
+    <pre><code>┌─────────────────────────────────────────────────────────────────────┐
 │                         MR BUNKMANAGER                               │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                      │
@@ -352,8 +350,7 @@ description: Technical architecture guide for MR BunkManager application
 │  │  │ Firebase Auth   │  │ Firestore DB    │  │ AsyncStorage │  │   │
 │  │  └─────────────────┘  └─────────────────┘  └──────────────┘  │   │
 │  └──────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────┘
-```
+└─────────────────────────────────────────────────────────────────────┘</code></pre>
   </div>
 </div>
 
@@ -366,9 +363,7 @@ description: Technical architecture guide for MR BunkManager application
   <h3>1. Presentation Layer</h3>
   <h4>Navigation Structure (Expo Router v4)</h4>
   <div class="diagram-box">
-
-```
-app/
+    <pre><code>app/
 ├── _layout.tsx              # Root layout with providers
 ├── index.tsx                # Entry point (redirects based on auth)
 ├── (auth)/                  # Auth group (unauthenticated)
@@ -385,15 +380,12 @@ app/
 │   └── profile.tsx
 ├── note/[id].tsx            # Dynamic route: Note detail
 ├── user/[id].tsx            # Dynamic route: User profile
-└── create-note.tsx
-```
+└── create-note.tsx</code></pre>
   </div>
 
   <h4>Component Hierarchy</h4>
   <div class="diagram-box">
-
-```
-Components/
+    <pre><code>Components/
 ├── Layout Components
 │   ├── NetworkMonitor       # Global connectivity status
 │   └── ThemeSwitcher        # Theme toggle button
@@ -411,8 +403,7 @@ Components/
 └── Groups Components
     ├── GroupCard            # Group preview card
     ├── GroupChatScreen      # Full chat interface
-    └── MessageBubble        # Chat message
-```
+    └── MessageBubble        # Chat message</code></pre>
   </div>
 </div>
 
@@ -432,12 +423,9 @@ Components/
 
   <h4>State Flow</h4>
   <div class="diagram-box">
-
-```
-User Action → Store Action → Service Call → Firebase → Store Update → UI Re-render
+    <pre><code>User Action → Store Action → Service Call → Firebase → Store Update → UI Re-render
      │                                                        │
-     └────────────── Optimistic Update (UI) ◄─────────────────┘
-```
+     └────────────── Optimistic Update (UI) ◄─────────────────┘</code></pre>
   </div>
 </div>
 
@@ -446,22 +434,17 @@ User Action → Store Action → Service Call → Firebase → Store Update → 
 
   <div class="layer-card">
     <h4>Authentication Services</h4>
-
-```
-authService.ts
+    <pre><code>authService.ts
 ├── signUp(email, password, displayName)
 ├── signIn(email, password)
 ├── signInWithGoogle()
 ├── signOut()
-└── resetPassword(email)
-```
+└── resetPassword(email)</code></pre>
   </div>
 
   <div class="layer-card">
     <h4>Data Services</h4>
-
-```
-firestoreService.ts
+    <pre><code>firestoreService.ts
 ├── User Profile CRUD
 ├── Timetable Management
 └── Subject Attendance Tracking
@@ -469,20 +452,17 @@ firestoreService.ts
 notesService.ts
 ├── Note CRUD Operations
 ├── Feed Generation
-└── Search & Filtering
+└── Search &amp; Filtering
 
 groupsService.ts
 ├── Group CRUD
 ├── Member Management
-└── Real-time Messaging
-```
+└── Real-time Messaging</code></pre>
   </div>
 
   <div class="layer-card">
     <h4>Infrastructure Services</h4>
-
-```
-cacheService.ts
+    <pre><code>cacheService.ts
 ├── AsyncStorage Operations
 └── User Data Cache
 
@@ -492,17 +472,14 @@ offlineQueueService.ts
 
 notificationService.ts
 ├── Register Push Token
-└── Handle Incoming
-```
+└── Handle Incoming</code></pre>
   </div>
 </div>
 
 <div class="arch-card">
   <h3>4. Data Layer - Firestore Schema</h3>
   <div class="diagram-box">
-
-```
-Firestore Database
+    <pre><code>Firestore Database
 │
 ├── users/{userId}
 │   ├── displayName, email, photoURL
@@ -535,8 +512,7 @@ Firestore Database
 │   └── messages/{messageId}
 │
 └── pushTokens/{tokenId}
-    └── userId, token, tokenType, active
-```
+    └── userId, token, tokenType, active</code></pre>
   </div>
 </div>
 
@@ -548,9 +524,7 @@ Firestore Database
 <div class="arch-card">
   <h3>Offline-First Strategy</h3>
   <div class="diagram-box">
-
-```
-┌─────────────────────────────────────────────────────────────────┐
+    <pre><code>┌─────────────────────────────────────────────────────────────────┐
 │                    OFFLINE-FIRST ARCHITECTURE                    │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
@@ -579,8 +553,7 @@ Firestore Database
 │                           │ When Online:    │                   │
 │                           │ Process Queue   │                   │
 │                           └─────────────────┘                   │
-└─────────────────────────────────────────────────────────────────┘
-```
+└─────────────────────────────────────────────────────────────────┘</code></pre>
   </div>
 </div>
 
@@ -592,9 +565,7 @@ Firestore Database
 <div class="arch-card">
   <h3>AI Chat Architecture</h3>
   <div class="diagram-box">
-
-```
-User Input (text/voice/image)
+    <pre><code>User Input (text/voice/image)
        │
        ▼
 ┌─────────────────────────────────────────┐
@@ -622,8 +593,7 @@ User Input (text/voice/image)
 └──────────────────┬──────────────────────┘
                    │
                    ▼
-           Response to User
-```
+           Response to User</code></pre>
   </div>
 </div>
 
@@ -669,9 +639,7 @@ User Input (text/voice/image)
 <div class="arch-card">
   <h3>Authentication Flow</h3>
   <div class="diagram-box">
-
-```
-Login Screen
+    <pre><code>Login Screen
      │
      ├──► Email/Password → Firebase signInWithEmailAndPassword
      │
@@ -691,8 +659,7 @@ Login Screen
                     │  if (!emailVerified) → /email-verify    │
                     │  if (!onboarded) → /onboarding          │
                     │  else → /(tabs)                          │
-                    └─────────────────────────────────────────┘
-```
+                    └─────────────────────────────────────────┘</code></pre>
   </div>
 </div>
 
@@ -703,16 +670,14 @@ Login Screen
 
 <div class="arch-card">
   <div class="diagram-box">
-
-```
-MR_BunkManager/
+    <pre><code>MR_BunkManager/
 ├── app/                     # Expo Router screens
 ├── src/
 │   ├── components/          # Reusable UI components
 │   │   ├── notes/           # Notes feature components
 │   │   └── groups/          # Groups feature components
 │   ├── screens/             # Complex screen implementations
-│   ├── services/            # Business logic & API
+│   ├── services/            # Business logic &amp; API
 │   ├── store/               # Zustand state stores
 │   ├── types/               # TypeScript definitions
 │   └── config/              # App configuration
@@ -722,8 +687,7 @@ MR_BunkManager/
 │   └── cron-service/
 ├── assets/                  # Static assets
 ├── docs/                    # Documentation
-└── app.config.js            # Expo configuration
-```
+└── app.config.js            # Expo configuration</code></pre>
   </div>
 </div>
 

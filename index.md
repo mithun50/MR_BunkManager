@@ -235,6 +235,23 @@ description: A comprehensive attendance management and student collaboration pla
     color: rgba(255,255,255,0.3);
   }
 
+  .quickstart-section pre {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 20px;
+    overflow-x: auto;
+    margin: 12px 0;
+  }
+
+  .quickstart-section pre code {
+    color: rgba(255,255,255,0.8);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.85em;
+    line-height: 1.6;
+    background: transparent;
+  }
+
   /* Team Section */
   .team-section {
     margin-bottom: 60px;
@@ -468,9 +485,7 @@ description: A comprehensive attendance management and student collaboration pla
   </ul>
 
   <h3>Installation</h3>
-
-```bash
-# Clone the repository
+  <pre><code># Clone the repository
 git clone https://github.com/mithun50/MR_BunkManager.git
 cd MR_BunkManager
 
@@ -478,18 +493,14 @@ cd MR_BunkManager
 npm install
 
 # Start development server
-npx expo start
-```
+npx expo start</code></pre>
 
   <h3>Build for Production</h3>
-
-```bash
-# Build Android APK
+  <pre><code># Build Android APK
 eas build -p android --profile preview
 
 # Build for Play Store
-eas build -p android --profile production
-```
+eas build -p android --profile production</code></pre>
 </div>
 
 <!-- API Section -->

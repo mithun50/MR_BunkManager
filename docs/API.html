@@ -216,18 +216,6 @@ description: Complete API reference for MR BunkManager backend and frontend serv
     font-size: 0.9em;
   }
 
-  /* Type badges */
-  .type-badge {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 6px;
-    font-size: 0.75em;
-    font-family: 'SF Mono', monospace;
-    background: rgba(255,255,255,0.06);
-    color: rgba(255,255,255,0.7);
-    border: 1px solid rgba(255,255,255,0.1);
-  }
-
   /* Service Section */
   .service-section {
     background: rgba(255,255,255,0.02);
@@ -319,7 +307,6 @@ description: Complete API reference for MR BunkManager backend and frontend serv
   "tokenType": "expo",
   "timestamp": "26/11/2025, 03:30:45 PM"
 }</code></pre>
-
   <h4>Error Codes</h4>
   <table class="status-table">
     <tr><th>Code</th><th>Description</th></tr>
@@ -459,7 +446,6 @@ description: Complete API reference for MR BunkManager backend and frontend serv
     "message": "Hello everyone!"
   }
 }</code></pre>
-
   <h4>Activity Types</h4>
   <table class="status-table">
     <tr><th>Type</th><th>Extra Fields</th><th>Notification</th></tr>
@@ -558,7 +544,6 @@ description: Complete API reference for MR BunkManager backend and frontend serv
   "details": "Technical details",
   "timestamp": "26/11/2025, 03:30:45 PM"
 }</code></pre>
-
   <h4>HTTP Status Codes</h4>
   <table class="status-table">
     <tr><th>Code</th><th>Description</th></tr>
@@ -606,7 +591,7 @@ updateUserProfile(uid: string, data: Partial&lt;UserProfile&gt;): Promise&lt;voi
 saveTimetable(uid: string, entries: TimetableEntry[]): Promise&lt;void&gt;
 getTimetable(uid: string): Promise&lt;TimetableEntry[]&gt;
 
-// Subjects &amp; Attendance
+// Subjects & Attendance
 getSubjects(uid: string): Promise&lt;Subject[]&gt;
 addSubject(uid: string, subject: Subject): Promise&lt;void&gt;
 updateSubjectAttendance(uid: string, subjectId: string, attended: number, total: number): Promise&lt;void&gt;</code></pre>
