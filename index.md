@@ -326,6 +326,73 @@ description: A comprehensive attendance management and student collaboration pla
     margin-bottom: 80px;
   }
 
+  .api-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .api-table th {
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.7);
+    font-size: 0.8em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 16px 20px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .api-table td {
+    padding: 14px 20px;
+    color: rgba(255,255,255,0.6);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 0.95em;
+  }
+
+  .api-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .api-table tr:hover td {
+    background: rgba(255,255,255,0.02);
+  }
+
+  .api-table code {
+    background: rgba(255,255,255,0.08);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.9em;
+    color: #fff;
+  }
+
+  .method-get, .method-post {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .method-get {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+  }
+
+  .method-post {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+  }
+
   /* Responsive */
   @media (max-width: 768px) {
     .hero h1 {
@@ -510,18 +577,57 @@ eas build -p android --profile production</code></pre>
 </div>
 
 <div class="api-section">
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Server health check |
-| POST | `/save-token` | Register push token |
-| POST | `/send-notification` | Send to specific user |
-| POST | `/send-daily-reminders` | Daily class reminders |
-| POST | `/send-class-reminders` | 30/10 min before class |
-| POST | `/notify-group-members` | Group activity alerts |
-| POST | `/notify-followers` | New note notifications |
-| POST | `/upload` | Upload to Google Drive |
-
+  <table class="api-table">
+    <thead>
+      <tr>
+        <th>Method</th>
+        <th>Endpoint</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="method-get">GET</span></td>
+        <td><code>/health</code></td>
+        <td>Server health check</td>
+      </tr>
+      <tr>
+        <td><span class="method-post">POST</span></td>
+        <td><code>/save-token</code></td>
+        <td>Register push token</td>
+      </tr>
+      <tr>
+        <td><span class="method-post">POST</span></td>
+        <td><code>/send-notification</code></td>
+        <td>Send to specific user</td>
+      </tr>
+      <tr>
+        <td><span class="method-post">POST</span></td>
+        <td><code>/send-daily-reminders</code></td>
+        <td>Daily class reminders</td>
+      </tr>
+      <tr>
+        <td><span class="method-post">POST</span></td>
+        <td><code>/send-class-reminders</code></td>
+        <td>30/10 min before class</td>
+      </tr>
+      <tr>
+        <td><span class="method-post">POST</span></td>
+        <td><code>/notify-group-members</code></td>
+        <td>Group activity alerts</td>
+      </tr>
+      <tr>
+        <td><span class="method-post">POST</span></td>
+        <td><code>/notify-followers</code></td>
+        <td>New note notifications</td>
+      </tr>
+      <tr>
+        <td><span class="method-post">POST</span></td>
+        <td><code>/upload</code></td>
+        <td>Upload to Google Drive</td>
+      </tr>
+    </tbody>
+  </table>
 </div>
 
 <!-- Team Section -->
