@@ -599,8 +599,7 @@ description: Complete source code documentation and line-by-line analysis for MR
 <div class="code-card">
   <h3>Core Types</h3>
 
-  <div class="tree-box">
-<pre><code>// types/user.ts
+  <pre><code>// types/user.ts
 interface UserProfile {
   uid: string;
   displayName: string;
@@ -658,7 +657,6 @@ interface GroupMessage {
   fileUrl?: string;
   createdAt: Date;
 }</code></pre>
-  </div>
 </div>
 
 <div class="section-divider">
