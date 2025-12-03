@@ -115,6 +115,7 @@ description: Technical architecture guide for MR BunkManager application
     padding: 24px;
     overflow-x: auto;
     margin: 20px 0;
+    -webkit-overflow-scrolling: touch;
   }
 
   .diagram-box pre {
@@ -122,13 +123,17 @@ description: Technical architecture guide for MR BunkManager application
     background: transparent !important;
     border: none !important;
     padding: 0 !important;
+    white-space: pre;
+    display: block;
+    min-width: max-content;
   }
 
   .diagram-box code {
     color: rgba(255,255,255,0.7);
-    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
     font-size: 0.8em;
     line-height: 1.5;
+    display: block;
   }
 
   /* Layer Card */
@@ -329,17 +334,40 @@ description: Technical architecture guide for MR BunkManager application
     }
 
     .arch-card {
-      padding: 16px;
+      padding: 20px;
       border-radius: 16px;
     }
 
+    .arch-card h3 {
+      font-size: 1.1em;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+    }
+
     .diagram-box {
-      padding: 12px;
+      padding: 16px;
+      border-radius: 12px;
+      margin: 16px 0;
+    }
+
+    .diagram-box code {
+      font-size: 0.7em;
+      line-height: 1.4;
+    }
+
+    .layer-card {
+      padding: 16px;
       border-radius: 12px;
     }
 
     .back-link {
       padding: 8px 16px;
+      font-size: 0.85em;
+    }
+
+    .arch-table th,
+    .arch-table td {
+      padding: 10px 12px;
       font-size: 0.85em;
     }
   }
@@ -349,13 +377,34 @@ description: Technical architecture guide for MR BunkManager application
       font-size: 1.5em;
     }
 
+    .arch-card {
+      padding: 16px;
+    }
+
+    .arch-card h3 {
+      font-size: 1em;
+    }
+
+    .diagram-box {
+      padding: 12px;
+    }
+
     .diagram-box code {
       font-size: 0.6em;
+      line-height: 1.3;
     }
 
     .tech-badge {
-      font-size: 0.7em;
+      font-size: 0.65em;
       padding: 4px 8px;
+    }
+
+    .layer-card {
+      padding: 12px;
+    }
+
+    .layer-card h4 {
+      font-size: 0.95em;
     }
   }
 </style>

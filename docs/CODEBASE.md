@@ -151,6 +151,7 @@ description: Complete source code documentation and line-by-line analysis for MR
     padding: 24px;
     overflow-x: auto;
     margin: 20px 0;
+    -webkit-overflow-scrolling: touch;
   }
 
   .tree-box pre {
@@ -158,13 +159,17 @@ description: Complete source code documentation and line-by-line analysis for MR
     background: transparent !important;
     border: none !important;
     padding: 0 !important;
+    white-space: pre;
+    display: block;
+    min-width: max-content;
   }
 
   .tree-box code {
     color: rgba(255,255,255,0.7);
-    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
     font-size: 0.85em;
     line-height: 1.6;
+    display: block;
   }
 
   .analysis-table {
@@ -243,13 +248,41 @@ description: Complete source code documentation and line-by-line analysis for MR
       border-radius: 16px;
     }
 
+    .tree-box {
+      padding: 16px;
+      border-radius: 12px;
+      margin: 16px 0;
+    }
+
+    .tree-box code {
+      font-size: 0.75em;
+      line-height: 1.5;
+    }
+
     .stats-grid {
       gap: 12px;
+    }
+
+    .stat-card {
+      padding: 16px;
+    }
+
+    .stat-number {
+      font-size: 1.6em;
     }
 
     .back-link {
       padding: 8px 16px;
       font-size: 0.85em;
+    }
+
+    .analysis-table {
+      font-size: 0.85em;
+    }
+
+    .analysis-table th,
+    .analysis-table td {
+      padding: 10px 12px;
     }
   }
 
@@ -266,8 +299,25 @@ description: Complete source code documentation and line-by-line analysis for MR
       padding: 12px;
     }
 
-    .stat-card .stat-value {
-      font-size: 1.2em;
+    .stat-number {
+      font-size: 1.4em;
+    }
+
+    .tree-box {
+      padding: 12px;
+    }
+
+    .tree-box code {
+      font-size: 0.7em;
+    }
+
+    .code-card h3 {
+      font-size: 1em;
+      flex-wrap: wrap;
+    }
+
+    .file-badge, .line-badge {
+      font-size: 0.65em;
     }
   }
 </style>
