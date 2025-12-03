@@ -433,8 +433,40 @@ description: A comprehensive attendance management and student collaboration pla
     <a href="https://github.com/mithun50/MR_BunkManager/releases/download/v1.0.0/Mr-BunkManagerv1beta.apk" class="btn-primary">Download APK</a>
     <a href="https://github.com/mithun50/MR_BunkManager" class="btn-glass">View on GitHub</a>
     <a href="docs/API" class="btn-glass">API Docs</a>
-    <a href="docs/ARCHITECTURE" class="btn-glass">Architecture</a>
   </div>
+</div>
+
+<!-- Documentation Links -->
+<div class="section-header" style="margin-top: 20px;">
+  <h2>Documentation</h2>
+  <p>Comprehensive guides for developers and contributors</p>
+</div>
+
+<div class="features-grid" style="margin-bottom: 40px;">
+  <a href="docs/API" class="feature-card" style="text-decoration: none;">
+    <div class="feature-icon">🔌</div>
+    <h3>API Reference</h3>
+    <p>Complete backend API documentation with endpoints, request/response formats, and error handling.</p>
+  </a>
+
+  <a href="docs/ARCHITECTURE" class="feature-card" style="text-decoration: none;">
+    <div class="feature-icon">🏗️</div>
+    <h3>Architecture</h3>
+    <p>System design, layer architecture, database schema, and data flow diagrams.</p>
+  </a>
+
+  <a href="docs/CODEBASE" class="feature-card" style="text-decoration: none;">
+    <div class="feature-icon">📁</div>
+    <h3>Codebase Guide</h3>
+    <p>Line-by-line code analysis, directory structure, and component breakdown.</p>
+  </a>
+
+  <a href="docs/SERVICES" class="feature-card" style="text-decoration: none;">
+    <div class="feature-icon">⚙️</div>
+    <h3>Services</h3>
+    <p>Frontend services documentation with method signatures and usage examples.</p>
+  </a>
+</div>
 </div>
 
 <!-- Features Section -->

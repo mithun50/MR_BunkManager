@@ -146,6 +146,52 @@
       transform: translateY(-2px);
     }
 
+    /* Navbar Dropdown */
+    .navbar-dropdown {
+      position: relative;
+    }
+
+    .navbar-dropdown .dropdown-toggle {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .navbar-dropdown .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-top: 10px;
+      min-width: 180px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 8px;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: var(--glass-shadow);
+      z-index: 1001;
+    }
+
+    .navbar-dropdown:hover .dropdown-menu {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .navbar-dropdown .dropdown-menu a {
+      display: block;
+      padding: 10px 16px;
+      border-radius: 10px;
+      white-space: nowrap;
+    }
+
+    .navbar-dropdown .dropdown-menu a:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
     /* Main Content Wrapper */
     .page-wrapper {
       position: relative;
@@ -494,6 +540,28 @@
         padding: 14px;
       }
 
+      .navbar-dropdown {
+        width: 100%;
+      }
+
+      .navbar-dropdown .dropdown-toggle {
+        width: 100%;
+        text-align: center;
+      }
+
+      .navbar-dropdown .dropdown-menu {
+        position: static;
+        transform: none;
+        margin-top: 8px;
+        opacity: 1;
+        visibility: visible;
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .navbar-dropdown .dropdown-menu a {
+        padding: 12px;
+      }
+
       .menu-toggle {
         display: block;
       }
@@ -572,8 +640,15 @@
       <button class="menu-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('active')">☰</button>
       <div class="navbar-links">
         <a href="{{ '/' | relative_url }}">Home</a>
-        <a href="{{ '/docs/API' | relative_url }}">API</a>
-        <a href="{{ '/docs/ARCHITECTURE' | relative_url }}">Architecture</a>
+        <div class="navbar-dropdown">
+          <a href="#" class="dropdown-toggle">Docs ▾</a>
+          <div class="dropdown-menu">
+            <a href="{{ '/docs/API' | relative_url }}">API Reference</a>
+            <a href="{{ '/docs/ARCHITECTURE' | relative_url }}">Architecture</a>
+            <a href="{{ '/docs/CODEBASE' | relative_url }}">Codebase</a>
+            <a href="{{ '/docs/SERVICES' | relative_url }}">Services</a>
+          </div>
+        </div>
         <a href="https://github.com/mithun50/MR_BunkManager" class="btn-github">GitHub</a>
       </div>
     </div>
@@ -598,6 +673,8 @@
             <ul>
               <li><a href="{{ '/docs/API' | relative_url }}">API Reference</a></li>
               <li><a href="{{ '/docs/ARCHITECTURE' | relative_url }}">Architecture</a></li>
+              <li><a href="{{ '/docs/CODEBASE' | relative_url }}">Codebase Analysis</a></li>
+              <li><a href="{{ '/docs/SERVICES' | relative_url }}">Services Guide</a></li>
             </ul>
           </div>
           <div class="footer-section">
