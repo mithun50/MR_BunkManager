@@ -66,6 +66,39 @@ description: Complete source code documentation and line-by-line analysis for MR
     font-size: 1em;
   }
 
+  /* Code blocks styling */
+  pre {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 20px;
+    overflow-x: auto;
+    margin: 12px 0;
+  }
+
+  pre code {
+    color: rgba(255,255,255,0.8);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.85em;
+    line-height: 1.6;
+    background: transparent;
+  }
+
+  /* Info Box */
+  .info-box {
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+  }
+
+  .info-box p {
+    color: rgba(255,255,255,0.7);
+    margin: 0;
+    font-size: 0.9em;
+  }
+
   .code-card {
     background: rgba(255,255,255,0.02);
     border: 1px solid rgba(255,255,255,0.06);
@@ -147,29 +180,24 @@ description: Complete source code documentation and line-by-line analysis for MR
   .tree-box {
     background: rgba(0,0,0,0.4);
     border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 16px;
-    padding: 24px;
+    border-radius: 12px;
+    padding: 20px;
     overflow-x: auto;
-    margin: 20px 0;
-    -webkit-overflow-scrolling: touch;
+    margin: 12px 0;
   }
 
   .tree-box pre {
     margin: 0;
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
-    white-space: pre;
-    display: block;
-    min-width: max-content;
+    background: transparent;
+    border: none;
+    padding: 0;
   }
 
   .tree-box code {
-    color: rgba(255,255,255,0.7);
-    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    color: rgba(255,255,255,0.8);
+    font-family: 'SF Mono', 'Fira Code', monospace;
     font-size: 0.85em;
     line-height: 1.6;
-    display: block;
   }
 
   .analysis-table {

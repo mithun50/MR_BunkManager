@@ -107,33 +107,46 @@ description: Technical architecture guide for MR BunkManager application
     line-height: 1.7;
   }
 
+  /* Code blocks styling */
+  pre {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 20px;
+    overflow-x: auto;
+    margin: 12px 0;
+  }
+
+  pre code {
+    color: rgba(255,255,255,0.8);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.85em;
+    line-height: 1.6;
+    background: transparent;
+  }
+
   /* Diagram Box */
   .diagram-box {
     background: rgba(0,0,0,0.4);
     border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 16px;
-    padding: 24px;
+    border-radius: 12px;
+    padding: 20px;
     overflow-x: auto;
-    margin: 20px 0;
-    -webkit-overflow-scrolling: touch;
+    margin: 12px 0;
   }
 
   .diagram-box pre {
     margin: 0;
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
-    white-space: pre;
-    display: block;
-    min-width: max-content;
+    background: transparent;
+    border: none;
+    padding: 0;
   }
 
   .diagram-box code {
-    color: rgba(255,255,255,0.7);
-    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    color: rgba(255,255,255,0.8);
+    font-family: 'SF Mono', 'Fira Code', monospace;
     font-size: 0.8em;
     line-height: 1.5;
-    display: block;
   }
 
   /* Layer Card */
