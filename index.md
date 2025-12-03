@@ -393,8 +393,12 @@ description: A comprehensive attendance management and student collaboration pla
     border: 1px solid rgba(59, 130, 246, 0.3);
   }
 
-  /* Responsive */
+  /* Responsive - Tablets */
   @media (max-width: 768px) {
+    .hero {
+      padding: 60px 16px;
+    }
+
     .hero h1 {
       font-size: 2.2em;
     }
@@ -420,6 +424,120 @@ description: A comprehensive attendance management and student collaboration pla
 
     .tech-section, .quickstart-section {
       padding: 24px;
+    }
+
+    .section-header h2 {
+      font-size: 1.6em;
+    }
+  }
+
+  /* Responsive - Mobile */
+  @media (max-width: 600px) {
+    .hero {
+      padding: 50px 14px;
+      margin-bottom: 40px;
+    }
+
+    .hero-logo {
+      width: 90px;
+      height: 90px;
+      border-radius: 22px;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      font-size: 1.9em;
+    }
+
+    .hero-subtitle {
+      font-size: 0.95em;
+      margin-bottom: 30px;
+    }
+
+    .hero-buttons a {
+      padding: 12px 24px;
+      font-size: 0.9em;
+    }
+
+    .section-header {
+      margin-bottom: 30px;
+    }
+
+    .section-header h2 {
+      font-size: 1.5em;
+    }
+
+    .section-header p {
+      font-size: 1em;
+    }
+
+    .feature-card {
+      padding: 24px;
+      border-radius: 16px;
+    }
+
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      font-size: 1.3em;
+    }
+
+    .feature-card h3 {
+      font-size: 1.1em;
+    }
+
+    .tech-section, .quickstart-section {
+      padding: 20px;
+      border-radius: 16px;
+    }
+  }
+
+  /* Responsive - Small Mobile */
+  @media (max-width: 400px) {
+    .hero {
+      padding: 40px 12px;
+    }
+
+    .hero-logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+    }
+
+    .hero h1 {
+      font-size: 1.6em;
+    }
+
+    .hero-subtitle {
+      font-size: 0.9em;
+    }
+
+    .section-header h2 {
+      font-size: 1.3em;
+    }
+
+    .feature-card {
+      padding: 20px;
+    }
+
+    .feature-icon {
+      width: 40px;
+      height: 40px;
+      font-size: 1.2em;
+      border-radius: 12px;
+    }
+
+    .feature-card h3 {
+      font-size: 1em;
+    }
+
+    .feature-card p {
+      font-size: 0.9em;
+    }
+
+    .tech-badge {
+      font-size: 0.75em;
+      padding: 6px 10px;
     }
   }
 </style>

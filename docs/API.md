@@ -262,6 +262,55 @@ description: Complete API reference for MR BunkManager backend and frontend serv
       gap: 8px;
     }
   }
+
+  @media (max-width: 600px) {
+    .page-header {
+      margin-bottom: 40px;
+      padding-bottom: 30px;
+    }
+
+    .page-header h1 {
+      font-size: 1.8em;
+    }
+
+    .page-header p {
+      font-size: 1em;
+    }
+
+    .section-divider {
+      margin: 40px 0 30px;
+      padding-top: 30px;
+    }
+
+    .section-divider h2 {
+      font-size: 1.4em;
+    }
+
+    .api-card {
+      padding: 16px;
+      border-radius: 16px;
+    }
+
+    .back-link {
+      padding: 8px 16px;
+      font-size: 0.85em;
+    }
+  }
+
+  @media (max-width: 400px) {
+    .page-header h1 {
+      font-size: 1.5em;
+    }
+
+    .method-badge {
+      font-size: 0.7em;
+      padding: 5px 10px;
+    }
+
+    .endpoint-path {
+      font-size: 0.8em;
+    }
+  }
 </style>
 
 <div class="page-header">

@@ -214,6 +214,62 @@ description: Complete source code documentation and line-by-line analysis for MR
       grid-template-columns: repeat(2, 1fr);
     }
   }
+
+  @media (max-width: 600px) {
+    .page-header {
+      margin-bottom: 40px;
+      padding-bottom: 30px;
+    }
+
+    .page-header h1 {
+      font-size: 1.8em;
+    }
+
+    .page-header p {
+      font-size: 1em;
+    }
+
+    .section-divider {
+      margin: 40px 0 30px;
+      padding-top: 30px;
+    }
+
+    .section-divider h2 {
+      font-size: 1.4em;
+    }
+
+    .code-card {
+      padding: 16px;
+      border-radius: 16px;
+    }
+
+    .stats-grid {
+      gap: 12px;
+    }
+
+    .back-link {
+      padding: 8px 16px;
+      font-size: 0.85em;
+    }
+  }
+
+  @media (max-width: 400px) {
+    .page-header h1 {
+      font-size: 1.5em;
+    }
+
+    .stats-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .stat-card {
+      padding: 12px;
+    }
+
+    .stat-card .stat-value {
+      font-size: 1.2em;
+    }
+  }
 </style>
 
 <div class="page-header">

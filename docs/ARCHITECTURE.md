@@ -304,6 +304,60 @@ description: Technical architecture guide for MR BunkManager application
       font-size: 0.7em;
     }
   }
+
+  @media (max-width: 600px) {
+    .page-header {
+      margin-bottom: 40px;
+      padding-bottom: 30px;
+    }
+
+    .page-header h1 {
+      font-size: 1.8em;
+    }
+
+    .page-header p {
+      font-size: 1em;
+    }
+
+    .section-divider {
+      margin: 40px 0 30px;
+      padding-top: 30px;
+    }
+
+    .section-divider h2 {
+      font-size: 1.4em;
+    }
+
+    .arch-card {
+      padding: 16px;
+      border-radius: 16px;
+    }
+
+    .diagram-box {
+      padding: 12px;
+      border-radius: 12px;
+    }
+
+    .back-link {
+      padding: 8px 16px;
+      font-size: 0.85em;
+    }
+  }
+
+  @media (max-width: 400px) {
+    .page-header h1 {
+      font-size: 1.5em;
+    }
+
+    .diagram-box code {
+      font-size: 0.6em;
+    }
+
+    .tech-badge {
+      font-size: 0.7em;
+      padding: 4px 8px;
+    }
+  }
 </style>
 
 <div class="page-header">
