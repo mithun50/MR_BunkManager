@@ -585,7 +585,6 @@ description: A comprehensive attendance management and student collaboration pla
     <p>Frontend services documentation with method signatures and usage examples.</p>
   </a>
 </div>
-</div>
 
 <!-- Features Section -->
 <div class="section-header">
