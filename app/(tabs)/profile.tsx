@@ -732,7 +732,11 @@ export default function ProfileScreen() {
 
       <ScrollView
         style={styles.scrollContainer}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 16 }]}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: insets.bottom + 16 },
+          (isTablet || isDesktop) && styles.contentWide,
+        ]}
         showsVerticalScrollIndicator={false}
       >
       {loading ? (
@@ -1836,6 +1840,12 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
+  },
+  contentWide: {
+    maxWidth: 800,
+    alignSelf: 'center',
+    width: '100%',
+    paddingHorizontal: 24,
   },
   profileCard: {
     padding: 24,

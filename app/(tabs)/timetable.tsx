@@ -434,26 +434,31 @@ export default function TimetableScreen() {
             {
               backgroundColor: theme.colors.surface,
               width: modalWidth,
-              maxWidth: isDesktop ? 600 : 500,
+              maxWidth: isDesktop ? 550 : 500,
+              maxHeight: isDesktop ? '85%' : '90%',
             }
           ]}
           style={isWeb ? styles.webModalOverlay : undefined}
         >
-          <Text variant="headlineSmall" style={styles.modalTitle}>
-            Mark Attendance
-          </Text>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.modalScrollContent}
+          >
+            <Text variant="headlineSmall" style={styles.modalTitle}>
+              Mark Attendance
+            </Text>
 
-          {selectedClass && selectedSubject && (
-            <>
-              <Text variant="titleMedium" style={styles.selectedSubject}>
-                {selectedClass.subject}
-              </Text>
-              <Text variant="bodySmall" style={styles.classDetails}>
-                {selectedClass.startTime} - {selectedClass.endTime} • {selectedClass.type}
-              </Text>
+            {selectedClass && selectedSubject && (
+              <>
+                <Text variant="titleMedium" style={styles.selectedSubject}>
+                  {selectedClass.subject}
+                </Text>
+                <Text variant="bodySmall" style={styles.classDetails}>
+                  {selectedClass.startTime} - {selectedClass.endTime} • {selectedClass.type}
+                </Text>
 
-              {/* Calendar */}
-              <Calendar
+                {/* Calendar */}
+                <Calendar
                 current={selectedDate}
                 onDayPress={(day) => {
                   // Check if it's a Sunday
@@ -576,30 +581,31 @@ export default function TimetableScreen() {
                 placeholder="Add any notes..."
               />
 
-              <View style={styles.modalButtons}>
-                <Button
-                  mode="outlined"
-                  onPress={() => {
-                    setShowMarkModal(false);
-                    setSelectedClass(null);
-                    setSelectedSubject(null);
-                  }}
-                  style={styles.modalButton}
-                >
-                  Cancel
-                </Button>
-                <OnlineButton
-                  mode="contained"
-                  onPress={handleMarkAttendance}
-                  style={styles.modalButton}
-                  requiresOnline={true}
-                  offlineMessage="You need internet connection to save attendance"
-                >
-                  Save
-                </OnlineButton>
-              </View>
-            </>
-          )}
+                <View style={styles.modalButtons}>
+                  <Button
+                    mode="outlined"
+                    onPress={() => {
+                      setShowMarkModal(false);
+                      setSelectedClass(null);
+                      setSelectedSubject(null);
+                    }}
+                    style={styles.modalButton}
+                  >
+                    Cancel
+                  </Button>
+                  <OnlineButton
+                    mode="contained"
+                    onPress={handleMarkAttendance}
+                    style={styles.modalButton}
+                    requiresOnline={true}
+                    offlineMessage="You need internet connection to save attendance"
+                  >
+                    Save
+                  </OnlineButton>
+                </View>
+              </>
+            )}
+          </ScrollView>
         </Modal>
       </Portal>
     </View>
@@ -710,6 +716,9 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 12,
     maxHeight: '90%',
+  },
+  modalScrollContent: {
+    paddingBottom: 16,
   },
   modalTitle: {
     fontWeight: 'bold',
