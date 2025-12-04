@@ -1941,6 +1941,7 @@ const styles = StyleSheet.create({
     padding: 24,
     width: '80%',
     maxWidth: 600,
+    maxHeight: '85%',
   },
   modalDesktop: {
     margin: 32,
@@ -1949,6 +1950,7 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     width: '60%',
     maxWidth: 650,
+    maxHeight: '85%',
   },
   modalTitle: {
     fontWeight: 'bold',
