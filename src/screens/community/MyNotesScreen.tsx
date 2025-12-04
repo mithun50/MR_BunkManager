@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
+import { View, StyleSheet, FlatList, RefreshControl, Platform } from 'react-native';
 import {
   Text,
   ActivityIndicator,
@@ -98,6 +98,32 @@ export function MyNotesScreen() {
       loadNotes(true);
     }, [user, viewMode])
   );
+
+  // Web-specific: Refresh when browser window/tab gains focus
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+
+    const handleFocus = () => {
+      if (!isFirstLoad.current && user) {
+        loadNotes(true);
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    // Also listen for visibility change (tab switching)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && !isFirstLoad.current && user) {
+        loadNotes(true);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user, viewMode]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);

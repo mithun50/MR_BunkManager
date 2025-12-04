@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, FlatList, Pressable, Linking, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, FlatList, Pressable, Linking, Alert, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { useFocusEffect } from '@react-navigation/native';
 import {
@@ -95,11 +95,44 @@ export default function GroupsScreen() {
     }
   }, [user]);
 
+  const isFirstLoad = useRef(true);
+
   useFocusEffect(
     useCallback(() => {
       loadGroups();
     }, [loadGroups])
   );
+
+  // Web-specific: Refresh when browser window/tab gains focus
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+
+    const handleFocus = () => {
+      if (!isFirstLoad.current && user) {
+        loadGroups();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    // Also listen for visibility change (tab switching)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && !isFirstLoad.current && user) {
+        loadGroups();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Mark first load as complete after initial load
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
+    }
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user, loadGroups]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
