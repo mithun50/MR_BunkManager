@@ -1,4 +1,4 @@
-import { useWindowDimensions, Platform } from 'react-native';
+import { useWindowDimensions, Platform, Dimensions } from 'react-native';
 
 // Breakpoint values
 export const BREAKPOINTS = {
@@ -9,6 +9,36 @@ export const BREAKPOINTS = {
   xl: 1280,   // Desktops
   xxl: 1536,  // Large desktops
 } as const;
+
+// Detect if device is actually a mobile device (for "Request Desktop Site" handling)
+const getIsMobileDevice = (): boolean => {
+  if (Platform.OS !== 'web') {
+    // Native apps - iOS/Android are mobile devices
+    return Platform.OS === 'ios' || Platform.OS === 'android';
+  }
+
+  // Web platform - check user agent and touch capability
+  if (typeof navigator !== 'undefined') {
+    const userAgent = navigator.userAgent || navigator.vendor || '';
+
+    // Check for mobile user agent patterns
+    const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|CriOS/i;
+    const isMobileUA = mobileRegex.test(userAgent);
+
+    // Check for touch capability (most mobile devices have touch)
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    // Check actual screen size (not viewport which can be manipulated)
+    const screen = typeof window !== 'undefined' ? window.screen : null;
+    const actualScreenWidth = screen ? Math.min(screen.width, screen.height) : 1920;
+    const isSmallScreen = actualScreenWidth < 768;
+
+    // Device is mobile if: mobile user agent OR (has touch AND small physical screen)
+    return isMobileUA || (hasTouch && isSmallScreen);
+  }
+
+  return false;
+};
 
 // Responsive hook return type
 interface ResponsiveValues {
@@ -21,6 +51,9 @@ interface ResponsiveValues {
   isIOS: boolean;
   isAndroid: boolean;
 
+  // Device type (physical device, not viewport)
+  isMobileDevice: boolean;  // Actual mobile device (handles "Request Desktop Site")
+
   // Breakpoint booleans
   isXs: boolean;      // < 375px
   isSm: boolean;      // 375-767px
@@ -29,11 +62,11 @@ interface ResponsiveValues {
   isXl: boolean;      // 1280-1535px
   isXxl: boolean;     // >= 1536px
 
-  // Common queries
-  isMobile: boolean;      // < 768px
-  isTablet: boolean;      // 768-1023px
-  isDesktop: boolean;     // >= 1024px
-  isLargeDesktop: boolean; // >= 1280px
+  // Common queries (adjusted for mobile device detection)
+  isMobile: boolean;      // < 768px OR mobile device in desktop mode
+  isTablet: boolean;      // 768-1023px AND not mobile device
+  isDesktop: boolean;     // >= 1024px AND not mobile device
+  isLargeDesktop: boolean; // >= 1280px AND not mobile device
 
   // Orientation
   isPortrait: boolean;
@@ -59,7 +92,10 @@ export function useResponsive(): ResponsiveValues {
   const isIOS = Platform.OS === 'ios';
   const isAndroid = Platform.OS === 'android';
 
-  // Breakpoint detection
+  // Detect actual mobile device (handles "Request Desktop Site" mode)
+  const isMobileDevice = getIsMobileDevice();
+
+  // Breakpoint detection (raw, based on viewport)
   const isXs = width < BREAKPOINTS.sm;
   const isSm = width >= BREAKPOINTS.sm && width < BREAKPOINTS.md;
   const isMd = width >= BREAKPOINTS.md && width < BREAKPOINTS.lg;
@@ -67,18 +103,21 @@ export function useResponsive(): ResponsiveValues {
   const isXl = width >= BREAKPOINTS.xl && width < BREAKPOINTS.xxl;
   const isXxl = width >= BREAKPOINTS.xxl;
 
-  // Common queries
-  const isMobile = width < BREAKPOINTS.md;
-  const isTablet = width >= BREAKPOINTS.md && width < BREAKPOINTS.lg;
-  const isDesktop = width >= BREAKPOINTS.lg;
-  const isLargeDesktop = width >= BREAKPOINTS.xl;
+  // Common queries - adjusted for mobile device detection
+  // If on mobile device, force mobile layout even if viewport says desktop
+  const isMobile = width < BREAKPOINTS.md || isMobileDevice;
+  const isTablet = !isMobileDevice && (width >= BREAKPOINTS.md && width < BREAKPOINTS.lg);
+  const isDesktop = !isMobileDevice && width >= BREAKPOINTS.lg;
+  const isLargeDesktop = !isMobileDevice && width >= BREAKPOINTS.xl;
 
   // Orientation
   const isPortrait = height > width;
   const isLandscape = width > height;
 
-  // Responsive value picker
+  // Responsive value picker (respects mobile device detection)
   const responsive = <T,>(mobile: T, tablet?: T, desktop?: T, largeDesktop?: T): T => {
+    // Force mobile values on mobile devices regardless of viewport
+    if (isMobileDevice) return mobile;
     if (isLargeDesktop && largeDesktop !== undefined) return largeDesktop;
     if (isDesktop && desktop !== undefined) return desktop;
     if (isTablet && tablet !== undefined) return tablet;
@@ -115,6 +154,7 @@ export function useResponsive(): ResponsiveValues {
     isWeb,
     isIOS,
     isAndroid,
+    isMobileDevice,
     isXs,
     isSm,
     isMd,
