@@ -1,4 +1,4 @@
-import { View, StyleSheet, ScrollView, Alert, Platform, Image, KeyboardAvoidingView, Pressable } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, Platform, Image, KeyboardAvoidingView, Pressable, useWindowDimensions } from 'react-native';
 import { Text, Surface, Button, Avatar, useTheme, Divider, Appbar, Card, IconButton, Portal, Modal, SegmentedButtons, TextInput as PaperInput, Dialog, Chip } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/src/store/authStore';
@@ -22,6 +22,15 @@ export default function ProfileScreen() {
   const theme = useTheme();
   const { user } = useAuthStore();
   const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
+
+  // Responsive breakpoints
+  const isSmallScreen = screenWidth < 375;
+  const isMediumScreen = screenWidth >= 375 && screenWidth < 768;
+  const isTablet = screenWidth >= 768 && screenWidth < 1024;
+  const isDesktop = screenWidth >= 1024;
+  const isWeb = Platform.OS === 'web';
+
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
@@ -119,6 +128,27 @@ export default function ProfileScreen() {
     const h = hours % 12 === 0 ? 12 : hours % 12;
     const period = hours < 12 ? 'AM' : 'PM';
     return `${h.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
+
+  // Convert 12-hour format (e.g., "09:00 AM") to 24-hour format (e.g., "09:00") for HTML input
+  const convertTo24HourFormat = (time12: string): string => {
+    const [time, period] = time12.split(' ');
+    const [hours, minutes] = time.split(':');
+    let hour = parseInt(hours);
+
+    if (period?.toUpperCase() === 'PM' && hour !== 12) hour += 12;
+    if (period?.toUpperCase() === 'AM' && hour === 12) hour = 0;
+
+    return `${hour.toString().padStart(2, '0')}:${minutes}`;
+  };
+
+  // Convert 24-hour format (e.g., "14:30") to 12-hour format (e.g., "02:30 PM") for display
+  const convertTo12HourFormat = (time24: string): string => {
+    const [hours, minutes] = time24.split(':');
+    let hour = parseInt(hours);
+    const period = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12 === 0 ? 12 : hour % 12;
+    return `${hour.toString().padStart(2, '0')}:${minutes} ${period}`;
   };
 
   // Convert time string to Date object
@@ -1093,7 +1123,13 @@ export default function ProfileScreen() {
         <Modal
           visible={showManualEntry}
           onDismiss={() => setShowManualEntry(false)}
-          contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
+          contentContainerStyle={[
+            styles.modal,
+            isTablet && styles.modalTablet,
+            isDesktop && styles.modalDesktop,
+            { backgroundColor: theme.colors.surface }
+          ]}
+          style={isWeb ? styles.webModalOverlay : undefined}
         >
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -1110,52 +1146,97 @@ export default function ProfileScreen() {
             </Text>
 
             <Text variant="labelMedium" style={styles.fieldLabel}>Day *</Text>
-            <View style={styles.dayButtonsRow}>
-              <SegmentedButtons
-                value={manualDay}
-                onValueChange={setManualDay}
-                buttons={[
-                  { value: 'Monday', label: 'Mon' },
-                  { value: 'Tuesday', label: 'Tue' },
-                  { value: 'Wednesday', label: 'Wed' },
-                ]}
-                style={styles.segmentedButtons}
-              />
-            </View>
-            <View style={styles.dayButtonsRow}>
-              <SegmentedButtons
-                value={manualDay}
-                onValueChange={setManualDay}
-                buttons={[
-                  { value: 'Thursday', label: 'Thu' },
-                  { value: 'Friday', label: 'Fri' },
-                  { value: 'Saturday', label: 'Sat' },
-                ]}
-                style={styles.segmentedButtons}
-              />
-            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.dayChipsContainer}
+              style={styles.dayChipsScroll}
+            >
+              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => (
+                <Chip
+                  key={day}
+                  selected={manualDay === day}
+                  onPress={() => setManualDay(day)}
+                  style={styles.dayChip}
+                  mode={manualDay === day ? 'flat' : 'outlined'}
+                  showSelectedCheck={false}
+                >
+                  {day.slice(0, 3)}
+                </Chip>
+              ))}
+            </ScrollView>
 
             <Text variant="labelMedium" style={styles.fieldLabel}>Start Time *</Text>
-            <Button
-              mode="outlined"
-              onPress={() => setShowStartTimePicker(true)}
-              icon="clock-start"
-              style={styles.timeButton}
-              contentStyle={styles.timeButtonContent}
-            >
-              {manualStartTime || 'Select Start Time'}
-            </Button>
+            {isWeb ? (
+              <Surface style={[styles.webTimeInputSurface, { borderColor: theme.colors.outline }]} elevation={0}>
+                <IconButton icon="clock-start" size={20} style={styles.webTimeIcon} />
+                <input
+                  type="time"
+                  value={manualStartTime ? convertTo24HourFormat(manualStartTime) : ''}
+                  onChange={(e) => {
+                    const time24 = e.target.value;
+                    if (time24) {
+                      setManualStartTime(convertTo12HourFormat(time24));
+                    }
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: 12,
+                    fontSize: isSmallScreen ? 14 : 16,
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: theme.colors.onSurface,
+                    outline: 'none',
+                  }}
+                />
+              </Surface>
+            ) : (
+              <Button
+                mode="outlined"
+                onPress={() => setShowStartTimePicker(true)}
+                icon="clock-start"
+                style={styles.timeButton}
+                contentStyle={styles.timeButtonContent}
+              >
+                {manualStartTime || 'Select Start Time'}
+              </Button>
+            )}
 
             <Text variant="labelMedium" style={styles.fieldLabel}>End Time *</Text>
-            <Button
-              mode="outlined"
-              onPress={() => setShowEndTimePicker(true)}
-              icon="clock-end"
-              style={styles.timeButton}
-              contentStyle={styles.timeButtonContent}
-            >
-              {manualEndTime || 'Select End Time'}
-            </Button>
+            {isWeb ? (
+              <Surface style={[styles.webTimeInputSurface, { borderColor: theme.colors.outline }]} elevation={0}>
+                <IconButton icon="clock-end" size={20} style={styles.webTimeIcon} />
+                <input
+                  type="time"
+                  value={manualEndTime ? convertTo24HourFormat(manualEndTime) : ''}
+                  onChange={(e) => {
+                    const time24 = e.target.value;
+                    if (time24) {
+                      setManualEndTime(convertTo12HourFormat(time24));
+                    }
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: 12,
+                    fontSize: isSmallScreen ? 14 : 16,
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: theme.colors.onSurface,
+                    outline: 'none',
+                  }}
+                />
+              </Surface>
+            ) : (
+              <Button
+                mode="outlined"
+                onPress={() => setShowEndTimePicker(true)}
+                icon="clock-end"
+                style={styles.timeButton}
+                contentStyle={styles.timeButtonContent}
+              >
+                {manualEndTime || 'Select End Time'}
+              </Button>
+            )}
 
             <PaperInput
               label="Subject Name *"
@@ -1258,7 +1339,13 @@ export default function ProfileScreen() {
         <Modal
           visible={showEditTimetable}
           onDismiss={() => setShowEditTimetable(false)}
-          contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
+          contentContainerStyle={[
+            styles.modal,
+            isTablet && styles.modalTablet,
+            isDesktop && styles.modalDesktop,
+            { backgroundColor: theme.colors.surface }
+          ]}
+          style={isWeb ? styles.webModalOverlay : undefined}
         >
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -1275,52 +1362,97 @@ export default function ProfileScreen() {
             </Text>
 
             <Text variant="labelMedium" style={styles.fieldLabel}>Day *</Text>
-            <View style={styles.dayButtonsRow}>
-              <SegmentedButtons
-                value={editDay}
-                onValueChange={setEditDay}
-                buttons={[
-                  { value: 'Monday', label: 'Mon' },
-                  { value: 'Tuesday', label: 'Tue' },
-                  { value: 'Wednesday', label: 'Wed' },
-                ]}
-                style={styles.segmentedButtons}
-              />
-            </View>
-            <View style={styles.dayButtonsRow}>
-              <SegmentedButtons
-                value={editDay}
-                onValueChange={setEditDay}
-                buttons={[
-                  { value: 'Thursday', label: 'Thu' },
-                  { value: 'Friday', label: 'Fri' },
-                  { value: 'Saturday', label: 'Sat' },
-                ]}
-                style={styles.segmentedButtons}
-              />
-            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.dayChipsContainer}
+              style={styles.dayChipsScroll}
+            >
+              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => (
+                <Chip
+                  key={day}
+                  selected={editDay === day}
+                  onPress={() => setEditDay(day)}
+                  style={styles.dayChip}
+                  mode={editDay === day ? 'flat' : 'outlined'}
+                  showSelectedCheck={false}
+                >
+                  {day.slice(0, 3)}
+                </Chip>
+              ))}
+            </ScrollView>
 
             <Text variant="labelMedium" style={styles.fieldLabel}>Start Time *</Text>
-            <Button
-              mode="outlined"
-              onPress={() => setShowEditStartTimePicker(true)}
-              icon="clock-start"
-              style={styles.timeButton}
-              contentStyle={styles.timeButtonContent}
-            >
-              {editStartTime || 'Select Start Time'}
-            </Button>
+            {isWeb ? (
+              <Surface style={[styles.webTimeInputSurface, { borderColor: theme.colors.outline }]} elevation={0}>
+                <IconButton icon="clock-start" size={20} style={styles.webTimeIcon} />
+                <input
+                  type="time"
+                  value={editStartTime ? convertTo24HourFormat(editStartTime) : ''}
+                  onChange={(e) => {
+                    const time24 = e.target.value;
+                    if (time24) {
+                      setEditStartTime(convertTo12HourFormat(time24));
+                    }
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: 12,
+                    fontSize: isSmallScreen ? 14 : 16,
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: theme.colors.onSurface,
+                    outline: 'none',
+                  }}
+                />
+              </Surface>
+            ) : (
+              <Button
+                mode="outlined"
+                onPress={() => setShowEditStartTimePicker(true)}
+                icon="clock-start"
+                style={styles.timeButton}
+                contentStyle={styles.timeButtonContent}
+              >
+                {editStartTime || 'Select Start Time'}
+              </Button>
+            )}
 
             <Text variant="labelMedium" style={styles.fieldLabel}>End Time *</Text>
-            <Button
-              mode="outlined"
-              onPress={() => setShowEditEndTimePicker(true)}
-              icon="clock-end"
-              style={styles.timeButton}
-              contentStyle={styles.timeButtonContent}
-            >
-              {editEndTime || 'Select End Time'}
-            </Button>
+            {isWeb ? (
+              <Surface style={[styles.webTimeInputSurface, { borderColor: theme.colors.outline }]} elevation={0}>
+                <IconButton icon="clock-end" size={20} style={styles.webTimeIcon} />
+                <input
+                  type="time"
+                  value={editEndTime ? convertTo24HourFormat(editEndTime) : ''}
+                  onChange={(e) => {
+                    const time24 = e.target.value;
+                    if (time24) {
+                      setEditEndTime(convertTo12HourFormat(time24));
+                    }
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: 12,
+                    fontSize: isSmallScreen ? 14 : 16,
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: theme.colors.onSurface,
+                    outline: 'none',
+                  }}
+                />
+              </Surface>
+            ) : (
+              <Button
+                mode="outlined"
+                onPress={() => setShowEditEndTimePicker(true)}
+                icon="clock-end"
+                style={styles.timeButton}
+                contentStyle={styles.timeButtonContent}
+              >
+                {editEndTime || 'Select End Time'}
+              </Button>
+            )}
 
             <PaperInput
               label="Subject Name *"
@@ -1426,7 +1558,13 @@ export default function ProfileScreen() {
         <Modal
           visible={showEditProfile}
           onDismiss={() => !savingProfile && setShowEditProfile(false)}
-          contentContainerStyle={[styles.modalContainer, { backgroundColor: theme.colors.background }]}
+          contentContainerStyle={[
+            styles.modalContainer,
+            isTablet && styles.modalTablet,
+            isDesktop && styles.modalDesktop,
+            { backgroundColor: theme.colors.background }
+          ]}
+          style={isWeb ? styles.webModalOverlay : undefined}
         >
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -1590,7 +1728,7 @@ export default function ProfileScreen() {
       </Portal>
 
       {/* Start Time Picker for Manual Entry */}
-      {showStartTimePicker && (
+      {showStartTimePicker && !isWeb && (
         <DateTimePicker
           value={manualStartDate}
           mode="time"
@@ -1613,7 +1751,7 @@ export default function ProfileScreen() {
       )}
 
       {/* End Time Picker for Manual Entry */}
-      {showEndTimePicker && (
+      {showEndTimePicker && !isWeb && (
         <DateTimePicker
           value={manualEndDate}
           mode="time"
@@ -1636,7 +1774,7 @@ export default function ProfileScreen() {
       )}
 
       {/* Start Time Picker for Edit Entry */}
-      {showEditStartTimePicker && (
+      {showEditStartTimePicker && !isWeb && (
         <DateTimePicker
           value={editStartDate}
           mode="time"
@@ -1659,7 +1797,7 @@ export default function ProfileScreen() {
       )}
 
       {/* End Time Picker for Edit Entry */}
-      {showEditEndTimePicker && (
+      {showEditEndTimePicker && !isWeb && (
         <DateTimePicker
           value={editEndDate}
           mode="time"
@@ -1680,6 +1818,7 @@ export default function ProfileScreen() {
           }}
         />
       )}
+
     </View>
   );
 }
@@ -1768,10 +1907,30 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   modal: {
-    margin: 20,
-    padding: 20,
+    margin: 16,
+    padding: 16,
     borderRadius: 12,
-    maxHeight: '80%',
+    maxHeight: '85%',
+    maxWidth: 550,
+    width: '95%',
+    alignSelf: 'center',
+    elevation: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+  },
+  modalTablet: {
+    margin: 24,
+    padding: 24,
+    width: '80%',
+    maxWidth: 600,
+  },
+  modalDesktop: {
+    margin: 32,
+    padding: 28,
+    width: '60%',
+    maxWidth: 650,
   },
   modalTitle: {
     fontWeight: 'bold',
@@ -1868,10 +2027,18 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   modalContainer: {
-    margin: 20,
-    padding: 20,
+    margin: 16,
+    padding: 16,
     borderRadius: 12,
     maxHeight: '90%',
+    maxWidth: 550,
+    width: '95%',
+    alignSelf: 'center',
+    elevation: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
   },
   modalContent: {
     paddingBottom: 20,
@@ -1959,5 +2126,44 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginVertical: 0,
     fontWeight: '600',
+  },
+  // Web Modal Overlay Style - uses 'fixed' for proper web overlay
+  webModalOverlay: {
+    // @ts-ignore - 'fixed' is valid CSS for web
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 9999,
+  },
+  // Web Time Input Container - matches outlined input style
+  webTimeInputSurface: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 4,
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  webTimeIcon: {
+    margin: 0,
+  },
+  // Day Chips - Scrollable selector
+  dayChipsScroll: {
+    marginBottom: 16,
+    maxHeight: 50,
+  },
+  dayChipsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+  },
+  dayChip: {
+    marginRight: 4,
   },
 });

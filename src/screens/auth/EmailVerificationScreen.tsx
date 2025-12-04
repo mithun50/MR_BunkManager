@@ -1,13 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Button, useTheme, Surface } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import authService from '../../services/authService';
 import { useAuthStore } from '../../store/authStore';
+import { useResponsive } from '../../hooks/useResponsive';
 
 export default function EmailVerificationScreen() {
   const theme = useTheme();
+  const {
+    isDesktop,
+    isTablet,
+    containerPadding,
+    responsive,
+  } = useResponsive();
   const { user, refreshUser } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -70,28 +77,52 @@ export default function EmailVerificationScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Surface style={styles.content}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      contentContainerStyle={[
+        styles.scrollContent,
+        { padding: containerPadding }
+      ]}
+    >
+      <Surface style={[
+        styles.content,
+        {
+          maxWidth: responsive(500, 500, 450, 480),
+          padding: responsive(24, 28, 32, 40),
+        }
+      ]}>
         <MaterialCommunityIcons
           name="email-check"
-          size={80}
+          size={responsive(64, 72, 80, 90)}
           color={theme.colors.primary}
           style={styles.icon}
         />
 
-        <Text variant="headlineMedium" style={styles.title}>
+        <Text
+          variant={isDesktop ? "headlineLarge" : "headlineMedium"}
+          style={styles.title}
+        >
           Verify Your Email
         </Text>
 
-        <Text variant="bodyMedium" style={styles.description}>
+        <Text
+          variant={isDesktop ? "bodyLarge" : "bodyMedium"}
+          style={styles.description}
+        >
           We've sent a verification email to:
         </Text>
 
-        <Text variant="titleMedium" style={[styles.email, { color: theme.colors.primary }]}>
+        <Text
+          variant={isDesktop ? "titleLarge" : "titleMedium"}
+          style={[styles.email, { color: theme.colors.primary }]}
+        >
           {user?.email}
         </Text>
 
-        <Text variant="bodyMedium" style={styles.instructions}>
+        <Text
+          variant={isDesktop ? "bodyLarge" : "bodyMedium"}
+          style={styles.instructions}
+        >
           Please check your inbox and click the verification link to continue.
         </Text>
 
@@ -148,21 +179,25 @@ export default function EmailVerificationScreen() {
           Logout
         </Button>
       </Surface>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
-    padding: 24,
+    alignItems: 'center',
   },
   content: {
-    padding: 32,
+    // padding and maxWidth are set dynamically for responsiveness
     borderRadius: 16,
     elevation: 2,
     alignItems: 'center',
+    width: '100%',
   },
   icon: {
     marginBottom: 24,

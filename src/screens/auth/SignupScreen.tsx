@@ -11,9 +11,18 @@ import {
 import { router } from 'expo-router';
 import authService from '../../services/authService';
 import OnlineButton from '../../components/OnlineButton';
+import { useResponsive } from '../../hooks/useResponsive';
 
 export default function SignupScreen() {
   const theme = useTheme();
+  const {
+    isDesktop,
+    isTablet,
+    isMobile,
+    containerPadding,
+    contentMaxWidth,
+    responsive,
+  } = useResponsive();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -81,17 +90,33 @@ export default function SignupScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingHorizontal: containerPadding }
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.content}>
+        <View style={[
+          styles.content,
+          {
+            maxWidth: responsive(500, 500, 450, 480),
+            paddingHorizontal: responsive(16, 20, 32, 40),
+            paddingVertical: responsive(20, 24, 32, 40),
+          }
+        ]}>
           {/* Header */}
           <View style={styles.header}>
-            <Text variant="displaySmall" style={[styles.title, { color: theme.colors.primary }]}>
+            <Text
+              variant={isDesktop ? "displayMedium" : "displaySmall"}
+              style={[styles.title, { color: theme.colors.primary }]}
+            >
               Create Account
             </Text>
-            <Text variant="bodyLarge" style={styles.subtitle}>
+            <Text
+              variant={isDesktop ? "titleMedium" : "bodyLarge"}
+              style={styles.subtitle}
+            >
               Join Mr. Bunk Manager today
             </Text>
           </View>
@@ -212,13 +237,12 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    justifyContent: 'center',
     paddingVertical: 40,
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    maxWidth: 500,
+    // paddingHorizontal and maxWidth are set dynamically for responsiveness
     width: '100%',
     alignSelf: 'center',
   },

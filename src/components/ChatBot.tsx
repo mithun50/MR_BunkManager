@@ -13,9 +13,9 @@ import {
   Keyboard,
   TouchableOpacity,
   Animated,
-  Dimensions,
   Platform,
   Modal,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboard-controller';
@@ -33,6 +33,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import MarkdownRenderer from './MarkdownRenderer';
 import VoiceBot from './VoiceBot';
+import { useResponsive } from '@/src/hooks/useResponsive';
 
 // Optional speech recognition (requires development build)
 let ExpoSpeechRecognitionModule: any = null;
@@ -46,9 +47,6 @@ try {
 }
 import { sendMessage, quickPrompts, ChatMessage as APIChatMessage, AttendanceContext } from '@/src/services/chatService';
 import chatStorageService, { Chat, ChatMessage } from '@/src/services/chatStorageService';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const DRAWER_WIDTH = SCREEN_WIDTH * 0.75;
 
 interface ChatBotProps {
   attendanceContext: AttendanceContext | null;
@@ -66,7 +64,30 @@ export default function ChatBot({ attendanceContext, onClose }: ChatBotProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<any>(null);
-  const drawerAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
+  const {
+    width: screenWidth,
+    isWeb,
+    isMobile,
+    isTablet,
+    isDesktop,
+    isLargeDesktop,
+    containerPadding,
+    contentMaxWidth,
+    responsive,
+  } = useResponsive();
+
+  // Responsive drawer width
+  const drawerWidth = responsive(
+    screenWidth * 0.75,  // mobile: 75% of screen
+    320,                 // tablet: fixed 320px
+    360,                 // desktop: fixed 360px
+    400                  // large desktop: fixed 400px
+  );
+
+  // Responsive message bubble max width
+  const messageBubbleMaxWidth = responsive('85%', '75%', '65%', '55%');
+
+  const drawerAnim = useRef(new Animated.Value(-drawerWidth)).current;
 
   // Chat state
   const [chats, setChats] = useState<Chat[]>([]);
@@ -206,7 +227,7 @@ export default function ChatBot({ attendanceContext, onClose }: ChatBotProps) {
 
   const closeDrawer = () => {
     Animated.spring(drawerAnim, {
-      toValue: -DRAWER_WIDTH,
+      toValue: -drawerWidth,
       useNativeDriver: true,
       tension: 65,
       friction: 11,
@@ -351,49 +372,58 @@ export default function ChatBot({ attendanceContext, onClose }: ChatBotProps) {
       <View style={[styles.mainContent, { paddingTop: insets.top }]}>
         {/* Header */}
         <Surface style={[styles.chatHeader, { backgroundColor: theme.colors.primaryContainer }]}>
-          <View style={styles.headerLeft}>
-            <IconButton
-              icon="menu"
-              size={24}
-              onPress={openDrawer}
-              iconColor={theme.colors.onPrimaryContainer}
-            />
-            <MaterialCommunityIcons name="robot-happy" size={24} color={theme.colors.primary} />
-            <Text
-              variant="titleMedium"
-              style={{ fontWeight: 'bold', marginLeft: 8, color: theme.colors.onPrimaryContainer, flex: 1 }}
-              numberOfLines={1}
-            >
-              {getCurrentChatTitle()}
-            </Text>
-          </View>
-          <View style={styles.headerActions}>
-            <IconButton
-              icon="microphone-message"
-              size={22}
-              onPress={() => setVoiceBotVisible(true)}
-              iconColor={theme.colors.onPrimaryContainer}
-            />
-            <IconButton
-              icon="plus"
-              size={22}
-              onPress={createNewChat}
-              iconColor={theme.colors.onPrimaryContainer}
-            />
-            <IconButton
-              icon="broom"
-              size={22}
-              onPress={clearCurrentChat}
-              iconColor={theme.colors.onPrimaryContainer}
-            />
-            {onClose && (
+          <View style={[
+            styles.headerInner,
+            isDesktop && { maxWidth: contentMaxWidth, alignSelf: 'center', width: '100%' }
+          ]}>
+            <View style={styles.headerLeft}>
               <IconButton
-                icon="close"
-                size={24}
-                onPress={onClose}
+                icon="menu"
+                size={responsive(22, 24, 24, 26)}
+                onPress={openDrawer}
                 iconColor={theme.colors.onPrimaryContainer}
               />
-            )}
+              <MaterialCommunityIcons
+                name="robot-happy"
+                size={responsive(22, 24, 26, 28)}
+                color={theme.colors.primary}
+              />
+              <Text
+                variant={isDesktop ? "titleLarge" : "titleMedium"}
+                style={{ fontWeight: 'bold', marginLeft: 8, color: theme.colors.onPrimaryContainer, flex: 1 }}
+                numberOfLines={1}
+              >
+                {getCurrentChatTitle()}
+              </Text>
+            </View>
+            <View style={styles.headerActions}>
+              <IconButton
+                icon="microphone-message"
+                size={responsive(20, 22, 24, 24)}
+                onPress={() => setVoiceBotVisible(true)}
+                iconColor={theme.colors.onPrimaryContainer}
+              />
+              <IconButton
+                icon="plus"
+                size={responsive(20, 22, 24, 24)}
+                onPress={createNewChat}
+                iconColor={theme.colors.onPrimaryContainer}
+              />
+              <IconButton
+                icon="broom"
+                size={responsive(20, 22, 24, 24)}
+                onPress={clearCurrentChat}
+                iconColor={theme.colors.onPrimaryContainer}
+              />
+              {onClose && (
+                <IconButton
+                  icon="close"
+                  size={responsive(22, 24, 26, 26)}
+                  onPress={onClose}
+                  iconColor={theme.colors.onPrimaryContainer}
+                />
+              )}
+            </View>
           </View>
         </Surface>
 
@@ -401,7 +431,15 @@ export default function ChatBot({ attendanceContext, onClose }: ChatBotProps) {
         <KeyboardAwareScrollView
           ref={scrollViewRef}
           style={styles.messagesContainer}
-          contentContainerStyle={styles.messagesContent}
+          contentContainerStyle={[
+            styles.messagesContent,
+            {
+              paddingHorizontal: containerPadding,
+              maxWidth: contentMaxWidth,
+              alignSelf: 'center',
+              width: '100%',
+            }
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           bottomOffset={120}
@@ -413,6 +451,7 @@ export default function ChatBot({ attendanceContext, onClose }: ChatBotProps) {
                 styles.messageBubble,
                 msg.role === 'user' ? styles.userBubble : styles.assistantBubble,
                 {
+                  maxWidth: messageBubbleMaxWidth,
                   backgroundColor: msg.role === 'user'
                     ? theme.colors.primary
                     : theme.colors.surfaceVariant,
@@ -422,7 +461,10 @@ export default function ChatBot({ attendanceContext, onClose }: ChatBotProps) {
               {msg.image && (
                 <Image
                   source={{ uri: msg.image }}
-                  style={styles.messageImage}
+                  style={[
+                    styles.messageImage,
+                    { width: responsive(180, 200, 240, 280), height: responsive(135, 150, 180, 210) }
+                  ]}
                   resizeMode="cover"
                 />
               )}
@@ -430,7 +472,7 @@ export default function ChatBot({ attendanceContext, onClose }: ChatBotProps) {
                 <Text
                   style={[
                     styles.messageText,
-                    { color: theme.colors.onPrimary }
+                    { color: theme.colors.onPrimary, fontSize: responsive(14, 14, 15, 16) }
                   ]}
                 >
                   {msg.content}
@@ -453,73 +495,91 @@ export default function ChatBot({ attendanceContext, onClose }: ChatBotProps) {
 
         {/* Bottom Section */}
         <KeyboardStickyView offset={{ closed: 0, opened: 0 }}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={[styles.quickPrompts, { backgroundColor: theme.colors.background }]}
-            contentContainerStyle={styles.quickPromptsContent}
-            keyboardShouldPersistTaps="handled"
-          >
-            {quickPrompts.map((item, index) => (
-              <Chip
-                key={index}
-                onPress={() => handleQuickPrompt(item.prompt)}
-                style={styles.promptChip}
-                textStyle={{ fontSize: 12 }}
-                disabled={isLoading}
-              >
-                {item.label}
-              </Chip>
-            ))}
-          </ScrollView>
+          <View style={[
+            styles.bottomSection,
+            isDesktop && { maxWidth: contentMaxWidth, alignSelf: 'center', width: '100%' }
+          ]}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={[styles.quickPrompts, { backgroundColor: theme.colors.background }]}
+              contentContainerStyle={[
+                styles.quickPromptsContent,
+                { paddingHorizontal: containerPadding }
+              ]}
+              keyboardShouldPersistTaps="handled"
+            >
+              {quickPrompts.map((item, index) => (
+                <Chip
+                  key={index}
+                  onPress={() => handleQuickPrompt(item.prompt)}
+                  style={styles.promptChip}
+                  textStyle={{ fontSize: responsive(11, 12, 13, 14) }}
+                  disabled={isLoading}
+                >
+                  {item.label}
+                </Chip>
+              ))}
+            </ScrollView>
 
-          {selectedImage && (
-            <View style={[styles.imagePreview, { backgroundColor: theme.colors.background }]}>
-              <Image source={{ uri: selectedImage }} style={styles.previewImage} />
+            {selectedImage && (
+              <View style={[styles.imagePreview, { backgroundColor: theme.colors.background, paddingHorizontal: containerPadding }]}>
+                <Image
+                  source={{ uri: selectedImage }}
+                  style={[styles.previewImage, { width: responsive(60, 70, 80, 90), height: responsive(60, 70, 80, 90) }]}
+                />
+                <IconButton
+                  icon="close"
+                  size={responsive(14, 16, 18, 18)}
+                  onPress={() => setSelectedImage(null)}
+                  style={styles.removeImage}
+                  iconColor="#fff"
+                />
+              </View>
+            )}
+
+            {error && (
+              <Text style={[styles.errorText, { color: theme.colors.error, paddingHorizontal: containerPadding }]}>
+                {error}
+              </Text>
+            )}
+
+            <View style={[
+              styles.inputContainer,
+              {
+                backgroundColor: theme.colors.surface,
+                paddingBottom: insets.bottom,
+                paddingHorizontal: responsive(4, 8, 12, 16),
+              }
+            ]}>
+              <IconButton icon="camera" size={responsive(20, 22, 24, 24)} onPress={takePhoto} disabled={isLoading || isRecording} />
+              <IconButton icon="image" size={responsive(20, 22, 24, 24)} onPress={pickImage} disabled={isLoading || isRecording} />
               <IconButton
-                icon="close"
-                size={16}
-                onPress={() => setSelectedImage(null)}
-                style={styles.removeImage}
-                iconColor="#fff"
+                icon={isRecording ? "microphone" : "microphone-outline"}
+                size={responsive(20, 22, 24, 24)}
+                onPress={toggleRecording}
+                disabled={isLoading}
+                iconColor={isRecording ? theme.colors.error : theme.colors.onSurface}
+                style={isRecording ? styles.recordingButton : undefined}
+              />
+              <TextInput
+                value={inputText}
+                onChangeText={setInputText}
+                placeholder={isRecording ? "Listening..." : "Ask BunkBot..."}
+                style={[styles.textInput, { fontSize: responsive(14, 14, 15, 16) }]}
+                mode="outlined"
+                dense
+                disabled={isLoading || isRecording}
+                onSubmitEditing={() => handleSend()}
+              />
+              <IconButton
+                icon="send"
+                size={responsive(20, 22, 24, 24)}
+                onPress={() => handleSend()}
+                disabled={isLoading || isRecording || (!inputText.trim() && !selectedImage)}
+                iconColor={theme.colors.primary}
               />
             </View>
-          )}
-
-          {error && (
-            <Text style={[styles.errorText, { color: theme.colors.error }]}>
-              {error}
-            </Text>
-          )}
-
-          <View style={[styles.inputContainer, { backgroundColor: theme.colors.surface, paddingBottom: insets.bottom }]}>
-            <IconButton icon="camera" size={22} onPress={takePhoto} disabled={isLoading || isRecording} />
-            <IconButton icon="image" size={22} onPress={pickImage} disabled={isLoading || isRecording} />
-            <IconButton
-              icon={isRecording ? "microphone" : "microphone-outline"}
-              size={22}
-              onPress={toggleRecording}
-              disabled={isLoading}
-              iconColor={isRecording ? theme.colors.error : theme.colors.onSurface}
-              style={isRecording ? styles.recordingButton : undefined}
-            />
-            <TextInput
-              value={inputText}
-              onChangeText={setInputText}
-              placeholder={isRecording ? "Listening..." : "Ask BunkBot..."}
-              style={styles.textInput}
-              mode="outlined"
-              dense
-              disabled={isLoading || isRecording}
-              onSubmitEditing={() => handleSend()}
-            />
-            <IconButton
-              icon="send"
-              size={22}
-              onPress={() => handleSend()}
-              disabled={isLoading || isRecording || (!inputText.trim() && !selectedImage)}
-              iconColor={theme.colors.primary}
-            />
           </View>
         </KeyboardStickyView>
       </View>
@@ -541,6 +601,7 @@ export default function ChatBot({ attendanceContext, onClose }: ChatBotProps) {
             backgroundColor: theme.colors.surface,
             transform: [{ translateX: drawerAnim }],
             paddingTop: insets.top,
+            width: drawerWidth,
           },
         ]}
       >
@@ -634,9 +695,15 @@ const styles = StyleSheet.create({
   chatHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 4,
+  },
+  headerInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
     paddingRight: 8,
-    paddingVertical: 4,
+    flex: 1,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -645,6 +712,9 @@ const styles = StyleSheet.create({
   },
   headerActions: {
     flexDirection: 'row',
+  },
+  bottomSection: {
+    width: '100%',
   },
   messagesContainer: {
     flex: 1,
@@ -655,7 +725,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   messageBubble: {
-    maxWidth: '85%',
+    // maxWidth is set dynamically for responsiveness
     padding: 12,
     borderRadius: 16,
     marginBottom: 8,
@@ -678,8 +748,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   messageImage: {
-    width: 200,
-    height: 150,
+    // width and height are set dynamically for responsiveness
     borderRadius: 8,
     marginBottom: 8,
   },
@@ -701,8 +770,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   previewImage: {
-    width: 60,
-    height: 60,
+    // width and height are set dynamically for responsiveness
     borderRadius: 8,
   },
   removeImage: {
@@ -741,7 +809,7 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    width: DRAWER_WIDTH,
+    // width is set dynamically via style prop for responsiveness
     zIndex: 20,
     elevation: 16,
     shadowColor: '#000',

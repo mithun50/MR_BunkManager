@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import {
   Text,
@@ -24,6 +24,7 @@ import { TimetableEntry, Subject } from '@/src/types/user';
 import { ThemeSwitcher } from '@/src/components/ThemeSwitcher';
 import VideoLoadingScreen from '@/src/components/VideoLoadingScreen';
 import OnlineButton from '@/src/components/OnlineButton';
+import { useResponsive } from '@/src/hooks/useResponsive';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -31,6 +32,15 @@ export default function TimetableScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
+  const {
+    isWeb,
+    isMobile,
+    isTablet,
+    isDesktop,
+    containerPadding,
+    contentMaxWidth,
+    modalWidth,
+  } = useResponsive();
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
@@ -294,7 +304,16 @@ export default function TimetableScreen() {
 
       <ScrollView
         style={styles.scrollContainer}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 16 }]}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingBottom: insets.bottom + 16,
+            paddingHorizontal: containerPadding,
+            maxWidth: contentMaxWidth,
+            alignSelf: 'center',
+            width: '100%',
+          }
+        ]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
         showsVerticalScrollIndicator={false}
       >
@@ -399,7 +418,15 @@ export default function TimetableScreen() {
             setSelectedClass(null);
             setSelectedSubject(null);
           }}
-          contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
+          contentContainerStyle={[
+            styles.modal,
+            {
+              backgroundColor: theme.colors.surface,
+              width: modalWidth,
+              maxWidth: isDesktop ? 600 : 500,
+            }
+          ]}
+          style={isWeb ? styles.webModalOverlay : undefined}
         >
           <Text variant="headlineSmall" style={styles.modalTitle}>
             Mark Attendance
@@ -691,5 +718,10 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     flex: 1,
+  },
+  webModalOverlay: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
 });

@@ -1,24 +1,35 @@
-import { View, StyleSheet, ScrollView, RefreshControl, useWindowDimensions, Platform } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Text, Surface, Card, useTheme, ProgressBar, Appbar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/src/store/authStore';
 import firestoreService from '@/src/services/firestoreService';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Subject, UserProfile } from '@/src/types/user';
 import { useFocusEffect } from '@react-navigation/native';
 import { ThemeSwitcher } from '@/src/components/ThemeSwitcher';
 import VideoLoadingScreen from '@/src/components/VideoLoadingScreen';
 import DonutChart from '@/src/components/DonutChart';
+import { useResponsive } from '@/src/hooks/useResponsive';
 
 export default function DashboardScreen() {
   const theme = useTheme();
   const { user } = useAuthStore();
   const insets = useSafeAreaInsets();
-  const { width: screenWidth } = useWindowDimensions();
-  const isWeb = Platform.OS === 'web';
-  const isWideScreen = screenWidth > 768;
-  const isVeryWideScreen = screenWidth > 1200;
+  const {
+    width: screenWidth,
+    isWeb,
+    isMobile,
+    isTablet,
+    isDesktop,
+    isLargeDesktop,
+    containerPadding,
+    contentMaxWidth
+  } = useResponsive();
+
+  // Legacy compatibility
+  const isWideScreen = isTablet || isDesktop;
+  const isVeryWideScreen = isLargeDesktop;
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -127,7 +138,13 @@ export default function DashboardScreen() {
         style={styles.scrollContainer}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: insets.bottom + 16 },
+          {
+            paddingBottom: insets.bottom + 16,
+            paddingHorizontal: containerPadding,
+            maxWidth: contentMaxWidth,
+            alignSelf: 'center',
+            width: '100%',
+          },
           isWeb && isWideScreen && styles.contentWeb,
           isWeb && isVeryWideScreen && styles.contentVeryWide,
         ]}

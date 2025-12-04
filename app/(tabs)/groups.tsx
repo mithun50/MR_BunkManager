@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Appbar, useTheme, IconButton, Badge } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { TabView, TabBar, SceneMap } from 'react-native-tab-view';
 import { ThemeSwitcher } from '@/src/components/ThemeSwitcher';
 import { FeedScreen, ExploreScreen, MyNotesScreen } from '@/src/screens/community';
+import { useResponsive } from '@/src/hooks/useResponsive';
 
 const renderScene = SceneMap({
   feed: FeedScreen,
@@ -18,7 +19,8 @@ export default function GroupsScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const layout = useWindowDimensions();
+  const { width, height, isDesktop, contentMaxWidth } = useResponsive();
+  const layout = { width, height };
 
   const [index, setIndex] = useState(0);
   const [routes] = useState([

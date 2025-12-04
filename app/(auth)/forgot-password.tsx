@@ -1,13 +1,19 @@
 import { useState } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Text, TextInput, Button, useTheme, HelperText } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import authService from '@/src/services/authService';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useResponsive } from '@/src/hooks/useResponsive';
 
 export default function ForgotPasswordScreen() {
   const theme = useTheme();
+  const {
+    isDesktop,
+    containerPadding,
+    responsive,
+  } = useResponsive();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -43,51 +49,73 @@ export default function ForgotPasswordScreen() {
   if (success) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.content}>
-          <View style={styles.iconContainer}>
-            <MaterialCommunityIcons
-              name="email-check-outline"
-              size={80}
-              color={theme.colors.primary}
-            />
+        <ScrollView
+          contentContainerStyle={[styles.scrollContent, { padding: containerPadding }]}
+        >
+          <View style={[
+            styles.content,
+            {
+              maxWidth: responsive(500, 500, 450, 480),
+              paddingHorizontal: responsive(16, 20, 32, 40),
+            }
+          ]}>
+            <View style={styles.iconContainer}>
+              <MaterialCommunityIcons
+                name="email-check-outline"
+                size={responsive(64, 72, 80, 90)}
+                color={theme.colors.primary}
+              />
+            </View>
+
+            <Text
+              variant={isDesktop ? "headlineLarge" : "headlineMedium"}
+              style={[styles.title, { color: theme.colors.primary }]}
+            >
+              Check Your Email
+            </Text>
+
+            <Text
+              variant={isDesktop ? "titleMedium" : "bodyLarge"}
+              style={styles.subtitle}
+            >
+              We've sent a password reset link to:
+            </Text>
+
+            <Text
+              variant={isDesktop ? "titleLarge" : "titleMedium"}
+              style={[styles.email, { color: theme.colors.primary }]}
+            >
+              {email}
+            </Text>
+
+            <Text
+              variant={isDesktop ? "bodyLarge" : "bodyMedium"}
+              style={styles.instructions}
+            >
+              Click the link in the email to reset your password. If you don't see the email, check your spam folder.
+            </Text>
+
+            <Button
+              mode="contained"
+              onPress={() => router.replace('/(auth)/login')}
+              style={styles.button}
+              contentStyle={styles.buttonContent}
+            >
+              Back to Login
+            </Button>
+
+            <Button
+              mode="text"
+              onPress={() => {
+                setSuccess(false);
+                setEmail('');
+              }}
+              style={styles.textButton}
+            >
+              Try Different Email
+            </Button>
           </View>
-
-          <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.primary }]}>
-            Check Your Email
-          </Text>
-
-          <Text variant="bodyLarge" style={styles.subtitle}>
-            We've sent a password reset link to:
-          </Text>
-
-          <Text variant="titleMedium" style={[styles.email, { color: theme.colors.primary }]}>
-            {email}
-          </Text>
-
-          <Text variant="bodyMedium" style={styles.instructions}>
-            Click the link in the email to reset your password. If you don't see the email, check your spam folder.
-          </Text>
-
-          <Button
-            mode="contained"
-            onPress={() => router.replace('/(auth)/login')}
-            style={styles.button}
-            contentStyle={styles.buttonContent}
-          >
-            Back to Login
-          </Button>
-
-          <Button
-            mode="text"
-            onPress={() => {
-              setSuccess(false);
-              setEmail('');
-            }}
-            style={styles.textButton}
-          >
-            Try Different Email
-          </Button>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -98,59 +126,75 @@ export default function ForgotPasswordScreen() {
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.content}>
-          <View style={styles.iconContainer}>
-            <MaterialCommunityIcons
-              name="lock-reset"
-              size={80}
-              color={theme.colors.primary}
+        <ScrollView
+          contentContainerStyle={[styles.scrollContent, { padding: containerPadding }]}
+        >
+          <View style={[
+            styles.content,
+            {
+              maxWidth: responsive(500, 500, 450, 480),
+              paddingHorizontal: responsive(16, 20, 32, 40),
+            }
+          ]}>
+            <View style={styles.iconContainer}>
+              <MaterialCommunityIcons
+                name="lock-reset"
+                size={responsive(64, 72, 80, 90)}
+                color={theme.colors.primary}
+              />
+            </View>
+
+            <Text
+              variant={isDesktop ? "headlineLarge" : "headlineMedium"}
+              style={[styles.title, { color: theme.colors.primary }]}
+            >
+              Forgot Password?
+            </Text>
+
+            <Text
+              variant={isDesktop ? "bodyLarge" : "bodyMedium"}
+              style={styles.subtitle}
+            >
+              Enter your email address and we'll send you a link to reset your password.
+            </Text>
+
+            <TextInput
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              mode="outlined"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              left={<TextInput.Icon icon="email" />}
+              style={styles.input}
+              error={!!error}
             />
+
+            <HelperText type="error" visible={!!error}>
+              {error}
+            </HelperText>
+
+            <Button
+              mode="contained"
+              onPress={handleResetPassword}
+              loading={loading}
+              disabled={loading}
+              style={styles.button}
+              contentStyle={styles.buttonContent}
+            >
+              Send Reset Link
+            </Button>
+
+            <Button
+              mode="text"
+              onPress={() => router.back()}
+              style={styles.textButton}
+            >
+              Back to Login
+            </Button>
           </View>
-
-          <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.primary }]}>
-            Forgot Password?
-          </Text>
-
-          <Text variant="bodyMedium" style={styles.subtitle}>
-            Enter your email address and we'll send you a link to reset your password.
-          </Text>
-
-          <TextInput
-            label="Email"
-            value={email}
-            onChangeText={setEmail}
-            mode="outlined"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-            left={<TextInput.Icon icon="email" />}
-            style={styles.input}
-            error={!!error}
-          />
-
-          <HelperText type="error" visible={!!error}>
-            {error}
-          </HelperText>
-
-          <Button
-            mode="contained"
-            onPress={handleResetPassword}
-            loading={loading}
-            disabled={loading}
-            style={styles.button}
-            contentStyle={styles.buttonContent}
-          >
-            Send Reset Link
-          </Button>
-
-          <Button
-            mode="text"
-            onPress={() => router.back()}
-            style={styles.textButton}
-          >
-            Back to Login
-          </Button>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -163,11 +207,15 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   content: {
     flex: 1,
-    padding: 24,
     justifyContent: 'center',
-    maxWidth: 500,
+    // maxWidth and paddingHorizontal are set dynamically for responsiveness
     width: '100%',
     alignSelf: 'center',
   },
