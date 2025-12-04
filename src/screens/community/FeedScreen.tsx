@@ -16,11 +16,14 @@ import { NoteCard } from '../../components/notes';
 import { FeedNote } from '../../types/notes';
 import notesService from '../../services/notesService';
 import followService from '../../services/followService';
+import { useResponsive } from '../../hooks/useResponsive';
 
 export function FeedScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { user } = useAuthStore();
+  const { isDesktop, isLargeDesktop, containerPadding, contentMaxWidth } = useResponsive();
+  const numColumns = isLargeDesktop ? 2 : 1;
   const [notes, setNotes] = useState<FeedNote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -144,7 +147,8 @@ export function FeedScreen() {
   // Render grouped view - Subject wise with Name and Roll No
   const renderGroupedView = () => (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      contentContainerStyle={[styles.groupedContent, { maxWidth: contentMaxWidth, paddingHorizontal: containerPadding }]}
       refreshControl={
         <RefreshControl
           refreshing={isRefreshing}
@@ -323,34 +327,41 @@ export function FeedScreen() {
   // Default list view
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <FlatList
-        data={notes}
-        keyExtractor={(item) => item.id}
-        ListHeaderComponent={renderHeader}
-        renderItem={({ item }) => (
-          <NoteCard
-            note={item}
-            currentUserId={user.uid}
-            onPress={() => handleNotePress(item.id)}
-            onAuthorPress={() => handleAuthorPress(item.authorId)}
-          />
-        )}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            colors={[theme.colors.primary]}
-          />
-        }
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={
-          isLoadingMore ? (
-            <ActivityIndicator style={styles.footerLoader} />
-          ) : null
-        }
-        contentContainerStyle={styles.listContent}
-      />
+      <View style={[styles.contentWrapper, { maxWidth: contentMaxWidth, paddingHorizontal: containerPadding }]}>
+        <FlatList
+          data={notes}
+          keyExtractor={(item) => item.id}
+          key={numColumns}
+          numColumns={numColumns}
+          columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
+          ListHeaderComponent={renderHeader}
+          renderItem={({ item }) => (
+            <View style={numColumns > 1 ? styles.cardWrapper : undefined}>
+              <NoteCard
+                note={item}
+                currentUserId={user.uid}
+                onPress={() => handleNotePress(item.id)}
+                onAuthorPress={() => handleAuthorPress(item.authorId)}
+              />
+            </View>
+          )}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              colors={[theme.colors.primary]}
+            />
+          }
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            isLoadingMore ? (
+              <ActivityIndicator style={styles.footerLoader} />
+            ) : null
+          }
+          contentContainerStyle={styles.listContent}
+        />
+      </View>
     </View>
   );
 }
@@ -358,6 +369,24 @@ export function FeedScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    alignItems: 'center',
+  },
+  contentWrapper: {
+    flex: 1,
+    width: '100%',
+  },
+  groupedContent: {
+    width: '100%',
+    alignSelf: 'center',
+    paddingBottom: 24,
+  },
+  columnWrapper: {
+    gap: 16,
+    paddingHorizontal: 8,
+  },
+  cardWrapper: {
+    flex: 1,
+    maxWidth: '50%',
   },
   centered: {
     flex: 1,

@@ -27,6 +27,7 @@ import { MembersModal } from './MembersModal';
 import { AddMembersModal } from './AddMembersModal';
 import groupsService from '../../services/groupsService';
 import { ThemeSwitcher } from '../ThemeSwitcher';
+import { useResponsive } from '../../hooks/useResponsive';
 
 interface GroupsListScreenProps {
   currentUserId: string;
@@ -44,6 +45,8 @@ export function GroupsListScreen({
   onUserPress,
 }: GroupsListScreenProps) {
   const theme = useTheme();
+  const { isMobile, isTablet, isDesktop, isLargeDesktop, containerPadding, contentMaxWidth } = useResponsive();
+  const numColumns = isLargeDesktop ? 3 : isDesktop ? 2 : 1;
 
   // State
   const [viewMode, setViewMode] = useState<ViewMode>('my-groups');
@@ -380,76 +383,81 @@ export function GroupsListScreen({
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <View style={styles.headerTitleContainer}>
-            <Text variant="headlineMedium" style={styles.title}>
-              Groups
-            </Text>
-            <Text variant="bodyMedium" style={styles.subtitle}>
-              Connect and collaborate with others
-            </Text>
+      <View style={[styles.contentWrapper, { maxWidth: contentMaxWidth, paddingHorizontal: containerPadding }]}>
+        {/* Header */}
+        <View style={[styles.header, isDesktop && styles.headerDesktop]}>
+          <View style={styles.headerRow}>
+            <View style={styles.headerTitleContainer}>
+              <Text variant={isDesktop ? "headlineLarge" : "headlineMedium"} style={styles.title}>
+                Groups
+              </Text>
+              <Text variant="bodyMedium" style={styles.subtitle}>
+                Connect and collaborate with others
+              </Text>
+            </View>
+            <ThemeSwitcher />
           </View>
-          <ThemeSwitcher />
         </View>
-      </View>
 
-      {/* View Mode Toggle */}
-      <SegmentedButtons
-        value={viewMode}
-        onValueChange={(value) => setViewMode(value as ViewMode)}
-        buttons={[
-          {
-            value: 'my-groups',
-            label: 'My Groups',
-            icon: 'account-group',
-          },
-          {
-            value: 'discover',
-            label: 'Discover',
-            icon: 'compass',
-          },
-        ]}
-        style={styles.segmentedButtons}
-      />
-
-      {/* Search Bar */}
-      <Searchbar
-        placeholder="Search groups..."
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        style={styles.searchbar}
-        elevation={0}
-      />
-
-      {/* Groups List */}
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" />
-        </View>
-      ) : (
-        <FlatList
-          data={filteredGroups}
-          keyExtractor={(item) => item.id}
-          renderItem={renderGroupCard}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={renderEmptyState}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={handleRefresh}
-              colors={[theme.colors.primary]}
-            />
-          }
+        {/* View Mode Toggle */}
+        <SegmentedButtons
+          value={viewMode}
+          onValueChange={(value) => setViewMode(value as ViewMode)}
+          buttons={[
+            {
+              value: 'my-groups',
+              label: 'My Groups',
+              icon: 'account-group',
+            },
+            {
+              value: 'discover',
+              label: 'Discover',
+              icon: 'compass',
+            },
+          ]}
+          style={[styles.segmentedButtons, isDesktop && styles.segmentedButtonsDesktop]}
         />
-      )}
+
+        {/* Search Bar */}
+        <Searchbar
+          placeholder="Search groups..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          style={[styles.searchbar, isDesktop && styles.searchbarDesktop]}
+          elevation={0}
+        />
+
+        {/* Groups List */}
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" />
+          </View>
+        ) : (
+          <FlatList
+            data={filteredGroups}
+            keyExtractor={(item) => item.id}
+            renderItem={renderGroupCard}
+            numColumns={numColumns}
+            key={numColumns}
+            contentContainerStyle={[styles.listContent, isDesktop && styles.listContentDesktop]}
+            columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
+            ListEmptyComponent={renderEmptyState}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                colors={[theme.colors.primary]}
+              />
+            }
+          />
+        )}
+      </View>
 
       {/* Create Group FAB */}
       <FAB
         icon="plus"
-        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+        style={[styles.fab, { backgroundColor: theme.colors.primary }, isDesktop && styles.fabDesktop]}
         color={theme.colors.onPrimary}
         onPress={() => setShowCreateModal(true)}
       />
@@ -468,9 +476,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  contentWrapper: {
+    flex: 1,
+    width: '100%',
+    alignSelf: 'center',
+  },
   header: {
     padding: 16,
     paddingTop: 8,
+  },
+  headerDesktop: {
+    paddingTop: 16,
+    paddingBottom: 12,
   },
   headerRow: {
     flexDirection: 'row',
@@ -491,10 +508,17 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 12,
   },
+  segmentedButtonsDesktop: {
+    maxWidth: 400,
+    marginHorizontal: 16,
+  },
   searchbar: {
     marginHorizontal: 16,
     marginBottom: 12,
     borderRadius: 12,
+  },
+  searchbarDesktop: {
+    maxWidth: 500,
   },
   loadingContainer: {
     flex: 1,
@@ -505,6 +529,13 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingTop: 4,
     flexGrow: 1,
+  },
+  listContentDesktop: {
+    paddingTop: 8,
+  },
+  columnWrapper: {
+    gap: 16,
+    justifyContent: 'flex-start',
   },
   emptyContainer: {
     flex: 1,
@@ -535,5 +566,9 @@ const styles = StyleSheet.create({
     right: 16,
     bottom: 16,
     borderRadius: 16,
+  },
+  fabDesktop: {
+    right: 32,
+    bottom: 32,
   },
 });

@@ -12,6 +12,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore } from '../../store/authStore';
 import { NoteCard } from '../../components/notes';
 import { Note, FeedNote } from '../../types/notes';
+import { useResponsive } from '../../hooks/useResponsive';
 import notesService from '../../services/notesService';
 import socialService from '../../services/socialService';
 
@@ -21,6 +22,8 @@ export function MyNotesScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { user } = useAuthStore();
+  const { isDesktop, isLargeDesktop, containerPadding, contentMaxWidth } = useResponsive();
+  const numColumns = isLargeDesktop ? 2 : 1;
   const [notes, setNotes] = useState<FeedNote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -128,59 +131,66 @@ export function MyNotesScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {/* View Mode Toggle */}
-      <View style={styles.toggleContainer}>
-        <SegmentedButtons
-          value={viewMode}
-          onValueChange={(value) => setViewMode(value as ViewMode)}
-          buttons={[
-            { value: 'my', label: 'My Notes', icon: 'note-text' },
-            { value: 'saved', label: 'Saved', icon: 'bookmark' },
-          ]}
+      <View style={[styles.contentWrapper, { maxWidth: contentMaxWidth, paddingHorizontal: containerPadding }]}>
+        {/* View Mode Toggle */}
+        <View style={styles.toggleContainer}>
+          <SegmentedButtons
+            value={viewMode}
+            onValueChange={(value) => setViewMode(value as ViewMode)}
+            buttons={[
+              { value: 'my', label: 'My Notes', icon: 'note-text' },
+              { value: 'saved', label: 'Saved', icon: 'bookmark' },
+            ]}
+          />
+        </View>
+
+        <FlatList
+          data={notes}
+          keyExtractor={(item) => item.id}
+          key={numColumns}
+          numColumns={numColumns}
+          columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
+          renderItem={({ item }) => (
+            <View style={numColumns > 1 ? styles.cardWrapper : undefined}>
+              <NoteCard
+                note={item}
+                currentUserId={user!.uid}
+                onPress={() => handleNotePress(item.id)}
+                onAuthorPress={() => handleAuthorPress(item.authorId)}
+                onDelete={viewMode === 'my' ? () => setNotes(notes.filter(n => n.id !== item.id)) : undefined}
+              />
+            </View>
+          )}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              colors={[theme.colors.primary]}
+            />
+          }
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Text variant="titleMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                {viewMode === 'my' ? "You haven't shared any notes yet" : "You haven't saved any notes"}
+              </Text>
+              {viewMode === 'my' && (
+                <Text
+                  variant="bodyMedium"
+                  style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}
+                >
+                  Tap the + button to create your first note
+                </Text>
+              )}
+            </View>
+          }
+          ListFooterComponent={
+            isLoadingMore ? <ActivityIndicator style={styles.footerLoader} /> : null
+          }
+          contentContainerStyle={styles.listContent}
         />
       </View>
-
-      <FlatList
-        data={notes}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <NoteCard
-            note={item}
-            currentUserId={user!.uid}
-            onPress={() => handleNotePress(item.id)}
-            onAuthorPress={() => handleAuthorPress(item.authorId)}
-            onDelete={viewMode === 'my' ? () => setNotes(notes.filter(n => n.id !== item.id)) : undefined}
-          />
-        )}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            colors={[theme.colors.primary]}
-          />
-        }
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text variant="titleMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-              {viewMode === 'my' ? "You haven't shared any notes yet" : "You haven't saved any notes"}
-            </Text>
-            {viewMode === 'my' && (
-              <Text
-                variant="bodyMedium"
-                style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}
-              >
-                Tap the + button to create your first note
-              </Text>
-            )}
-          </View>
-        }
-        ListFooterComponent={
-          isLoadingMore ? <ActivityIndicator style={styles.footerLoader} /> : null
-        }
-        contentContainerStyle={styles.listContent}
-      />
 
       {/* Create Note FAB */}
       <FAB
@@ -196,6 +206,19 @@ export function MyNotesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    alignItems: 'center',
+  },
+  contentWrapper: {
+    flex: 1,
+    width: '100%',
+  },
+  columnWrapper: {
+    gap: 16,
+    paddingHorizontal: 8,
+  },
+  cardWrapper: {
+    flex: 1,
+    maxWidth: '50%',
   },
   centered: {
     flex: 1,

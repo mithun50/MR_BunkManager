@@ -36,7 +36,7 @@ export function GroupCard({ group, onPress, onJoin, showJoinButton, isMember }: 
   const categoryColor = getCategoryColor(group.category);
 
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.touchable}>
       <Card style={styles.card} mode="elevated">
         <Card.Content style={styles.content}>
           <View style={styles.header}>
@@ -105,6 +105,10 @@ export function GroupCard({ group, onPress, onJoin, showJoinButton, isMember }: 
 }
 
 const styles = StyleSheet.create({
+  touchable: {
+    flex: 1,
+    minWidth: 280,
+  },
   card: {
     marginBottom: 12,
     borderRadius: 16,

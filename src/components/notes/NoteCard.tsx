@@ -364,9 +364,10 @@ export function NoteCard({
 const styles = StyleSheet.create({
   container: {
     borderRadius: 12,
-    marginHorizontal: 16,
+    marginHorizontal: 8,
     marginVertical: 8,
     overflow: 'hidden',
+    flex: 1,
   },
   // Compact styles
   compactContainer: {
