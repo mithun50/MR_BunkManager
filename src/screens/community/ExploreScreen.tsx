@@ -103,6 +103,7 @@ export function ExploreScreen() {
   };
 
   const isFirstLoad = useRef(true);
+  const initialLoadComplete = useRef(false);
 
   useEffect(() => {
     if (profile) {
@@ -110,6 +111,7 @@ export function ExploreScreen() {
         setIsLoading(true);
         await loadNotes(true);
         setIsLoading(false);
+        initialLoadComplete.current = true;
       };
       init();
     }
@@ -134,7 +136,8 @@ export function ExploreScreen() {
     if (Platform.OS !== 'web') return;
 
     const handleFocus = () => {
-      if (!isFirstLoad.current && profile) {
+      // Only refresh if initial load is complete
+      if (initialLoadComplete.current && profile) {
         loadNotes(true);
       }
     };
@@ -143,7 +146,7 @@ export function ExploreScreen() {
 
     // Also listen for visibility change (tab switching)
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && !isFirstLoad.current && profile) {
+      if (document.visibilityState === 'visible' && initialLoadComplete.current && profile) {
         loadNotes(true);
       }
     };

@@ -70,12 +70,14 @@ export function FeedScreen() {
   };
 
   const isFirstLoad = useRef(true);
+  const initialLoadComplete = useRef(false);
 
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
       await loadNotes(true);
       setIsLoading(false);
+      initialLoadComplete.current = true;
     };
     init();
   }, [user]);
@@ -97,7 +99,8 @@ export function FeedScreen() {
     if (Platform.OS !== 'web') return;
 
     const handleFocus = () => {
-      if (!isFirstLoad.current && user) {
+      // Only refresh if initial load is complete
+      if (initialLoadComplete.current && user) {
         loadNotes(true);
       }
     };
@@ -106,7 +109,7 @@ export function FeedScreen() {
 
     // Also listen for visibility change (tab switching)
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && !isFirstLoad.current && user) {
+      if (document.visibilityState === 'visible' && initialLoadComplete.current && user) {
         loadNotes(true);
       }
     };

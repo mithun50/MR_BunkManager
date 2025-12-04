@@ -96,10 +96,16 @@ export default function GroupsScreen() {
   }, [user]);
 
   const isFirstLoad = useRef(true);
+  const initialLoadComplete = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
-      loadGroups();
+      if (isFirstLoad.current) {
+        isFirstLoad.current = false;
+      }
+      loadGroups().then(() => {
+        initialLoadComplete.current = true;
+      });
     }, [loadGroups])
   );
 
@@ -108,7 +114,8 @@ export default function GroupsScreen() {
     if (Platform.OS !== 'web') return;
 
     const handleFocus = () => {
-      if (!isFirstLoad.current && user) {
+      // Only refresh if initial load is complete
+      if (initialLoadComplete.current && user) {
         loadGroups();
       }
     };
@@ -117,16 +124,11 @@ export default function GroupsScreen() {
 
     // Also listen for visibility change (tab switching)
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && !isFirstLoad.current && user) {
+      if (document.visibilityState === 'visible' && initialLoadComplete.current && user) {
         loadGroups();
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // Mark first load as complete after initial load
-    if (isFirstLoad.current) {
-      isFirstLoad.current = false;
-    }
 
     return () => {
       window.removeEventListener('focus', handleFocus);

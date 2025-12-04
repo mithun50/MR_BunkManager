@@ -75,6 +75,7 @@ export function MyNotesScreen() {
   };
 
   const isFirstLoad = useRef(true);
+  const initialLoadComplete = useRef(false);
 
   useEffect(() => {
     const init = async () => {
@@ -83,6 +84,7 @@ export function MyNotesScreen() {
       setLastDoc(null);
       await loadNotes(true);
       setIsLoading(false);
+      initialLoadComplete.current = true;
     };
     init();
   }, [user, viewMode]);
@@ -104,7 +106,8 @@ export function MyNotesScreen() {
     if (Platform.OS !== 'web') return;
 
     const handleFocus = () => {
-      if (!isFirstLoad.current && user) {
+      // Only refresh if initial load is complete
+      if (initialLoadComplete.current && user) {
         loadNotes(true);
       }
     };
@@ -113,7 +116,7 @@ export function MyNotesScreen() {
 
     // Also listen for visibility change (tab switching)
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && !isFirstLoad.current && user) {
+      if (document.visibilityState === 'visible' && initialLoadComplete.current && user) {
         loadNotes(true);
       }
     };
