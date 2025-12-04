@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 
 // Backend URL for proxy uploads (web platform needs this due to CORS)
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://mr-bunk-manager-backend.vercel.app';
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://mr-bunk-manager.vercel.app';
 
 // File types allowed by Catbox
 const CATBOX_ALLOWED_EXTENSIONS = [

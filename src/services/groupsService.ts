@@ -23,7 +23,7 @@ import { db } from '../config/firebase';
 import { Group, GroupMessage, GroupMember } from '../types/groups';
 
 // Backend URL for notifications
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://mr-bunk-manager-backend.vercel.app';
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://mr-bunk-manager.vercel.app';
 
 class GroupsService {
   // ==================== GROUP OPERATIONS ====================
