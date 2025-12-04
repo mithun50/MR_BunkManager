@@ -1,4 +1,4 @@
-import { View, StyleSheet, ScrollView, Alert, Platform, Image, KeyboardAvoidingView, Pressable, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, Platform, Image, Pressable, useWindowDimensions } from 'react-native';
 import { Text, Surface, Button, Avatar, useTheme, Divider, Appbar, Card, IconButton, Portal, Modal, SegmentedButtons, TextInput as PaperInput, Dialog, Chip } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/src/store/authStore';
@@ -1135,16 +1135,11 @@ export default function ProfileScreen() {
           ]}
           style={isWeb ? styles.webModalOverlay : undefined}
         >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.modalScrollContent}
           >
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              enableOnAndroid={true}
-              contentContainerStyle={{ paddingTop: isDesktop ? 16 : 8, paddingBottom: insets.bottom + 100 }}
-            >
             <Text variant="headlineSmall" style={styles.modalTitle}>
               Add Timetable Entry
             </Text>
@@ -1311,8 +1306,7 @@ export default function ProfileScreen() {
                 Add Entry
               </OnlineButton>
             </View>
-            </ScrollView>
-          </KeyboardAvoidingView>
+          </ScrollView>
         </Modal>
       </Portal>
 
@@ -1353,16 +1347,11 @@ export default function ProfileScreen() {
           ]}
           style={isWeb ? styles.webModalOverlay : undefined}
         >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.modalScrollContent}
           >
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              enableOnAndroid={true}
-              contentContainerStyle={{ paddingTop: isDesktop ? 16 : 8, paddingBottom: insets.bottom + 100 }}
-            >
             <Text variant="headlineSmall" style={styles.modalTitle}>
               Edit Timetable Entry
             </Text>
@@ -1529,8 +1518,7 @@ export default function ProfileScreen() {
                 Save Changes
               </OnlineButton>
             </View>
-            </ScrollView>
-          </KeyboardAvoidingView>
+          </ScrollView>
         </Modal>
       </Portal>
 
@@ -1574,16 +1562,11 @@ export default function ProfileScreen() {
           ]}
           style={isWeb ? styles.webModalOverlay : undefined}
         >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.modalScrollContent}
           >
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              enableOnAndroid={true}
-              contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
-            >
               <View style={styles.modalHeader}>
                 <Text variant="headlineSmall" style={{ fontWeight: 'bold' }}>
                   Edit Profile
@@ -1730,8 +1713,7 @@ export default function ProfileScreen() {
                   Save Changes
                 </OnlineButton>
               </View>
-            </ScrollView>
-          </KeyboardAvoidingView>
+          </ScrollView>
         </Modal>
       </Portal>
 
@@ -1921,40 +1903,34 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   modal: {
-    margin: 16,
-    marginTop: 40,
-    padding: 16,
+    margin: 20,
+    padding: 20,
     borderRadius: 12,
-    maxHeight: '80%',
+    maxHeight: '90%',
     maxWidth: 550,
     width: '95%',
     alignSelf: 'center',
-    elevation: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.4,
-    shadowRadius: 24,
   },
   modalTablet: {
     margin: 24,
-    marginTop: 48,
     padding: 24,
-    width: '80%',
-    maxWidth: 600,
+    width: '85%',
+    maxWidth: 550,
     maxHeight: '85%',
   },
   modalDesktop: {
     margin: 32,
-    marginTop: 20,
     padding: 32,
-    paddingTop: 24,
-    width: '60%',
-    maxWidth: 650,
+    width: '70%',
+    maxWidth: 550,
     maxHeight: '85%',
   },
   modalTitle: {
     fontWeight: 'bold',
     marginBottom: 16,
+  },
+  modalScrollContent: {
+    paddingBottom: 16,
   },
   modalLabel: {
     marginBottom: 8,
@@ -2047,18 +2023,13 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   modalContainer: {
-    margin: 16,
-    padding: 16,
+    margin: 20,
+    padding: 20,
     borderRadius: 12,
     maxHeight: '90%',
     maxWidth: 550,
     width: '95%',
     alignSelf: 'center',
-    elevation: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.4,
-    shadowRadius: 24,
   },
   modalContent: {
     paddingBottom: 20,
@@ -2147,19 +2118,11 @@ const styles = StyleSheet.create({
     marginVertical: 0,
     fontWeight: '600',
   },
-  // Web Modal Overlay Style - uses 'fixed' for proper web overlay
+  // Web Modal Overlay Style - centers modal properly on web
   webModalOverlay: {
-    // @ts-ignore - 'fixed' is valid CSS for web
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 80,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    zIndex: 9999,
   },
   // Web Time Input Container - matches outlined input style
   webTimeInputSurface: {
