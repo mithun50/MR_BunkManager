@@ -1139,32 +1139,34 @@ export default function ProfileScreen() {
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               enableOnAndroid={true}
-              contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+              contentContainerStyle={{ paddingTop: isDesktop ? 16 : 8, paddingBottom: insets.bottom + 100 }}
             >
             <Text variant="headlineSmall" style={styles.modalTitle}>
               Add Timetable Entry
             </Text>
 
             <Text variant="labelMedium" style={styles.fieldLabel}>Day *</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.dayChipsContainer}
-              style={styles.dayChipsScroll}
+            <View style={styles.dayChipsWrapper}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.dayChipsContainer}
+                style={styles.dayChipsScroll}
             >
-              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => (
-                <Chip
-                  key={day}
-                  selected={manualDay === day}
-                  onPress={() => setManualDay(day)}
-                  style={styles.dayChip}
-                  mode={manualDay === day ? 'flat' : 'outlined'}
-                  showSelectedCheck={false}
-                >
-                  {day.slice(0, 3)}
-                </Chip>
-              ))}
-            </ScrollView>
+                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => (
+                  <Chip
+                    key={day}
+                    selected={manualDay === day}
+                    onPress={() => setManualDay(day)}
+                    style={styles.dayChip}
+                    mode={manualDay === day ? 'flat' : 'outlined'}
+                    showSelectedCheck={false}
+                  >
+                    {day.slice(0, 3)}
+                  </Chip>
+                ))}
+              </ScrollView>
+            </View>
 
             <Text variant="labelMedium" style={styles.fieldLabel}>Start Time *</Text>
             {isWeb ? (
@@ -1355,32 +1357,34 @@ export default function ProfileScreen() {
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               enableOnAndroid={true}
-              contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+              contentContainerStyle={{ paddingTop: isDesktop ? 16 : 8, paddingBottom: insets.bottom + 100 }}
             >
             <Text variant="headlineSmall" style={styles.modalTitle}>
               Edit Timetable Entry
             </Text>
 
             <Text variant="labelMedium" style={styles.fieldLabel}>Day *</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.dayChipsContainer}
-              style={styles.dayChipsScroll}
-            >
-              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => (
-                <Chip
-                  key={day}
-                  selected={editDay === day}
-                  onPress={() => setEditDay(day)}
-                  style={styles.dayChip}
-                  mode={editDay === day ? 'flat' : 'outlined'}
-                  showSelectedCheck={false}
-                >
-                  {day.slice(0, 3)}
-                </Chip>
-              ))}
-            </ScrollView>
+            <View style={styles.dayChipsWrapper}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.dayChipsContainer}
+                style={styles.dayChipsScroll}
+              >
+                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => (
+                  <Chip
+                    key={day}
+                    selected={editDay === day}
+                    onPress={() => setEditDay(day)}
+                    style={styles.dayChip}
+                    mode={editDay === day ? 'flat' : 'outlined'}
+                    showSelectedCheck={false}
+                  >
+                    {day.slice(0, 3)}
+                  </Chip>
+                ))}
+              </ScrollView>
+            </View>
 
             <Text variant="labelMedium" style={styles.fieldLabel}>Start Time *</Text>
             {isWeb ? (
@@ -1908,9 +1912,10 @@ const styles = StyleSheet.create({
   },
   modal: {
     margin: 16,
+    marginTop: 40,
     padding: 16,
     borderRadius: 12,
-    maxHeight: '85%',
+    maxHeight: '80%',
     maxWidth: 550,
     width: '95%',
     alignSelf: 'center',
@@ -1922,13 +1927,16 @@ const styles = StyleSheet.create({
   },
   modalTablet: {
     margin: 24,
+    marginTop: 48,
     padding: 24,
     width: '80%',
     maxWidth: 600,
   },
   modalDesktop: {
     margin: 32,
-    padding: 28,
+    marginTop: 20,
+    padding: 32,
+    paddingTop: 24,
     width: '60%',
     maxWidth: 650,
   },
@@ -2135,8 +2143,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
+    paddingTop: 80,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     zIndex: 9999,
   },
@@ -2152,16 +2161,21 @@ const styles = StyleSheet.create({
   webTimeIcon: {
     margin: 0,
   },
-  // Day Chips - Scrollable selector
-  dayChipsScroll: {
+  // Day Chips - Scrollable selector with wrapper for proper positioning
+  dayChipsWrapper: {
     marginBottom: 16,
+    zIndex: 1,
+    overflow: 'visible',
+  },
+  dayChipsScroll: {
     maxHeight: 50,
+    overflow: 'visible',
   },
   dayChipsContainer: {
     flexDirection: 'row',
     gap: 8,
-    paddingVertical: 4,
-    paddingHorizontal: 2,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
   },
   dayChip: {
     marginRight: 4,
