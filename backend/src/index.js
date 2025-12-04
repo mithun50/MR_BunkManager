@@ -53,18 +53,45 @@ const corsOptions = {
 };
 
 // Multer configuration for file uploads
+// Allowed MIME types matching Catbox.moe supported formats
+const ALLOWED_MIMES = [
+  // Images
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/x-icon', 'image/svg+xml',
+  // Videos
+  'video/mp4', 'video/webm', 'video/ogg',
+  // Audio
+  'audio/mpeg', 'audio/mp3', 'audio/ogg', 'audio/wav', 'audio/flac', 'audio/mp4', 'audio/x-m4a',
+  // Documents
+  'application/pdf', 'text/plain', 'application/json', 'application/xml', 'text/xml',
+  'text/csv', 'text/html', 'text/css', 'text/javascript', 'application/javascript',
+  // Archives
+  'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed',
+  'application/x-tar', 'application/gzip',
+  // Generic fallback
+  'application/octet-stream',
+];
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB max file size
+    fileSize: 200 * 1024 * 1024, // 200MB max file size (Catbox limit)
   },
   fileFilter: (req, file, cb) => {
-    // Allow images and PDFs
-    const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
-    if (allowedMimes.includes(file.mimetype)) {
+    // Allow all Catbox-supported file types
+    if (ALLOWED_MIMES.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type. Only images and PDFs are allowed.'));
+      // Also allow by extension for unknown MIME types
+      const ext = file.originalname.split('.').pop()?.toLowerCase();
+      const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'ico', 'svg',
+        'mp3', 'mp4', 'webm', 'ogg', 'wav', 'flac', 'm4a',
+        'pdf', 'txt', 'json', 'xml', 'csv', 'html', 'css', 'js',
+        'zip', 'rar', '7z', 'tar', 'gz'];
+      if (ext && allowedExts.includes(ext)) {
+        cb(null, true);
+      } else {
+        cb(new Error(`Invalid file type: ${file.mimetype}. Supported: images, videos, audio, documents, archives.`));
+      }
     }
   },
 });
@@ -1053,6 +1080,7 @@ app.use((req, res) => {
       'POST /send-class-reminders',
       'GET /tokens/:userId',
       'POST /upload',
+      'POST /upload-catbox',
       'DELETE /upload/:fileId',
       'GET /note/:noteId'
     ],

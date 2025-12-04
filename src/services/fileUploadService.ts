@@ -1,6 +1,9 @@
 import { Platform } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 
+// Backend URL for proxy uploads (web platform needs this due to CORS)
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://mr-bunk-manager-backend.vercel.app';
+
 // File types allowed by Catbox
 const CATBOX_ALLOWED_EXTENSIONS = [
   'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'ico', 'svg',
@@ -40,47 +43,87 @@ class FileUploadService {
 
   /**
    * Upload to Catbox.moe
+   * On web: Uses backend proxy to bypass CORS restrictions
+   * On mobile: Direct upload to Catbox (no CORS issues)
    */
   private async uploadToCatbox(fileUri: string, fileName: string, mimeType: string): Promise<string> {
     try {
-      console.log('📤 Uploading to Catbox:', fileName, mimeType);
-
-      const formData = new FormData();
-      formData.append('reqtype', 'fileupload');
+      console.log('📤 Uploading to Catbox:', fileName, mimeType, `(Platform: ${Platform.OS})`);
 
       if (Platform.OS === 'web') {
-        const response = await fetch(fileUri);
-        const blob = await response.blob();
-        formData.append('fileToUpload', blob, fileName);
+        // Web: Use backend proxy to bypass CORS
+        return await this.uploadViaBackendProxy(fileUri, fileName, mimeType);
       } else {
-        formData.append('fileToUpload', {
-          uri: fileUri,
-          type: mimeType,
-          name: fileName,
-        } as any);
+        // Mobile: Direct upload to Catbox (no CORS restrictions)
+        return await this.uploadDirectToCatbox(fileUri, fileName, mimeType);
       }
-
-      const uploadResponse = await fetch('https://catbox.moe/user/api.php', {
-        method: 'POST',
-        body: formData,
-        headers: Platform.OS === 'web' ? {} : {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      const url = await uploadResponse.text();
-      const trimmedUrl = url.trim();
-
-      if (!trimmedUrl || !trimmedUrl.startsWith('https://')) {
-        throw new Error('Invalid response from Catbox: ' + trimmedUrl);
-      }
-
-      console.log('✅ File uploaded to Catbox:', trimmedUrl);
-      return trimmedUrl;
     } catch (error: any) {
       console.error('❌ Catbox upload error:', error);
       throw new Error('Failed to upload file. Please try again.');
     }
+  }
+
+  /**
+   * Upload via backend proxy (for web platform - bypasses CORS)
+   */
+  private async uploadViaBackendProxy(fileUri: string, fileName: string, mimeType: string): Promise<string> {
+    console.log('🌐 Using backend proxy for web upload...');
+
+    // Fetch the file as blob from the local URI
+    const response = await fetch(fileUri);
+    const blob = await response.blob();
+
+    // Create form data for backend
+    const formData = new FormData();
+    formData.append('file', blob, fileName);
+
+    // Upload to backend proxy endpoint
+    const uploadResponse = await fetch(`${BACKEND_URL}/upload-catbox`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    const result = await uploadResponse.json();
+
+    if (!result.success || !result.url) {
+      throw new Error(result.error || 'Backend proxy upload failed');
+    }
+
+    console.log('✅ File uploaded via backend proxy:', result.url);
+    return result.url;
+  }
+
+  /**
+   * Direct upload to Catbox (for mobile platforms)
+   */
+  private async uploadDirectToCatbox(fileUri: string, fileName: string, mimeType: string): Promise<string> {
+    console.log('📱 Direct upload to Catbox (mobile)...');
+
+    const formData = new FormData();
+    formData.append('reqtype', 'fileupload');
+    formData.append('fileToUpload', {
+      uri: fileUri,
+      type: mimeType,
+      name: fileName,
+    } as any);
+
+    const uploadResponse = await fetch('https://catbox.moe/user/api.php', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    const url = await uploadResponse.text();
+    const trimmedUrl = url.trim();
+
+    if (!trimmedUrl || !trimmedUrl.startsWith('https://')) {
+      throw new Error('Invalid response from Catbox: ' + trimmedUrl);
+    }
+
+    console.log('✅ File uploaded directly to Catbox:', trimmedUrl);
+    return trimmedUrl;
   }
 
   /**
