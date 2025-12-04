@@ -183,15 +183,15 @@ export default function DashboardScreen() {
               </Text>
             </View>
 
-            {/* Web: Side by side | Mobile: Stacked */}
+            {/* Wide screens: Side by side | Mobile: Stacked */}
             <View style={[
               styles.overallContent,
-              isWeb && isWideScreen && styles.overallContentWeb
+              (isTablet || isDesktop || isLargeDesktop) && styles.overallContentWeb
             ]}>
               {/* Left - Stats */}
               <View style={[
                 styles.overallStats,
-                isWeb && isWideScreen && styles.overallStatsWeb
+                (isTablet || isDesktop || isLargeDesktop) && styles.overallStatsWeb
               ]}>
                 <View style={styles.percentageContainer}>
                   <Text variant="displayMedium" style={{ color: getAttendanceColor(overallPercentage) }}>
@@ -212,7 +212,7 @@ export default function DashboardScreen() {
               {totalClasses > 0 && (
                 <View style={[
                   styles.chartSection,
-                  isWeb && isWideScreen && styles.chartSectionWeb
+                  (isTablet || isDesktop || isLargeDesktop) && styles.chartSectionWeb
                 ]}>
                   <Text variant="titleSmall" style={styles.chartTitle}>
                     Attendance Breakdown
@@ -221,8 +221,8 @@ export default function DashboardScreen() {
                     attended={attendedClasses}
                     absent={totalClasses - attendedClasses}
                     percentage={overallPercentage}
-                    size={isWeb && isWideScreen ? 160 : 200}
-                    strokeWidth={isWeb && isWideScreen ? 25 : 35}
+                    size={(isTablet || isDesktop || isLargeDesktop) ? 160 : 200}
+                    strokeWidth={(isTablet || isDesktop || isLargeDesktop) ? 25 : 35}
                   />
                 </View>
               )}
@@ -247,7 +247,7 @@ export default function DashboardScreen() {
 
       {/* Quick Stats */}
       {subjects.length > 0 && (
-        <View style={[styles.statsContainer, isWeb && isWideScreen && styles.statsContainerWeb]}>
+        <View style={[styles.statsContainer, (isTablet || isDesktop || isLargeDesktop) && styles.statsContainerWeb]}>
           <Surface style={[styles.statCard, { backgroundColor: theme.colors.secondaryContainer }]}>
             <MaterialCommunityIcons
               name={canBunk >= 0 ? "check-circle" : "alert-circle"}
@@ -282,13 +282,14 @@ export default function DashboardScreen() {
           </Text>
           <View style={[
             styles.subjectsGrid,
-            isWeb && isWideScreen && styles.subjectsGridWeb,
-            isWeb && isVeryWideScreen && styles.subjectsGridVeryWide,
+            (isTablet || isDesktop) && styles.subjectsGridWeb,
+            isLargeDesktop && styles.subjectsGridVeryWide,
           ]}>
             {subjects.map((subject) => (
               <Card key={subject.id} style={[
                 styles.card,
-                isWeb && isWideScreen && styles.cardWeb,
+                (isTablet || isDesktop) && styles.cardWeb,
+                isLargeDesktop && styles.cardVeryWide,
               ]}>
                 <Card.Content>
                   <View style={styles.subjectHeader}>
@@ -339,14 +340,14 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   contentWeb: {
-    maxWidth: 900,
+    maxWidth: 1000,
     alignSelf: 'center',
     width: '100%',
     paddingHorizontal: 24,
   },
   contentVeryWide: {
-    maxWidth: 1200,
-    paddingHorizontal: 32,
+    maxWidth: 1400,
+    paddingHorizontal: 40,
   },
   header: {
     marginBottom: 24,
@@ -420,7 +421,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   statsContainerWeb: {
-    maxWidth: 500,
+    maxWidth: 600,
     alignSelf: 'center',
     width: '100%',
   },
@@ -460,7 +461,11 @@ const styles = StyleSheet.create({
   cardWeb: {
     width: '48%',
     marginBottom: 16,
-    minWidth: 350,
+    minWidth: 300,
+  },
+  cardVeryWide: {
+    width: '31%',
+    minWidth: 280,
   },
   subjectHeader: {
     flexDirection: 'row',

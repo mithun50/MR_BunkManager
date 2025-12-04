@@ -37,6 +37,7 @@ export default function TimetableScreen() {
     isMobile,
     isTablet,
     isDesktop,
+    isLargeDesktop,
     containerPadding,
     contentMaxWidth,
     modalWidth,
@@ -330,12 +331,21 @@ export default function TimetableScreen() {
             </Card.Content>
           </Card>
         ) : (
-          DAYS.map(day => {
+          <View style={[
+            styles.daysGrid,
+            (isTablet || isDesktop) && styles.daysGridWide,
+            isLargeDesktop && styles.daysGridVeryWide,
+          ]}>
+          {DAYS.map(day => {
             const dayClasses = getClassesForDay(day);
             if (dayClasses.length === 0) return null;
 
             return (
-              <View key={day} style={styles.dayContainer}>
+              <View key={day} style={[
+                styles.dayContainer,
+                (isTablet || isDesktop) && styles.dayContainerWide,
+                isLargeDesktop && styles.dayContainerVeryWide,
+              ]}>
                 <Text variant="titleLarge" style={styles.dayTitle}>
                   {day}
                 </Text>
@@ -405,7 +415,8 @@ export default function TimetableScreen() {
                 ))}
               </View>
             );
-          })
+          })}
+          </View>
         )}
       </ScrollView>
 
@@ -620,8 +631,28 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     textAlign: 'center',
   },
+  daysGrid: {
+    flexDirection: 'column',
+  },
+  daysGridWide: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 20,
+    justifyContent: 'flex-start',
+  },
+  daysGridVeryWide: {
+    gap: 24,
+  },
   dayContainer: {
     marginBottom: 24,
+  },
+  dayContainerWide: {
+    width: '48%',
+    minWidth: 320,
+  },
+  dayContainerVeryWide: {
+    width: '31%',
+    minWidth: 300,
   },
   dayTitle: {
     fontWeight: 'bold',
