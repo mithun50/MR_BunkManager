@@ -789,6 +789,8 @@ notificationService.ts
     <pre><code>MR_BunkManager/
 ├── app/                     # Expo Router screens
 ├── src/
+│   ├── hooks/               # Custom React hooks
+│   │   └── useResponsive.ts # Responsive design utilities
 │   ├── components/          # Reusable UI components
 │   │   ├── notes/           # Notes feature components
 │   │   └── groups/          # Groups feature components

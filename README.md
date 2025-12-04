@@ -4,7 +4,9 @@ A comprehensive attendance management and student collaboration platform built w
 
 ## Download
 
-**[Click here to download the app (APK)](https://github.com/mithun50/MR_BunkManager/releases/download/v1.0.0/Mr-BunkManagerv1beta.apk)**
+**[Download Android App (APK)](https://github.com/mithun50/MR_BunkManager/releases/download/v1.0.0/Mr-BunkManagerv1beta.apk)**
+
+**[Use Web App](https://mr-bunk-manager-idtl.vercel.app)** - Access the app directly in your browser (Login only)
 
 ## Overview
 
@@ -37,6 +39,8 @@ MR BunkManager helps students track their attendance, manage their class schedul
 - **Offline Support**: Queue operations when offline
 - **Dark/Light Theme**: System theme support
 - **File Uploads**: Google Drive and Catbox.moe integration
+- **Responsive Design**: Adaptive UI for mobile, tablet, and desktop
+- **Web App Support**: Access via browser with Expo Web
 
 ## Tech Stack
 
@@ -97,6 +101,9 @@ MR_BunkManager/
 │   ├── search-users.tsx
 │   └── _layout.tsx               # Root layout
 ├── src/
+│   ├── hooks/                    # Custom React hooks
+│   │   ├── useResponsive.ts      # Responsive design utilities
+│   │   └── index.ts              # Hook exports
 │   ├── components/               # Reusable components
 │   │   ├── ChatBot.tsx           # AI assistant
 │   │   ├── VoiceBot.tsx          # Voice assistant

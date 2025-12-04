@@ -404,6 +404,9 @@ description: Complete source code documentation and line-by-line analysis for MR
 │   └── _layout.tsx                   # Root layout
 │
 ├── src/                              # Source code
+│   ├── hooks/                        # Custom React hooks (2 files)
+│   │   ├── useResponsive.ts          # Responsive design utilities
+│   │   └── index.ts                  # Hook exports
 │   ├── components/                   # React components (15+ files)
 │   ├── screens/                      # Screen implementations (13 files)
 │   ├── services/                     # Business logic (15 files)
@@ -547,6 +550,39 @@ description: Complete source code documentation and line-by-line analysis for MR
     <tr><td><code>255-319</code></td><td><code>handleSend()</code> - Main message handler</td></tr>
     <tr><td><code>348-625</code></td><td>JSX render (header, messages, input, drawer)</td></tr>
     <tr><td><code>626-793</code></td><td>StyleSheet definitions</td></tr>
+  </table>
+</div>
+
+<div class="section-divider">
+  <h2>Custom Hooks</h2>
+  <p>Reusable React hooks for common functionality</p>
+</div>
+
+<div class="code-card">
+  <h3>
+    useResponsive.ts
+    <span class="file-badge">TypeScript</span>
+  </h3>
+  <p>Provides responsive design utilities with breakpoints for mobile, tablet, desktop, and large desktop screens.</p>
+
+  <table class="analysis-table">
+    <tr><th>Export</th><th>Type</th><th>Description</th></tr>
+    <tr><td><code>BREAKPOINTS</code></td><td><code>Object</code></td><td>Screen width breakpoints (xs: 0, sm: 375, md: 768, lg: 1024, xl: 1280, xxl: 1536)</td></tr>
+    <tr><td><code>useResponsive()</code></td><td><code>Hook</code></td><td>Returns responsive values and utility functions</td></tr>
+  </table>
+
+  <table class="analysis-table">
+    <tr><th>Return Value</th><th>Type</th><th>Description</th></tr>
+    <tr><td><code>isMobile</code></td><td><code>boolean</code></td><td>Screen width < 768px</td></tr>
+    <tr><td><code>isTablet</code></td><td><code>boolean</code></td><td>Screen width 768-1023px</td></tr>
+    <tr><td><code>isDesktop</code></td><td><code>boolean</code></td><td>Screen width 1024-1279px</td></tr>
+    <tr><td><code>isLargeDesktop</code></td><td><code>boolean</code></td><td>Screen width >= 1280px</td></tr>
+    <tr><td><code>isWeb</code></td><td><code>boolean</code></td><td>Platform.OS === 'web'</td></tr>
+    <tr><td><code>responsive()</code></td><td><code>Function</code></td><td>Returns value based on screen size</td></tr>
+    <tr><td><code>spacing()</code></td><td><code>Function</code></td><td>Responsive spacing multiplier</td></tr>
+    <tr><td><code>fontSize()</code></td><td><code>Function</code></td><td>Responsive font size multiplier</td></tr>
+    <tr><td><code>containerPadding</code></td><td><code>number</code></td><td>Responsive container padding</td></tr>
+    <tr><td><code>contentMaxWidth</code></td><td><code>number</code></td><td>Responsive max content width</td></tr>
   </table>
 </div>
 
