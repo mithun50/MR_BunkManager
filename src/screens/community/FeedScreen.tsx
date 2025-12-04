@@ -176,8 +176,8 @@ export function FeedScreen() {
   // Render grouped view - Subject wise with Name and Roll No
   const renderGroupedView = () => (
     <ScrollView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-      contentContainerStyle={[styles.groupedContent, { maxWidth: contentMaxWidth, paddingHorizontal: containerPadding }]}
+      style={[styles.scrollContainer, { backgroundColor: theme.colors.background }]}
+      contentContainerStyle={[styles.groupedContent, { maxWidth: contentMaxWidth, paddingHorizontal: containerPadding, alignItems: 'center' }]}
       refreshControl={
         <RefreshControl
           refreshing={isRefreshing}
@@ -399,6 +399,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
+  },
+  scrollContainer: {
+    flex: 1,
   },
   contentWrapper: {
     flex: 1,
