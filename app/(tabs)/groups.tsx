@@ -69,7 +69,7 @@ export default function GroupsScreen() {
           onPress={() => router.push('/search-users' as any)}
           iconColor={theme.colors.onSurface}
         />
-        <View style={{ marginRight: 8 }}>
+        <View style={{ marginRight: 16 }}>
           <ThemeSwitcher />
         </View>
       </Appbar.Header>

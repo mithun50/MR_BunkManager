@@ -29,7 +29,7 @@ jobs:
       - name: 📦 Install dependencies
         run: npm install
 
-      - name: 🏗️ Build Android AAB with EAS
+      - name: 🏗️ Build Android APK with EAS
         run: |
           eas build --platform android --profile production --local --non-interactive
         env:
@@ -37,8 +37,8 @@ jobs:
           EAS_LOCAL_BUILD_SKIP_CLEANUP: 1
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-      - name: 📤 Upload built AAB
+      - name: 📤 Upload built APK
         uses: actions/upload-artifact@v4
         with:
-          name: expo-android-aab
-          path: /home/runner/work/MR_BunkManager/MR_BunkManager/*.aab
+          name: expo-android-apk
+          path: /home/runner/work/MR_BunkManager/MR_BunkManager/*.apk
