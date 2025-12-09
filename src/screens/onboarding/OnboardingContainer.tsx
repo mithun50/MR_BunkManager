@@ -32,6 +32,12 @@ export default function OnboardingContainer() {
     setCurrentStep(2);
   };
 
+  const handleTimetableExtracted = (entries: TimetableEntry[]) => {
+    // Pre-fill extracted entries and go to manual entry for review/edit
+    setTimetableData(entries);
+    setCurrentStep(2);
+  };
+
   const handleManualEntryComplete = (timetable: TimetableEntry[]) => {
     setTimetableData(timetable);
     setCurrentStep(3);
@@ -171,7 +177,11 @@ export default function OnboardingContainer() {
         )}
 
         {currentStep === 1 && (
-          <TimetableUploadScreen onManual={handleTimetableManual} onSkip={handleTimetableSkip} />
+          <TimetableUploadScreen
+            onManual={handleTimetableManual}
+            onSkip={handleTimetableSkip}
+            onExtracted={handleTimetableExtracted}
+          />
         )}
 
         {currentStep === 2 && (

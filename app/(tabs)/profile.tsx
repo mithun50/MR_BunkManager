@@ -1,5 +1,5 @@
 import { View, StyleSheet, ScrollView, Alert, Platform, Image, Pressable, useWindowDimensions } from 'react-native';
-import { Text, Surface, Button, Avatar, useTheme, Divider, Appbar, Card, IconButton, Portal, Modal, SegmentedButtons, TextInput as PaperInput, Dialog, Chip } from 'react-native-paper';
+import { Text, Surface, Button, Avatar, useTheme, Divider, Appbar, Card, IconButton, Portal, Modal, SegmentedButtons, TextInput as PaperInput, Dialog, Chip, ActivityIndicator } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/src/store/authStore';
 import authService from '@/src/services/authService';
@@ -17,6 +17,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import VideoLoadingScreen from '@/src/components/VideoLoadingScreen';
 import imageUploadService from '@/src/services/imageUploadService';
 import OnlineButton from '@/src/components/OnlineButton';
+import { extractTextFromImage } from '@/src/services/ocrService';
+import { parseTimetableFromText } from '@/src/services/timetableParserService';
 
 export default function ProfileScreen() {
   const theme = useTheme();
@@ -63,6 +65,8 @@ export default function ProfileScreen() {
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
   const [extracting, setExtracting] = useState(false);
+  const [extractionStatus, setExtractionStatus] = useState('');
+  const [extractionPreviewImage, setExtractionPreviewImage] = useState<string | null>(null);
   const [showEditTimetable, setShowEditTimetable] = useState(false);
   const [selectedTimetableEntry, setSelectedTimetableEntry] = useState<TimetableEntry | null>(null);
   const [showDeleteTimetableEntryDialog, setShowDeleteTimetableEntryDialog] = useState(false);
@@ -297,6 +301,196 @@ export default function ProfileScreen() {
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
       Alert.alert('Error', `Failed to discard data: ${error.message || 'Unknown error'}`);
+    }
+  };
+
+  // Helper function for platform-specific alerts
+  const showPlatformAlert = (title: string, message: string, buttons?: any[]) => {
+    if (Platform.OS === 'web') {
+      if (buttons && buttons.length > 1) {
+        const result = window.confirm(`${title}\n\n${message}`);
+        if (result && buttons[0]?.onPress) {
+          buttons[0].onPress();
+        } else if (!result && buttons[1]?.onPress) {
+          buttons[1].onPress();
+        }
+      } else {
+        window.alert(`${title}\n\n${message}`);
+        if (buttons?.[0]?.onPress) {
+          buttons[0].onPress();
+        }
+      }
+    } else {
+      Alert.alert(title, message, buttons);
+    }
+  };
+
+  // Handle image extraction for timetable
+  const handleExtractFromImage = async () => {
+    if (Platform.OS === 'web') {
+      // Web: Use file input
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async (e: any) => {
+        const file = e.target.files?.[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = async (event) => {
+            const base64 = event.target?.result as string;
+            await processExtractionImage(base64);
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+      input.click();
+    } else {
+      // Native: Show options
+      Alert.alert(
+        'Select Timetable Image',
+        'Choose how to add your timetable image',
+        [
+          { text: 'Take Photo', onPress: () => pickExtractionImage(true) },
+          { text: 'Choose from Gallery', onPress: () => pickExtractionImage(false) },
+          { text: 'Cancel', style: 'cancel' },
+        ]
+      );
+    }
+  };
+
+  const pickExtractionImage = async (useCamera: boolean) => {
+    try {
+      if (useCamera) {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission needed', 'Camera permission is required to take photos.');
+          return;
+        }
+      } else {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission needed', 'Photo library permission is required to select images.');
+          return;
+        }
+      }
+
+      const result = useCamera
+        ? await ImagePicker.launchCameraAsync({
+            mediaTypes: ['images'],
+            quality: 0.8,
+            allowsEditing: true,
+          })
+        : await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            quality: 0.8,
+            allowsEditing: true,
+          });
+
+      if (!result.canceled && result.assets[0]) {
+        await processExtractionImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Image picker error:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    }
+  };
+
+  const processExtractionImage = async (imageUri: string) => {
+    if (!user) return;
+
+    setExtracting(true);
+    setExtractionPreviewImage(imageUri);
+    setExtractionStatus('Extracting text from image...');
+
+    try {
+      // Step 1: OCR extraction
+      const ocrResult = await extractTextFromImage(imageUri);
+
+      if (!ocrResult.success) {
+        throw new Error(ocrResult.error || 'Failed to extract text from image');
+      }
+
+      setExtractionStatus('Parsing timetable data...');
+
+      // Step 2: AI parsing
+      const parseResult = await parseTimetableFromText(ocrResult.text);
+
+      if (!parseResult.success) {
+        throw new Error(parseResult.error || 'Failed to parse timetable');
+      }
+
+      setExtracting(false);
+      setExtractionPreviewImage(null);
+      setExtractionStatus('');
+
+      // Add extracted entries to existing timetable
+      const newEntries = parseResult.entries.map(entry => ({
+        ...entry,
+        id: generateTimetableId(),
+      }));
+
+      // Check for duplicates and merge
+      const existingKeys = new Set(timetable.map(e => `${e.day}-${e.startTime}-${e.subject}`.toLowerCase()));
+      const uniqueNewEntries = newEntries.filter(
+        e => !existingKeys.has(`${e.day}-${e.startTime}-${e.subject}`.toLowerCase())
+      );
+
+      if (uniqueNewEntries.length === 0) {
+        showPlatformAlert('No New Entries', 'All extracted entries already exist in your timetable.');
+        return;
+      }
+
+      const updatedTimetable = sortTimetable([...timetable, ...uniqueNewEntries]);
+
+      // Update UI immediately
+      setTimetable(updatedTimetable);
+
+      // Save to Firestore
+      await firestoreService.saveTimetable(user.uid, updatedTimetable);
+
+      // Create subjects for new entries
+      const allSubjects = await firestoreService.getSubjects(user.uid);
+      const existingSubjectKeys = new Set(
+        allSubjects.map(s => `${s.name}-${s.code || 'no-code'}`.toLowerCase())
+      );
+
+      for (const entry of uniqueNewEntries) {
+        const subjectKey = `${entry.subject}-${entry.subjectCode || 'no-code'}`.toLowerCase();
+        if (!existingSubjectKeys.has(subjectKey)) {
+          const newSubject: any = {
+            id: generateSubjectId(),
+            name: entry.subject,
+            code: entry.subjectCode || '',
+            type: entry.type,
+            totalClasses: 0,
+            attendedClasses: 0,
+            attendancePercentage: 0,
+            lastUpdated: new Date(),
+          };
+
+          if (entry.faculty) newSubject.faculty = entry.faculty;
+          if (entry.room) newSubject.room = entry.room;
+
+          await firestoreService.addSubject(user.uid, newSubject);
+          existingSubjectKeys.add(subjectKey);
+        }
+      }
+
+      showPlatformAlert(
+        'Success!',
+        `Added ${uniqueNewEntries.length} new class${uniqueNewEntries.length !== 1 ? 'es' : ''} to your timetable.`
+      );
+
+      // Reload data to sync
+      await loadData();
+    } catch (error) {
+      setExtracting(false);
+      setExtractionPreviewImage(null);
+      setExtractionStatus('');
+      showPlatformAlert(
+        'Extraction Failed',
+        error instanceof Error ? error.message : 'Failed to process image. Please try again or add classes manually.'
+      );
     }
   };
 
@@ -846,7 +1040,24 @@ export default function ProfileScreen() {
             )}
 
             {extracting ? (
-              <VideoLoadingScreen onFinish={() => setExtracting(false)} />
+              <Card style={{ marginVertical: 16, padding: 20 }}>
+                <View style={{ alignItems: 'center' }}>
+                  {extractionPreviewImage && (
+                    <Image
+                      source={{ uri: extractionPreviewImage }}
+                      style={{ width: 150, height: 100, borderRadius: 8, marginBottom: 16 }}
+                      resizeMode="contain"
+                    />
+                  )}
+                  <ActivityIndicator size="large" color={theme.colors.primary} />
+                  <Text variant="titleMedium" style={{ marginTop: 16, textAlign: 'center' }}>
+                    {extractionStatus}
+                  </Text>
+                  <Text variant="bodySmall" style={{ opacity: 0.6, marginTop: 8 }}>
+                    This may take a few seconds...
+                  </Text>
+                </View>
+              </Card>
             ) : (
               <View style={styles.timetableButtons}>
                 {timetable.length > 0 && (
@@ -863,6 +1074,15 @@ export default function ProfileScreen() {
 
                 <Button
                   mode="contained"
+                  icon="image-search"
+                  onPress={handleExtractFromImage}
+                  style={styles.timetableButton}
+                >
+                  {Platform.OS === 'web' ? 'Extract from Image' : 'Extract from Image'}
+                </Button>
+
+                <Button
+                  mode="outlined"
                   icon="pencil-plus"
                   onPress={() => setShowManualEntry(true)}
                   style={styles.timetableButton}
