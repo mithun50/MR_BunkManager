@@ -674,6 +674,76 @@ notificationService.ts
 </div>
 
 <div class="section-divider">
+  <h2>OCR Timetable Extraction</h2>
+  <p>Image-to-timetable extraction pipeline</p>
+</div>
+
+<div class="arch-card">
+  <h3>OCR Extraction Flow</h3>
+  <div class="diagram-box">
+    <pre><code>User selects image (camera/gallery)
+       │
+       ▼
+┌─────────────────────────────────────────┐
+│           OCR SERVICE                    │
+│  ┌─────────────────────────────────┐    │
+│  │   Platform Detection             │    │
+│  │   - Web: File input (base64)     │    │
+│  │   - Native: ImagePicker + File   │    │
+│  └─────────────────────────────────┘    │
+│                │                         │
+│                ▼                         │
+│  ┌─────────────────────────────────┐    │
+│  │   Image Processing               │    │
+│  │   - Convert to base64            │    │
+│  │   - Detect MIME type             │    │
+│  │   - Format for API               │    │
+│  └─────────────────────────────────┘    │
+└──────────────────┬──────────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────────┐
+│            OCR.space API                 │
+│   Engine: 2 (advanced)                   │
+│   Table Detection: Enabled               │
+│   Auto Scale: Enabled                    │
+└──────────────────┬──────────────────────┘
+                   │
+                   ▼
+         Extracted Text (OCR Result)
+                   │
+                   ▼
+┌─────────────────────────────────────────┐
+│      TIMETABLE PARSER SERVICE            │
+│  ┌─────────────────────────────────┐    │
+│  │   AI Prompt Engineering          │    │
+│  │   - System prompt for parsing    │    │
+│  │   - JSON output format           │    │
+│  │   - Day/time normalization       │    │
+│  └─────────────────────────────────┘    │
+└──────────────────┬──────────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────────┐
+│            GROQ API                      │
+│   Model: Llama 4 Maverick                │
+│   Temperature: 0.1 | Max Tokens: 4096    │
+└──────────────────┬──────────────────────┘
+                   │
+                   ▼
+      Structured TimetableEntry[]
+                   │
+                   ▼
+┌─────────────────────────────────────────┐
+│      TIMETABLE MANUAL ENTRY SCREEN       │
+│   - Review extracted entries             │
+│   - Edit/Add/Delete entries              │
+│   - Save to Firestore                    │
+└─────────────────────────────────────────┘</code></pre>
+  </div>
+</div>
+
+<div class="section-divider">
   <h2>AI Integration</h2>
   <p>Chat service architecture with Groq API</p>
 </div>

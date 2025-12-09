@@ -629,6 +629,53 @@ description: Complete API reference for MR BunkManager backend and frontend serv
 </div>
 
 <div class="section-divider">
+  <h2>OCR &amp; Timetable Extraction</h2>
+  <p>Image text extraction and AI parsing services</p>
+</div>
+
+<div class="api-card">
+  <h4>ocrService - OCR.space Integration</h4>
+  <p class="api-description">Extracts text from images using OCR (Optical Character Recognition). Supports JPG, PNG, GIF, WebP, BMP, TIFF formats.</p>
+  <pre><code>extractTextFromImage(imageUri: string): Promise&lt;OCRResult&gt;
+
+// Input types supported:
+// - data:image/...;base64,... (Web & Native)
+// - file:///path/to/image (Native only)
+// - content://... (Android only)
+// - https://... (Web & Native)
+
+interface OCRResult {
+  success: boolean;
+  text: string;        // Extracted text
+  error?: string;      // Error message if failed
+}</code></pre>
+</div>
+
+<div class="api-card">
+  <h4>timetableParserService - AI Parsing</h4>
+  <p class="api-description">Parses OCR-extracted text into structured timetable entries using Groq AI (Llama 4 Maverick).</p>
+  <pre><code>parseTimetableFromText(ocrText: string): Promise&lt;ParseResult&gt;
+
+interface ParseResult {
+  success: boolean;
+  entries: TimetableEntry[];  // Parsed timetable entries
+  error?: string;
+}
+
+interface TimetableEntry {
+  id: string;
+  day: string;           // Monday, Tuesday, etc.
+  subject: string;
+  subjectCode?: string;
+  startTime: string;     // HH:MM format
+  endTime: string;
+  type?: string;         // lecture, lab, tutorial
+  faculty?: string;
+  room?: string;
+}</code></pre>
+</div>
+
+<div class="section-divider">
   <h2>Frontend Services</h2>
   <p>Client-side service API reference</p>
 </div>

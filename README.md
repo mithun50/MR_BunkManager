@@ -32,6 +32,8 @@ MR BunkManager helps students track their attendance, manage their class schedul
 
 - **BunkBot AI Assistant**: Get personalized attendance advice
 - **Voice Bot**: Voice-based interaction with AI assistant
+- **OCR Timetable Extraction**: Extract class schedules from images using OCR.space API
+- **AI Timetable Parsing**: Parse extracted text into structured timetable entries using Groq AI
 
 ### Additional Features
 
@@ -56,6 +58,7 @@ MR BunkManager helps students track their attendance, manage their class schedul
 | Firebase JS SDK | Authentication & Firestore |
 | React Native Reanimated | Animations |
 | Groq API | AI chat (Llama 4 Maverick) |
+| OCR.space API | Image text extraction |
 
 ### Backend (Notification Server)
 
@@ -131,6 +134,8 @@ MR_BunkManager/
 │   │   ├── authService.ts        # Firebase auth
 │   │   ├── firestoreService.ts   # Database operations
 │   │   ├── chatService.ts        # AI chat API
+│   │   ├── ocrService.ts         # OCR.space image text extraction
+│   │   ├── timetableParserService.ts # AI timetable parsing
 │   │   ├── notesService.ts       # Notes CRUD
 │   │   ├── groupsService.ts      # Groups & chat
 │   │   ├── socialService.ts      # Likes, comments, saves
@@ -207,6 +212,9 @@ MR_BunkManager/
 
    # AI Service
    EXPO_PUBLIC_GROQ_API_KEY=your_groq_api_key
+
+   # OCR Service (Optical Character Recognition)
+   EXPO_PUBLIC_OCR_API_KEY=your_ocr_space_api_key
 
    # Backend
    EXPO_PUBLIC_BACKEND_URL=https://your-backend.vercel.app
@@ -337,6 +345,17 @@ pushTokens/
 - AI chat with Groq API
 - Attendance context awareness
 - Image analysis support
+
+### ocrService
+- OCR (Optical Character Recognition) using OCR.space API
+- Extract text from images (JPG, PNG, GIF, WebP, BMP, TIFF)
+- Platform support: Web and Native (Android/iOS)
+- Auto-detection of image MIME types
+
+### timetableParserService
+- AI-powered parsing of OCR text using Groq API
+- Converts extracted text to structured TimetableEntry objects
+- Intelligent day/time normalization and validation
 
 ### groupsService
 - Group CRUD operations

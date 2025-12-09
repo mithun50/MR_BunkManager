@@ -603,7 +603,7 @@ description: A comprehensive attendance management and student collaboration pla
   <div class="feature-card">
     <div class="feature-icon">📅</div>
     <h3>Timetable Management</h3>
-    <p>Add, edit, and manage your class schedules with ease. Manual entry with intuitive UI for quick setup.</p>
+    <p>Add, edit, and manage your class schedules. Extract timetables from images using OCR (Optical Character Recognition) with AI parsing.</p>
   </div>
 
   <div class="feature-card">
@@ -621,7 +621,7 @@ description: A comprehensive attendance management and student collaboration pla
   <div class="feature-card">
     <div class="feature-icon">🤖</div>
     <h3>AI Assistant</h3>
-    <p>BunkBot AI provides personalized attendance advice. Voice-enabled for hands-free interaction.</p>
+    <p>BunkBot AI provides personalized attendance advice. Voice-enabled and supports OCR timetable extraction from images.</p>
   </div>
 
   <div class="feature-card">
@@ -683,6 +683,10 @@ description: A comprehensive attendance management and student collaboration pla
       <div class="tech-item">
         <span class="tech-name">Groq API</span>
         <span class="tech-purpose">AI Chat</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-name">OCR.space API</span>
+        <span class="tech-purpose">Image Text Extraction</span>
       </div>
     </div>
   </div>

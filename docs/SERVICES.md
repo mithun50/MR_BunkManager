@@ -490,6 +490,110 @@ const isFollowing = await followService.isFollowing(myUserId, targetUserId);</co
 </div>
 
 <div class="section-divider">
+  <h2>OCR &amp; Timetable Extraction Services</h2>
+  <p>Image text extraction and AI parsing</p>
+</div>
+
+<div class="service-card">
+  <h3>ocrService</h3>
+  <p>OCR (Optical Character Recognition) service using OCR.space API to extract text from images. Supports multiple image formats and both web and native platforms.</p>
+
+  <h4>Configuration</h4>
+  <table class="method-table">
+    <tr><th>Setting</th><th>Value</th></tr>
+    <tr><td>API Provider</td><td>OCR.space</td></tr>
+    <tr><td>OCR Engine</td><td>Engine 2 (advanced)</td></tr>
+    <tr><td>Supported Formats</td><td>JPG, PNG, GIF, WebP, BMP, TIFF</td></tr>
+    <tr><td>Table Detection</td><td>Enabled</td></tr>
+    <tr><td>Auto Scale</td><td>Enabled</td></tr>
+  </table>
+
+  <h4>Methods</h4>
+  <pre><code>extractTextFromImage(imageUri: string): Promise&lt;OCRResult&gt;</code></pre>
+
+  <h4>OCRResult Interface</h4>
+  <pre><code>interface OCRResult {
+  success: boolean;
+  text: string;
+  error?: string;
+}</code></pre>
+
+  <h4>Supported Input Types</h4>
+  <table class="method-table">
+    <tr><th>Input Type</th><th>Example</th><th>Platform</th></tr>
+    <tr><td>Base64 Data URI</td><td><code>data:image/png;base64,...</code></td><td>Web &amp; Native</td></tr>
+    <tr><td>File URI</td><td><code>file:///path/to/image.jpg</code></td><td>Native only</td></tr>
+    <tr><td>Content URI</td><td><code>content://...</code></td><td>Android only</td></tr>
+    <tr><td>HTTP URL</td><td><code>https://example.com/image.png</code></td><td>Web &amp; Native</td></tr>
+  </table>
+
+  <h4>Usage Example</h4>
+  <pre><code>import { extractTextFromImage } from '@/src/services/ocrService';
+
+// Extract text from image
+const result = await extractTextFromImage('file:///path/to/timetable.jpg');
+
+if (result.success) {
+  console.log('Extracted text:', result.text);
+} else {
+  console.error('OCR failed:', result.error);
+}</code></pre>
+</div>
+
+<div class="service-card">
+  <h3>timetableParserService</h3>
+  <p>AI-powered service that parses OCR-extracted text into structured TimetableEntry objects using Groq API (Llama 4 Maverick model).</p>
+
+  <h4>Configuration</h4>
+  <table class="method-table">
+    <tr><th>Setting</th><th>Value</th></tr>
+    <tr><td>Model</td><td><code>meta-llama/llama-4-maverick-17b-128e-instruct</code></td></tr>
+    <tr><td>Temperature</td><td><code>0.1</code> (low for structured output)</td></tr>
+    <tr><td>Max Tokens</td><td><code>4096</code></td></tr>
+    <tr><td>API</td><td>Groq Cloud API</td></tr>
+  </table>
+
+  <h4>Methods</h4>
+  <pre><code>parseTimetableFromText(ocrText: string): Promise&lt;ParseResult&gt;</code></pre>
+
+  <h4>ParseResult Interface</h4>
+  <pre><code>interface ParseResult {
+  success: boolean;
+  entries: TimetableEntry[];
+  error?: string;
+}
+
+interface TimetableEntry {
+  id: string;
+  day: string;           // Monday, Tuesday, etc.
+  subject: string;       // Subject name
+  subjectCode?: string;  // Subject code (if detected)
+  startTime: string;     // HH:MM format
+  endTime: string;       // HH:MM format
+  type?: string;         // lecture, lab, tutorial
+  faculty?: string;      // Teacher name (if detected)
+  room?: string;         // Room/Location (if detected)
+}</code></pre>
+
+  <h4>Usage Example</h4>
+  <pre><code>import { extractTextFromImage } from '@/src/services/ocrService';
+import { parseTimetableFromText } from '@/src/services/timetableParserService';
+
+// Step 1: Extract text from image
+const ocrResult = await extractTextFromImage(imageUri);
+
+if (ocrResult.success) {
+  // Step 2: Parse extracted text into timetable entries
+  const parseResult = await parseTimetableFromText(ocrResult.text);
+
+  if (parseResult.success) {
+    console.log('Parsed entries:', parseResult.entries);
+    // entries can be used to populate timetable
+  }
+}</code></pre>
+</div>
+
+<div class="section-divider">
   <h2>AI Services</h2>
   <p>AI-powered chat and assistance</p>
 </div>

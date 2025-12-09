@@ -358,15 +358,15 @@ description: Complete source code documentation and line-by-line analysis for MR
 
 <div class="stats-grid">
   <div class="stat-card">
-    <div class="stat-number">110+</div>
+    <div class="stat-number">115+</div>
     <div class="stat-label">Source Files</div>
   </div>
   <div class="stat-card">
-    <div class="stat-number">9,000+</div>
+    <div class="stat-number">10,000+</div>
     <div class="stat-label">Lines of Code</div>
   </div>
   <div class="stat-card">
-    <div class="stat-number">15</div>
+    <div class="stat-number">17</div>
     <div class="stat-label">Services</div>
   </div>
   <div class="stat-card">
@@ -409,7 +409,9 @@ description: Complete source code documentation and line-by-line analysis for MR
 │   │   └── index.ts                  # Hook exports
 │   ├── components/                   # React components (15+ files)
 │   ├── screens/                      # Screen implementations (13 files)
-│   ├── services/                     # Business logic (15 files)
+│   ├── services/                     # Business logic (17 files)
+│   │   ├── ocrService.ts             # OCR.space API integration
+│   │   ├── timetableParserService.ts # AI timetable parsing
 │   ├── store/                        # Zustand stores (5 files)
 │   ├── types/                        # TypeScript definitions (3 files)
 │   └── config/                       # Configuration (2 files)
@@ -696,8 +698,65 @@ interface GroupMessage {
 </div>
 
 <div class="section-divider">
+  <h2>OCR &amp; Timetable Extraction</h2>
+  <p>Image text extraction and AI parsing services</p>
+</div>
+
+<div class="code-card">
+  <h3>
+    ocrService.ts
+    <span class="file-badge">TypeScript</span>
+    <span class="line-badge">141 lines</span>
+  </h3>
+  <p>OCR (Optical Character Recognition) service using OCR.space API. Extracts text from images supporting multiple formats and both web and native platforms.</p>
+
+  <table class="analysis-table">
+    <tr><th>Lines</th><th>Function</th><th>Purpose</th></tr>
+    <tr><td><code>1-11</code></td><td>Imports &amp; Config</td><td>Platform, expo-file-system/next, API URL/Key</td></tr>
+    <tr><td><code>16-37</code></td><td><code>getImageMimeType()</code></td><td>Detect MIME type from URI or base64 prefix</td></tr>
+    <tr><td><code>44-140</code></td><td><code>extractTextFromImage()</code></td><td>Main OCR extraction function</td></tr>
+    <tr><td><code>64-66</code></td><td>Base64 handling</td><td>Direct base64 data URI support</td></tr>
+    <tr><td><code>67-90</code></td><td>File URI handling</td><td>Native file:// and content:// URIs using File class</td></tr>
+    <tr><td><code>91-93</code></td><td>URL handling</td><td>HTTP/HTTPS image URLs</td></tr>
+    <tr><td><code>102-126</code></td><td>API Response</td><td>Parse OCR.space JSON response</td></tr>
+  </table>
+
+  <pre><code>// Key features:
+- OCR Engine 2 (advanced recognition)
+- Table detection enabled
+- Auto-scale for better accuracy
+- Supports: JPG, PNG, GIF, WebP, BMP, TIFF</code></pre>
+</div>
+
+<div class="code-card">
+  <h3>
+    timetableParserService.ts
+    <span class="file-badge">TypeScript</span>
+  </h3>
+  <p>AI-powered service that parses OCR-extracted text into structured TimetableEntry objects using Groq API (Llama 4 Maverick model).</p>
+
+  <table class="analysis-table">
+    <tr><th>Feature</th><th>Description</th></tr>
+    <tr><td>Model</td><td>Llama 4 Maverick (meta-llama/llama-4-maverick-17b-128e-instruct)</td></tr>
+    <tr><td>Temperature</td><td>0.1 (low for structured output)</td></tr>
+    <tr><td>Max Tokens</td><td>4096</td></tr>
+    <tr><td>Output Format</td><td>JSON array of TimetableEntry objects</td></tr>
+    <tr><td>Day Normalization</td><td>Converts Mon/Tue/etc. to full day names</td></tr>
+    <tr><td>Time Normalization</td><td>Converts to HH:MM 24-hour format</td></tr>
+  </table>
+
+  <pre><code>// Extracts from OCR text:
+- Subject name and code
+- Day of week
+- Start and end times
+- Class type (lecture/lab/tutorial)
+- Faculty name (if present)
+- Room/Location (if present)</code></pre>
+</div>
+
+<div class="section-divider">
   <h2>Service Summary</h2>
-  <p>All 15 services and their responsibilities</p>
+  <p>All 17 services and their responsibilities</p>
 </div>
 
 <div class="code-card">
@@ -707,6 +766,8 @@ interface GroupMessage {
     <tr><td>Firestore</td><td><code>firestoreService.ts</code></td><td>User profile, timetable, subjects</td></tr>
     <tr><td>Chat</td><td><code>chatService.ts</code></td><td>Groq AI integration</td></tr>
     <tr><td>Chat Storage</td><td><code>chatStorageService.ts</code></td><td>Chat history persistence</td></tr>
+    <tr><td>OCR</td><td><code>ocrService.ts</code></td><td>OCR.space image text extraction</td></tr>
+    <tr><td>Timetable Parser</td><td><code>timetableParserService.ts</code></td><td>AI parsing of OCR text to timetable</td></tr>
     <tr><td>Notes</td><td><code>notesService.ts</code></td><td>Notes CRUD, feed, search</td></tr>
     <tr><td>Groups</td><td><code>groupsService.ts</code></td><td>Groups, members, real-time chat</td></tr>
     <tr><td>Social</td><td><code>socialService.ts</code></td><td>Likes, comments, saves</td></tr>
