@@ -18,7 +18,7 @@ import { useAuthStore } from '../../store/authStore';
 import OnlineButton from '../../components/OnlineButton';
 import { useResponsive } from '../../hooks/useResponsive';
 
-const APP_DOWNLOAD_URL = 'https://github.com/mithun50/MR_BunkManager/releases/download/v1.0.0/Mr-BunkManagerv1beta.apk';
+const APP_DOWNLOAD_URL = 'https://github.com/mithun50/MR_BunkManager/releases/download/v1.0.1/build-1765289380203.apk';
 
 export default function LoginScreen() {
   const theme = useTheme();
@@ -237,7 +237,7 @@ export default function LoginScreen() {
                   Mr. Bunk Manager
                 </Text>
                 <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, opacity: 0.7 }}>
-                  v1.0.0 Beta • Android APK
+                  v1.0.1 • Android APK
                 </Text>
               </View>
             </Surface>

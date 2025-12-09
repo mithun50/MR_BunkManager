@@ -4,7 +4,7 @@
 
 **Project Title:** MR Bunk Manager - Smart Attendance Management and Student Collaboration Platform
 
-**Version:** 1.0.0
+**Version:** 1.0.1
 
 **Platform:** Cross-Platform Mobile and Web Application
 

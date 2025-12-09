@@ -4,7 +4,7 @@ A comprehensive attendance management and student collaboration platform built w
 
 ## Download
 
-**[Download Android App (APK)](https://github.com/mithun50/MR_BunkManager/releases/download/v1.0.0/Mr-BunkManagerv1beta.apk)**
+**[Download Android App (APK)](https://github.com/mithun50/MR_BunkManager/releases/download/v1.0.1/build-1765289380203.apk)**
 
 **[Use Web App](https://mr-bunk-manager-idtl.vercel.app)** - Access the app directly in your browser (Login only)
 
@@ -458,5 +458,5 @@ For issues and feature requests, please use the [GitHub Issues](https://github.c
 ---
 
 **Package**: `com.idtl.mrbunkmanager`
-**Version**: 1.0.0
+**Version**: 1.0.1
 **Min SDK**: Android 6.0+ (API 23)
