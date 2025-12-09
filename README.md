@@ -10,7 +10,7 @@ A comprehensive attendance management and student collaboration platform built w
 
 ## Demo Video
 
-<video src="https://github.com/mithun50/MR_BunkManager/raw/main/docs/Mister_BunkManager.mp4" controls></video>
+<video src="https://raw.githubusercontent.com/mithun50/MR_BunkManager/main/docs/Mister_BunkManager.mp4" controls></video>
 
 ## Overview
 
