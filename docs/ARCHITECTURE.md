@@ -674,12 +674,69 @@ notificationService.ts
 </div>
 
 <div class="section-divider">
-  <h2>OCR Timetable Extraction</h2>
-  <p>Image-to-timetable extraction pipeline</p>
+  <h2>Timetable Management</h2>
+  <p>Two methods: Manual entry and OCR extraction</p>
 </div>
 
 <div class="arch-card">
-  <h3>OCR Extraction Flow</h3>
+  <h3>Timetable Setup Options</h3>
+  <div class="diagram-box">
+    <pre><code>                    USER CHOOSES METHOD
+                            │
+            ┌───────────────┴───────────────┐
+            ▼                               ▼
+    ┌───────────────┐               ┌───────────────┐
+    │ MANUAL ENTRY  │               │ OCR EXTRACTION│
+    │   (Default)   │               │   (Optional)  │
+    └───────┬───────┘               └───────┬───────┘
+            │                               │
+            ▼                               ▼
+    Add entries one                 Upload timetable
+    by one with UI:                 image (camera/
+    - Day selection                 gallery/file)
+    - Subject name                          │
+    - Time picker                           ▼
+    - Type (lecture/              ┌─────────────────┐
+      lab/tutorial)               │   OCR SERVICE   │
+    - Faculty (opt)               │  (OCR.space)    │
+    - Room (opt)                  └────────┬────────┘
+            │                              │
+            │                              ▼
+            │                     Extract raw text
+            │                     from image
+            │                              │
+            │                              ▼
+            │                     ┌─────────────────┐
+            │                     │  AI PARSER      │
+            │                     │  (Groq/Llama 4) │
+            │                     └────────┬────────┘
+            │                              │
+            │                              ▼
+            │                     Parse to structured
+            │                     TimetableEntry[]
+            │                              │
+            └──────────────┬───────────────┘
+                           ▼
+            ┌─────────────────────────────────┐
+            │   MANUAL ENTRY SCREEN           │
+            │   (Review, Edit, Add, Delete)   │
+            │   - All entries editable        │
+            │   - Add more entries manually   │
+            │   - Delete unwanted entries     │
+            └───────────────┬─────────────────┘
+                            │
+                            ▼
+            ┌─────────────────────────────────┐
+            │       SAVE TO FIRESTORE         │
+            │   - Save timetable entries      │
+            │   - Auto-create subjects for    │
+            │     attendance tracking         │
+            └─────────────────────────────────┘</code></pre>
+  </div>
+</div>
+
+<div class="arch-card">
+  <h3>OCR Extraction Pipeline (Detail)</h3>
   <div class="diagram-box">
     <pre><code>User selects image (camera/gallery)
        │
@@ -704,9 +761,10 @@ notificationService.ts
                    ▼
 ┌─────────────────────────────────────────┐
 │            OCR.space API                 │
-│   Engine: 2 (advanced)                   │
+│   Engine: 2 (advanced recognition)       │
 │   Table Detection: Enabled               │
 │   Auto Scale: Enabled                    │
+│   Formats: JPG, PNG, GIF, WebP, BMP, TIFF│
 └──────────────────┬──────────────────────┘
                    │
                    ▼
@@ -719,7 +777,8 @@ notificationService.ts
 │  │   AI Prompt Engineering          │    │
 │  │   - System prompt for parsing    │    │
 │  │   - JSON output format           │    │
-│  │   - Day/time normalization       │    │
+│  │   - Day normalization (Mon→Monday)│   │
+│  │   - Time normalization (HH:MM)   │    │
 │  └─────────────────────────────────┘    │
 └──────────────────┬──────────────────────┘
                    │
@@ -727,18 +786,24 @@ notificationService.ts
 ┌─────────────────────────────────────────┐
 │            GROQ API                      │
 │   Model: Llama 4 Maverick                │
-│   Temperature: 0.1 | Max Tokens: 4096    │
+│   Temperature: 0.1 (structured output)   │
+│   Max Tokens: 4096                       │
 └──────────────────┬──────────────────────┘
                    │
                    ▼
       Structured TimetableEntry[]
+      {day, subject, subjectCode,
+       startTime, endTime, type,
+       faculty, room}
                    │
                    ▼
 ┌─────────────────────────────────────────┐
-│      TIMETABLE MANUAL ENTRY SCREEN       │
-│   - Review extracted entries             │
-│   - Edit/Add/Delete entries              │
-│   - Save to Firestore                    │
+│      MANUAL ENTRY SCREEN                 │
+│   - Pre-filled with extracted entries    │
+│   - User can review and edit             │
+│   - Add more entries manually            │
+│   - Delete incorrect entries             │
+│   - Save when satisfied                  │
 └─────────────────────────────────────────┘</code></pre>
   </div>
 </div>

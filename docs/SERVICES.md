@@ -310,7 +310,8 @@ getUserProfile(uid: string): Promise&lt;UserProfile | null&gt;
 updateUserProfile(uid: string, data: Partial&lt;UserProfile&gt;): Promise&lt;void&gt;
 deleteUserProfile(uid: string): Promise&lt;void&gt;</code></pre>
 
-  <h4>Timetable Methods</h4>
+  <h4>Timetable Methods (Manual Entry CRUD)</h4>
+  <p>These methods support the manual timetable entry feature where users add/edit/delete entries one by one:</p>
   <pre><code>saveTimetable(uid: string, entries: TimetableEntry[]): Promise&lt;void&gt;
 getTimetable(uid: string): Promise&lt;TimetableEntry[]&gt;
 addTimetableEntry(uid: string, entry: TimetableEntry): Promise&lt;string&gt;
@@ -491,7 +492,13 @@ const isFollowing = await followService.isFollowing(myUserId, targetUserId);</co
 
 <div class="section-divider">
   <h2>OCR &amp; Timetable Extraction Services</h2>
-  <p>Image text extraction and AI parsing</p>
+  <p>Alternative to manual entry: Extract timetable from images using OCR and AI parsing</p>
+</div>
+
+<div class="info-box">
+  <p><strong>Two ways to set up timetable:</strong><br>
+  1. <strong>Manual Entry</strong> (Default): Use firestoreService methods above to add/edit/delete entries with UI<br>
+  2. <strong>OCR Extraction</strong> (Optional): Upload image → OCR extracts text → AI parses to entries → Review in manual entry screen</p>
 </div>
 
 <div class="service-card">

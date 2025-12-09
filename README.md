@@ -18,7 +18,9 @@ MR BunkManager helps students track their attendance, manage their class schedul
 
 - **Attendance Tracking**: Track attendance across all subjects with visual analytics
 - **Smart Dashboard**: View overall and subject-wise attendance with donut charts
-- **Timetable Management**: Add, edit, and manage class schedules
+- **Timetable Management**: Two ways to set up your schedule:
+  - **Manual Entry**: Add, edit, and delete class entries with intuitive UI
+  - **OCR Extraction**: Upload timetable image → AI extracts and parses → Review and edit
 - **Attendance Calculator**: Know how many classes you can bunk or must attend
 
 ### Social Features
@@ -32,8 +34,16 @@ MR BunkManager helps students track their attendance, manage their class schedul
 
 - **BunkBot AI Assistant**: Get personalized attendance advice
 - **Voice Bot**: Voice-based interaction with AI assistant
-- **OCR Timetable Extraction**: Extract class schedules from images using OCR.space API
-- **AI Timetable Parsing**: Parse extracted text into structured timetable entries using Groq AI
+- **OCR Timetable Extraction**: Extract class schedules from images using OCR.space API (Optical Character Recognition)
+- **AI Timetable Parsing**: Groq AI (Llama 4 Maverick) parses extracted text into structured timetable entries
+
+#### How OCR Timetable Extraction Works
+
+1. **Image Upload**: User uploads/captures timetable image (JPG, PNG, GIF, WebP, BMP, TIFF supported)
+2. **OCR Processing**: OCR.space API extracts raw text from the image using Engine 2 with table detection
+3. **AI Parsing**: Groq AI analyzes the extracted text and converts it to structured TimetableEntry objects
+4. **Review & Edit**: Extracted entries are shown in manual entry screen for user review, editing, or adding more entries
+5. **Save**: User saves the final timetable (creates subjects automatically for attendance tracking)
 
 ### Additional Features
 

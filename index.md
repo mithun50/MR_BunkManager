@@ -603,7 +603,7 @@ description: A comprehensive attendance management and student collaboration pla
   <div class="feature-card">
     <div class="feature-icon">📅</div>
     <h3>Timetable Management</h3>
-    <p>Add, edit, and manage your class schedules. Extract timetables from images using OCR (Optical Character Recognition) with AI parsing.</p>
+    <p>Two ways to set up: Manual entry with intuitive UI, or OCR extraction from images with AI parsing. Review and edit before saving.</p>
   </div>
 
   <div class="feature-card">
@@ -620,8 +620,8 @@ description: A comprehensive attendance management and student collaboration pla
 
   <div class="feature-card">
     <div class="feature-icon">🤖</div>
-    <h3>AI Assistant</h3>
-    <p>BunkBot AI provides personalized attendance advice. Voice-enabled and supports OCR timetable extraction from images.</p>
+    <h3>AI Features</h3>
+    <p>BunkBot AI for attendance advice, voice interaction, and OCR timetable extraction: Image → Text → AI Parsing → Structured entries.</p>
   </div>
 
   <div class="feature-card">
