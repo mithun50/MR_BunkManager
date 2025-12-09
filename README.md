@@ -8,6 +8,10 @@ A comprehensive attendance management and student collaboration platform built w
 
 **[Use Web App](https://mr-bunk-manager-idtl.vercel.app)** - Access the app directly in your browser (Login only)
 
+## Demo Video
+
+<video src="https://github.com/mithun50/MR_BunkManager/raw/main/docs/Mister_BunkManager.mp4" controls></video>
+
 ## Overview
 
 MR BunkManager helps students track their attendance, manage their class schedule, collaborate with peers through study groups, and share study materials. The app features an AI-powered assistant that provides personalized attendance advice.

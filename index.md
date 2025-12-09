@@ -555,6 +555,19 @@ description: A comprehensive attendance management and student collaboration pla
   </div>
 </div>
 
+<!-- Demo Video Section -->
+<div class="section-header" style="margin-top: 20px;">
+  <h2>Demo Video</h2>
+  <p>Watch a quick overview of MR BunkManager</p>
+</div>
+
+<div style="display: flex; justify-content: center; margin-bottom: 40px;">
+  <video controls style="max-width: 100%; width: 800px; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+    <source src="https://github.com/mithun50/MR_BunkManager/raw/main/docs/Mister_BunkManager.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+</div>
+
 <!-- Documentation Links -->
 <div class="section-header" style="margin-top: 20px;">
   <h2>Documentation</h2>
