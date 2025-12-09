@@ -362,7 +362,7 @@ export async function sendNotificationToFollowers(authorId, noteInfo) {
         android: {
           notification: {
             color: '#3B82F6',
-            sound: 'default',
+            sound: 'notification',
             priority: 'high',
             channelId: 'default',
           },
@@ -370,7 +370,7 @@ export async function sendNotificationToFollowers(authorId, noteInfo) {
         apns: {
           payload: {
             aps: {
-              sound: 'default',
+              sound: 'notification.wav',
               badge: 1,
             },
           },
@@ -446,7 +446,7 @@ export async function sendNotificationToUser(userId, customMessage = null) {
       android: {
         notification: {
           color: '#3B82F6',
-          sound: 'default',
+          sound: 'notification',
           priority: 'high',
           channelId: 'default',
         },
@@ -454,7 +454,7 @@ export async function sendNotificationToUser(userId, customMessage = null) {
       apns: {
         payload: {
           aps: {
-            sound: 'default',
+            sound: 'notification.wav',
             badge: 1,
           },
         },
@@ -526,7 +526,7 @@ export async function sendNotificationToAllUsers(customMessage = null) {
       android: {
         notification: {
           color: '#3B82F6',
-          sound: 'default',
+          sound: 'notification',
           priority: 'high',
           channelId: 'default',
         },
@@ -534,7 +534,7 @@ export async function sendNotificationToAllUsers(customMessage = null) {
       apns: {
         payload: {
           aps: {
-            sound: 'default',
+            sound: 'notification.wav',
             badge: 1,
           },
         },
@@ -612,7 +612,7 @@ export async function sendDailyReminders() {
         android: {
           notification: {
             color: '#3B82F6',
-            sound: 'default',
+            sound: 'notification',
             priority: 'high',
             channelId: 'default',
           },
@@ -620,7 +620,7 @@ export async function sendDailyReminders() {
         apns: {
           payload: {
             aps: {
-              sound: 'default',
+              sound: 'notification.wav',
               badge: 1,
             },
           },
@@ -861,7 +861,7 @@ export async function sendNotificationToGroupMembers(groupId, groupName, senderI
         android: {
           notification: {
             color: '#3B82F6',
-            sound: 'default',
+            sound: 'notification',
             priority: 'high',
             channelId: 'default',
           },
@@ -869,7 +869,7 @@ export async function sendNotificationToGroupMembers(groupId, groupName, senderI
         apns: {
           payload: {
             aps: {
-              sound: 'default',
+              sound: 'notification.wav',
               badge: 1,
             },
           },
@@ -960,7 +960,7 @@ export async function sendClassReminders(minutesBefore = 30) {
           android: {
             notification: {
               color: '#3B82F6',
-              sound: 'default',
+              sound: 'notification',
               priority: 'high',
               channelId: 'default',
             },
@@ -968,7 +968,7 @@ export async function sendClassReminders(minutesBefore = 30) {
           apns: {
             payload: {
               aps: {
-                sound: 'default',
+                sound: 'notification.wav',
                 badge: 1,
               },
             },

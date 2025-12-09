@@ -85,7 +85,8 @@ module.exports = ({ config }) => {
         {
           icon: "./assets/images/logo.png",
           color: "#3B82F6",
-          defaultChannel: "default"
+          defaultChannel: "default",
+          sounds: ["./assets/sounds/notification.wav"]
         }
       ],
       [

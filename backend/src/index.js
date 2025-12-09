@@ -452,7 +452,7 @@ app.post('/notify-group-members', async (req, res) => {
       .filter(token => Expo.isExpoPushToken(token))
       .map(token => ({
         to: token,
-        sound: 'default',
+        sound: 'notification.wav',
         title,
         body,
         data: {
