@@ -411,9 +411,9 @@ The author also acknowledges the open-source community and the following project
 
 [4] M. Rahaman, M. Islam, and D. Nandi, "SmartPresence: Wi-Fi-based online attendance management for smart academic assistance," *Journal of Electrical Systems and Information Technology*, vol. 12, no. 23, 2025. [Online]. Available: [https://doi.org/10.1186/s43067-025-00215-y](https://doi.org/10.1186/s43067-025-00215-y)
 
-[5] "Student Attendance Management System Based on Fingerprint Identification Technology," in *Proc. IEEE Int. Conf.*, 2024. [Online]. Available: [https://doi.org/10.1109/ICACT60172.2024.10420938](https://doi.org/10.1109/ICACT60172.2024.10420938)
+[5] "Student Attendance Management System Based on Fingerprint Identification Technology," in *Proc. IEEE ICACT*, 2024. [Online]. Available: [https://ieeexplore.ieee.org/document/10420938](https://ieeexplore.ieee.org/document/10420938)
 
-[6] S. Sawhney, K. Kacker, S. Jain, S. N. Singh, and R. Garg, "Face Recognition Based Attendance System," in *Proc. IEEE Int. Conf. Intelligent Computing and Control Systems (ICICCS)*, 2023. [Online]. Available: [https://doi.org/10.1109/ICICCS56967.2023.10146718](https://doi.org/10.1109/ICICCS56967.2023.10146718)
+[6] S. Sawhney et al., "Face Recognition Based Attendance System," in *Proc. IEEE ICICCS*, 2023. [Online]. Available: [https://ieeexplore.ieee.org/document/10146718](https://ieeexplore.ieee.org/document/10146718)
 
 [7] S. Singh, "Mobile based Student Attendance Management System," *Int. J. Comput. Appl.*, 2016. [Online]. Available: [https://www.ijcaonline.org/](https://www.ijcaonline.org/)
 
