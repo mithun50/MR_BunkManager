@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="300" fill="#FAFAFA"/>
+
+  <!-- Title -->
+  <text x="400" y="25" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">OCR-to-Structured-Data Pipeline</text>
+
+  <!-- Step 1: Image Upload -->
+  <rect x="30" y="60" width="120" height="80" rx="10" fill="#FFE0B2" stroke="#FF9800" stroke-width="2" filter="url(#shadow)"/>
+  <text x="90" y="95" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle" fill="#333">Image</text>
+  <text x="90" y="115" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle" fill="#333">Upload</text>
+
+  <!-- Arrow 1 -->
+  <line x1="150" y1="100" x2="185" y2="100" stroke="#666" stroke-width="2"/>
+  <polygon points="190,100 180,95 180,105" fill="#666"/>
+  <text x="168" y="90" font-family="Arial" font-size="8" text-anchor="middle" fill="#666">JPG/PNG</text>
+
+  <!-- Step 2: OCR.space -->
+  <rect x="195" y="60" width="120" height="80" rx="10" fill="#BBDEFB" stroke="#2196F3" stroke-width="2" filter="url(#shadow)"/>
+  <text x="255" y="95" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle" fill="#333">OCR.space</text>
+  <text x="255" y="115" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle" fill="#333">API</text>
+
+  <!-- Arrow 2 -->
+  <line x1="315" y1="100" x2="350" y2="100" stroke="#666" stroke-width="2"/>
+  <polygon points="355,100 345,95 345,105" fill="#666"/>
+  <text x="333" y="90" font-family="Arial" font-size="8" text-anchor="middle" fill="#666">Table Detection</text>
+
+  <!-- Step 3: Raw Text -->
+  <rect x="360" y="60" width="120" height="80" rx="10" fill="#FFF9C4" stroke="#FFEB3B" stroke-width="2" filter="url(#shadow)"/>
+  <text x="420" y="95" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle" fill="#333">Raw Text</text>
+  <text x="420" y="115" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle" fill="#333">+ Tables</text>
+
+  <!-- Arrow 3 -->
+  <line x1="480" y1="100" x2="515" y2="100" stroke="#666" stroke-width="2"/>
+  <polygon points="520,100 510,95 510,105" fill="#666"/>
+  <text x="498" y="90" font-family="Arial" font-size="8" text-anchor="middle" fill="#666">Parsing</text>
+
+  <!-- Step 4: Groq LLM -->
+  <rect x="525" y="60" width="120" height="80" rx="10" fill="#E1BEE7" stroke="#9C27B0" stroke-width="2" filter="url(#shadow)"/>
+  <text x="585" y="90" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle" fill="#333">Groq LLM</text>
+  <text x="585" y="110" font-family="Arial" font-size="11" text-anchor="middle" fill="#666">Llama 4</text>
+  <text x="585" y="125" font-family="Arial" font-size="11" text-anchor="middle" fill="#666">Maverick</text>
+
+  <!-- Arrow 4 -->
+  <line x1="645" y1="100" x2="680" y2="100" stroke="#666" stroke-width="2"/>
+  <polygon points="685,100 675,95 675,105" fill="#666"/>
+  <text x="663" y="90" font-family="Arial" font-size="8" text-anchor="middle" fill="#666">Validated</text>
+
+  <!-- Step 5: Structured JSON -->
+  <rect x="690" y="60" width="100" height="80" rx="10" fill="#C8E6C9" stroke="#4CAF50" stroke-width="2" filter="url(#shadow)"/>
+  <text x="740" y="95" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle" fill="#333">Structured</text>
+  <text x="740" y="115" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle" fill="#333">JSON</text>
+
+  <!-- Sample Data Boxes -->
+  <!-- Input sample -->
+  <rect x="40" y="160" width="100" height="70" rx="5" fill="#F5F5F5" stroke="#DDD"/>
+  <text x="90" y="180" font-family="Arial" font-size="9" text-anchor="middle" fill="#666">[Timetable</text>
+  <text x="90" y="195" font-family="Arial" font-size="9" text-anchor="middle" fill="#666">Image]</text>
+  <rect x="55" y="205" width="70" height="20" fill="#EEE" stroke="#CCC"/>
+  <text x="90" y="218" font-family="Courier" font-size="8" text-anchor="middle" fill="#333">📷 .jpg</text>
+
+  <!-- Raw text sample -->
+  <rect x="370" y="160" width="100" height="70" rx="5" fill="#F5F5F5" stroke="#DDD"/>
+  <text x="420" y="178" font-family="Courier" font-size="8" text-anchor="middle" fill="#333">"Mon 9:00</text>
+  <text x="420" y="193" font-family="Courier" font-size="8" text-anchor="middle" fill="#333">Math 101</text>
+  <text x="420" y="208" font-family="Courier" font-size="8" text-anchor="middle" fill="#333">Room 201"</text>
+
+  <!-- JSON output sample -->
+  <rect x="690" y="160" width="100" height="85" rx="5" fill="#F5F5F5" stroke="#DDD"/>
+  <text x="740" y="178" font-family="Courier" font-size="7" text-anchor="middle" fill="#333">{</text>
+  <text x="740" y="190" font-family="Courier" font-size="7" text-anchor="middle" fill="#4CAF50">"day": "Monday",</text>
+  <text x="740" y="202" font-family="Courier" font-size="7" text-anchor="middle" fill="#4CAF50">"time": "9:00 AM",</text>
+  <text x="740" y="214" font-family="Courier" font-size="7" text-anchor="middle" fill="#4CAF50">"subject": "Math"</text>
+  <text x="740" y="226" font-family="Courier" font-size="7" text-anchor="middle" fill="#333">}</text>
+
+  <!-- Connecting lines to samples -->
+  <line x1="90" y1="140" x2="90" y2="160" stroke="#CCC" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="420" y1="140" x2="420" y2="160" stroke="#CCC" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="740" y1="140" x2="740" y2="160" stroke="#CCC" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- Footer -->
+  <text x="400" y="280" font-family="Arial" font-size="10" text-anchor="middle" fill="#999">Fig. 3: OCR-to-Structured-Data Pipeline</text>
+</svg>

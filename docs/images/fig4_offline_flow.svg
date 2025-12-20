@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="500" height="400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="500" height="400" fill="#FAFAFA"/>
+
+  <!-- Title -->
+  <text x="250" y="25" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Offline-First Data Flow</text>
+
+  <!-- Write Operation -->
+  <rect x="175" y="50" width="150" height="50" rx="8" fill="#BBDEFB" stroke="#2196F3" stroke-width="2"/>
+  <text x="250" y="80" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle" fill="#333">Write Operation</text>
+
+  <!-- Arrow down -->
+  <line x1="250" y1="100" x2="250" y2="125" stroke="#666" stroke-width="2"/>
+  <polygon points="250,130 245,120 255,120" fill="#666"/>
+
+  <!-- Decision Diamond -->
+  <polygon points="250,135 320,175 250,215 180,175" fill="#FFF9C4" stroke="#FFC107" stroke-width="2"/>
+  <text x="250" y="180" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle" fill="#333">Online?</text>
+
+  <!-- Yes branch (left) -->
+  <line x1="180" y1="175" x2="100" y2="175" stroke="#4CAF50" stroke-width="2"/>
+  <line x1="100" y1="175" x2="100" y2="240" stroke="#4CAF50" stroke-width="2"/>
+  <polygon points="100,245 95,235 105,235" fill="#4CAF50"/>
+  <text x="140" y="165" font-family="Arial" font-size="10" fill="#4CAF50">Yes</text>
+
+  <!-- Firebase Sync (left) -->
+  <rect x="40" y="250" width="120" height="50" rx="8" fill="#C8E6C9" stroke="#4CAF50" stroke-width="2"/>
+  <text x="100" y="270" font-family="Arial" font-size="11" font-weight="bold" text-anchor="middle" fill="#333">Firebase</text>
+  <text x="100" y="288" font-family="Arial" font-size="11" font-weight="bold" text-anchor="middle" fill="#333">Sync</text>
+
+  <!-- No branch (right) -->
+  <line x1="320" y1="175" x2="400" y2="175" stroke="#F44336" stroke-width="2"/>
+  <line x1="400" y1="175" x2="400" y2="240" stroke="#F44336" stroke-width="2"/>
+  <polygon points="400,245 395,235 405,235" fill="#F44336"/>
+  <text x="360" y="165" font-family="Arial" font-size="10" fill="#F44336">No</text>
+
+  <!-- Offline Queue (right) -->
+  <rect x="340" y="250" width="120" height="50" rx="8" fill="#FFCDD2" stroke="#F44336" stroke-width="2"/>
+  <text x="400" y="270" font-family="Arial" font-size="11" font-weight="bold" text-anchor="middle" fill="#333">Offline</text>
+  <text x="400" y="288" font-family="Arial" font-size="11" font-weight="bold" text-anchor="middle" fill="#333">Queue</text>
+
+  <!-- Arrows to cache -->
+  <line x1="100" y1="300" x2="100" y2="320" stroke="#666" stroke-width="2"/>
+  <line x1="100" y1="320" x2="200" y2="320" stroke="#666" stroke-width="2"/>
+
+  <line x1="400" y1="300" x2="400" y2="320" stroke="#666" stroke-width="2"/>
+  <line x1="400" y1="320" x2="300" y2="320" stroke="#666" stroke-width="2"/>
+
+  <polygon points="250,325 245,315 255,315" fill="#666"/>
+
+  <!-- Local Cache -->
+  <rect x="175" y="330" width="150" height="50" rx="8" fill="#E1BEE7" stroke="#9C27B0" stroke-width="2"/>
+  <text x="250" y="355" font-family="Arial" font-size="11" font-weight="bold" text-anchor="middle" fill="#333">Local Cache</text>
+  <text x="250" y="372" font-family="Arial" font-size="9" text-anchor="middle" fill="#666">(7-day TTL)</text>
+
+  <!-- Auto-sync arrow -->
+  <path d="M400 300 Q450 320 450 345 Q450 370 380 370" stroke="#FF9800" stroke-width="2" fill="none" stroke-dasharray="5,3"/>
+  <polygon points="375,370 385,365 385,375" fill="#FF9800"/>
+  <text x="460" y="340" font-family="Arial" font-size="9" fill="#FF9800">Auto-sync</text>
+  <text x="460" y="352" font-family="Arial" font-size="9" fill="#FF9800">on reconnect</text>
+
+  <!-- Footer -->
+  <text x="250" y="395" font-family="Arial" font-size="10" text-anchor="middle" fill="#999">Fig. 4: Offline-First Data Flow</text>
+</svg>
