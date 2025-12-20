@@ -6,6 +6,8 @@
 
 **Mithun Gowda B**
 Department of Computer Science and Engineering
+Don Bosco Institute of Technology
+Bangalore, Karnataka, India
 Email: mithungowda.b7411@gmail.com
 
 ---
@@ -393,7 +395,9 @@ The source code is available as open-source under the Apache 2.0 license at http
 
 ## ACKNOWLEDGMENT
 
-The author thanks the development team members—Nevil Dsouza (Team Leader), Naren V, Manas Habbu, Manasvi R, and Lavanya—for their contributions to the project. Special thanks to the early adopters who provided valuable feedback during the development process.
+The author thanks the development team members—Nevil Dsouza (Team Leader), Naren V, Manas Habbu, Manasvi R, and Lavanya—for their contributions to the project. Special thanks to Don Bosco Institute of Technology, Bangalore for providing the academic environment and support for this research.
+
+The author also acknowledges the open-source community and the following projects that made this work possible: Expo and the React Native community for their excellent cross-platform development framework; Firebase by Google for providing robust backend services; Groq for their high-performance LLM inference API; OCR.space for their OCR services; and the maintainers of React Native Paper, Zustand, and other open-source libraries used in this project. This work stands on the shoulders of the open-source software movement.
 
 ---
 
